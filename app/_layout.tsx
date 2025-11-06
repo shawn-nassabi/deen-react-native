@@ -1,3 +1,6 @@
+// Import polyfills first for streaming support
+import "@/utils/polyfills";
+
 import {
   DarkTheme,
   DefaultTheme,
