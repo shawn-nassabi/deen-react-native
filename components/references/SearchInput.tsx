@@ -1,9 +1,9 @@
 /**
- * Chat input component
- * Text input with send button and auto-growing functionality
+ * Search input component for references
+ * Bottom-fixed search bar with BlurView effect
  */
 
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   TextInput,
@@ -15,9 +15,9 @@ import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { UI_CONSTANTS, PLACEHOLDERS } from "@/utils/constants";
+import { PLACEHOLDERS } from "@/utils/constants";
 
-interface ChatInputProps {
+interface SearchInputProps {
   value: string;
   onChange: (text: string) => void;
   onSubmit: () => void;
@@ -25,34 +25,20 @@ interface ChatInputProps {
   placeholder?: string;
 }
 
-export default function ChatInput({
+export default function SearchInput({
   value,
   onChange,
   onSubmit,
   isLoading,
-  placeholder = PLACEHOLDERS.CHAT,
-}: ChatInputProps) {
+  placeholder = PLACEHOLDERS.REFERENCES,
+}: SearchInputProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
-  const [inputHeight, setInputHeight] = useState<number>(
-    UI_CONSTANTS.MIN_INPUT_HEIGHT
-  );
 
   const handleSubmit = () => {
     if (!isLoading && value.trim()) {
       onSubmit();
     }
-  };
-
-  const handleContentSizeChange = (event: any) => {
-    const newHeight = Math.min(
-      Math.max(
-        UI_CONSTANTS.MIN_INPUT_HEIGHT,
-        event.nativeEvent.contentSize.height
-      ),
-      UI_CONSTANTS.MAX_INPUT_HEIGHT
-    );
-    setInputHeight(newHeight);
   };
 
   const isDisabled = isLoading || !value.trim();
@@ -63,34 +49,36 @@ export default function ChatInput({
       tint={colorScheme === "dark" ? "dark" : "light"}
       style={styles.blurContainer}
     >
+      <View style={styles.searchIcon}>
+        <Ionicons name="search" size={20} color={colors.textSecondary} />
+      </View>
       <TextInput
         style={[
           styles.input,
           {
             color: colors.text,
-            height: inputHeight,
           },
         ]}
         placeholder={placeholder}
         placeholderTextColor={colors.textSecondary}
         value={value}
         onChangeText={onChange}
-        multiline
-        onContentSizeChange={handleContentSizeChange}
+        onSubmitEditing={handleSubmit}
         editable={!isLoading}
-        returnKeyType="default"
-        blurOnSubmit={false}
+        returnKeyType="search"
+        autoCapitalize="none"
+        autoCorrect={false}
       />
       <TouchableOpacity
         style={[
-          styles.sendButton,
+          styles.submitButton,
           {
             backgroundColor: isDisabled ? colors.panel2 : colors.primary,
           },
         ]}
         onPress={handleSubmit}
         disabled={isDisabled}
-        activeOpacity={0.9}
+        activeOpacity={0.2}
       >
         <Ionicons
           name="arrow-forward"
@@ -109,9 +97,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 28,
     marginHorizontal: 16,
     marginBottom: Platform.OS === "ios" ? 12 : 16,
@@ -131,21 +119,22 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  searchIcon: {
+    marginRight: 8,
+  },
   input: {
     flex: 1,
     fontSize: 15,
-    paddingTop: Platform.OS === "ios" ? 8 : 6,
-    paddingBottom: Platform.OS === "ios" ? 8 : 6,
+    paddingVertical: 8,
     paddingHorizontal: 4,
-    maxHeight: UI_CONSTANTS.MAX_INPUT_HEIGHT,
   },
-  sendButton: {
+  submitButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
-    marginBottom: 2,
   },
 });
+

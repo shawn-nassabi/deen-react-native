@@ -8,6 +8,7 @@ export const ERROR_MESSAGES = {
   NETWORK_ERROR:
     "Unable to connect to the server. Please check your internet connection.",
   SESSION_ERROR: "There was an error with your chat session. Please try again.",
+  REFERENCES_FAILED: "Failed to get references. Please try again.",
 } as const;
 
 export const UI_CONSTANTS = {
@@ -20,6 +21,7 @@ export const UI_CONSTANTS = {
 export const PLACEHOLDERS = {
   CHAT: "Type your message...",
   SEARCH: "Enter your search query...",
+  REFERENCES: "Search for references...",
 } as const;
 
 export const STORAGE_KEYS = {

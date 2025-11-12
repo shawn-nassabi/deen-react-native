@@ -228,3 +228,42 @@ export function parseStreamResponse(fullMessage: string): {
     return { responseText, references: [] };
   }
 }
+
+/**
+ * Search for references based on user query
+ * @param userQuery - The search query
+ * @returns Promise with search results containing shia and sunni references
+ */
+export async function searchReferences(userQuery: string): Promise<{
+  response?: {
+    shia?: any[];
+    sunni?: any[];
+  };
+  error?: string;
+}> {
+  console.log(`🔍 Searching references: "${userQuery.substring(0, 50)}..."`);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/references/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_query: userQuery }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      console.error(`❌ Reference search failed - HTTP ${response.status}: ${errorText}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const shiaCount = data.response?.shia?.length || 0;
+    const sunniCount = data.response?.sunni?.length || 0;
+    console.log(`✅ Found ${shiaCount} Shia and ${sunniCount} Sunni reference(s)`);
+
+    return data;
+  } catch (error) {
+    console.error("❌ Reference search error:", error);
+    throw error;
+  }
+}

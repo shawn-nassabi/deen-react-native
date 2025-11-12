@@ -15,7 +15,6 @@ import {
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
-import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -307,12 +306,12 @@ export default function ChatScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-    >
-      <ThemedView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
         {/* Header */}
         <BlurView
           intensity={60}
@@ -381,14 +380,14 @@ export default function ChatScreen() {
             <Ionicons name="arrow-down" size={24} color="#fff" />
           </TouchableOpacity>
         )}
-        <ChatInput
-          value={input}
-          onChange={setInput}
-          onSubmit={handleSendMessage}
-          isLoading={isLoading}
-        />
-      </ThemedView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+      <ChatInput
+        value={input}
+        onChange={setInput}
+        onSubmit={handleSendMessage}
+        isLoading={isLoading}
+      />
+    </View>
   );
 }
 
