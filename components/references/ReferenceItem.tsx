@@ -75,14 +75,33 @@ export default function ReferenceItem({
   const en = (reference?.text || "").trim();
   const ar = (reference?.text_ar || "").trim();
 
-  // Condensed preview for collapsed state
-  const condensedPreview = [
-    metadata.collection || metadata.reference,
-    metadata.chapter_title,
-    metadata.hadith_no ? `Hadith #${metadata.hadith_no}` : null,
-  ]
-    .filter(Boolean)
-    .join(" • ") || "Reference";
+  // Build condensed preview with essential metadata
+  const buildMetadataLine = () => {
+    const parts = [];
+    
+    // Primary identifiers
+    if (metadata.collection) parts.push(metadata.collection);
+    if (metadata.author) parts.push(metadata.author);
+    if (metadata.hadith_no) parts.push(`Hadith #${metadata.hadith_no}`);
+    
+    return parts.filter(Boolean).join(" • ");
+  };
+
+  const buildSecondaryLine = () => {
+    const parts = [];
+    
+    // Secondary details
+    if (metadata.chapter_number) parts.push(`Ch. ${metadata.chapter_number}`);
+    if (metadata.chapter_title) parts.push(metadata.chapter_title);
+    if (metadata.book_title) parts.push(metadata.book_title);
+    if (metadata.volume) parts.push(`Vol. ${metadata.volume}`);
+    
+    return parts.filter(Boolean).join(" • ");
+  };
+
+  const metadataLine1 = buildMetadataLine() || "Reference";
+  const metadataLine2 = buildSecondaryLine();
+  const textPreview = en ? en.substring(0, 80) : "No text available";
 
   // Toggle expand/collapse with animation
   const handleToggle = () => {
@@ -178,7 +197,7 @@ export default function ReferenceItem({
             </View>
 
             {/* Chevron Up Icon */}
-            <View style={styles.chevronContainer}>
+            <View style={styles.chevronContainer} key="chevron-up">
               <Ionicons
                 name="chevron-up"
                 size={20}
@@ -187,16 +206,40 @@ export default function ReferenceItem({
             </View>
           </>
         ) : (
-          // Condensed View - Show preview only
+          // Condensed View - Show 3-line preview
           <>
-            <Text
-              style={[styles.condensedText, { color: colors.textSecondary }]}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {condensedPreview}
-            </Text>
-            <View style={styles.chevronContainer}>
+            <View style={styles.condensedContent}>
+              {/* Line 1: Primary metadata */}
+              <Text
+                style={[styles.condensedLine1, { color: colors.text }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {metadataLine1}
+              </Text>
+              
+              {/* Line 2: Secondary metadata (if available) */}
+              {metadataLine2 && (
+                <Text
+                  style={[styles.condensedLine2, { color: colors.textSecondary }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {metadataLine2}
+                </Text>
+              )}
+              
+              {/* Line 3: Text preview */}
+              <Text
+                style={[styles.condensedLine3, { color: colors.textSecondary }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {textPreview}
+              </Text>
+            </View>
+            
+            <View style={styles.chevronContainer} key="chevron-down">
               <Ionicons
                 name="chevron-down"
                 size={20}
@@ -222,23 +265,48 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   condensedContainer: {
-    height: 60,
+    minHeight: 90,
     paddingHorizontal: 16,
-    paddingVertical: 0,
+    paddingVertical: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    overflow: "hidden",
   },
   expandedContainer: {
     padding: 16,
   },
-  condensedText: {
-    fontSize: 14,
+  condensedContent: {
     flex: 1,
     marginRight: 12,
+    gap: 4,
+    overflow: "hidden",
+    maxWidth: "100%",
+  },
+  condensedLine1: {
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+  condensedLine2: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500",
+  },
+  condensedLine3: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontStyle: "italic",
+    opacity: 0.85,
   },
   chevronContainer: {
     marginLeft: 8,
+    alignSelf: "center",
+    flexShrink: 0,
+    width: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
   metadataGrid: {
     gap: 12,

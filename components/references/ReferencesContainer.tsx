@@ -1,9 +1,10 @@
 /**
  * References container component
  * Handles display of search results with loading states and categorized sections
+ * Features tab switching between Shia and Sunni references
  */
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +13,7 @@ import {
   Animated,
   Easing,
   Platform,
+  TouchableOpacity,
 } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -33,9 +35,16 @@ export default function ReferencesContainer({
 }: ReferencesContainerProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  
+  // Tab state: 'shia' or 'sunni'
+  const [activeTab, setActiveTab] = useState<"shia" | "sunni">("shia");
 
   // Pulsing animation for loading
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  
+  // Animation for count text reveal
+  const countTranslateX = useRef(new Animated.Value(-50)).current;
+  const countOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (isLoading) {
@@ -64,6 +73,31 @@ export default function ReferencesContainer({
       };
     }
   }, [isLoading]);
+
+  // Animate count text when tab changes or results load
+  useEffect(() => {
+    if (results && (results.shia?.length > 0 || results.sunni?.length > 0)) {
+      // Reset animation values
+      countTranslateX.setValue(-50);
+      countOpacity.setValue(0);
+      
+      // Trigger reveal animation
+      Animated.parallel([
+        Animated.timing(countTranslateX, {
+          toValue: 0,
+          duration: 400,
+          delay: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(countOpacity, {
+          toValue: 1,
+          duration: 400,
+          delay: 100,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [activeTab, results]);
 
   // Loading State
   if (isLoading) {
@@ -137,6 +171,11 @@ export default function ReferencesContainer({
   const shiaRefs = results.shia || [];
   const sunniRefs = results.sunni || [];
   const totalRefs = shiaRefs.length + sunniRefs.length;
+  
+  // Determine which references to display based on active tab
+  const activeRefs = activeTab === "shia" ? shiaRefs : sunniRefs;
+  const hasShiaRefs = shiaRefs.length > 0;
+  const hasSunniRefs = sunniRefs.length > 0;
 
   return (
     <ScrollView
@@ -162,61 +201,119 @@ export default function ReferencesContainer({
         </ThemedText>
       </View>
 
-      {/* Shia References */}
-      {shiaRefs.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <ThemedText type="subtitle" style={[styles.sectionTitle]}>
-              Shia References
-            </ThemedText>
-            <View
-              style={[styles.badge, { backgroundColor: `${colors.primary}33` }]}
+      {/* Tab Switcher */}
+      {(hasShiaRefs || hasSunniRefs) && (
+        <View style={styles.tabSection}>
+          <View style={styles.tabContainer}>
+            {/* Shia Tab */}
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                {
+                  backgroundColor:
+                    activeTab === "shia" && hasShiaRefs
+                      ? colors.primary
+                      : colors.panel2,
+                  borderColor:
+                    activeTab === "shia" && hasShiaRefs
+                      ? colors.primary
+                      : colors.border,
+                },
+              ]}
+              onPress={() => setActiveTab("shia")}
+              activeOpacity={0.7}
+              disabled={!hasShiaRefs}
             >
-              <Text style={[styles.badgeText, { color: colors.primary }]}>
-                {shiaRefs.length} found
+              <Text
+                style={[
+                  styles.tabText,
+                  {
+                    color:
+                      activeTab === "shia" && hasShiaRefs
+                        ? "#ffffff"
+                        : colors.muted,
+                    opacity: hasShiaRefs ? 1 : 0.4,
+                  },
+                ]}
+              >
+                Shia References
               </Text>
-            </View>
+            </TouchableOpacity>
+
+            {/* Sunni Tab */}
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                {
+                  backgroundColor:
+                    activeTab === "sunni" && hasSunniRefs
+                      ? colors.primary
+                      : colors.panel2,
+                  borderColor:
+                    activeTab === "sunni" && hasSunniRefs
+                      ? colors.primary
+                      : colors.border,
+                },
+              ]}
+              onPress={() => setActiveTab("sunni")}
+              activeOpacity={0.7}
+              disabled={!hasSunniRefs}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  {
+                    color:
+                      activeTab === "sunni" && hasSunniRefs
+                        ? "#ffffff"
+                        : colors.muted,
+                    opacity: hasSunniRefs ? 1 : 0.4,
+                  },
+                ]}
+              >
+                Sunni References
+              </Text>
+            </TouchableOpacity>
           </View>
-          {shiaRefs.map((ref: any, idx: number) => (
+
+          {/* Count Display - Only for Active Tab */}
+          {activeRefs.length > 0 && (
+            <Animated.Text
+              style={[
+                styles.countText,
+                {
+                  color: colors.textSecondary,
+                  transform: [{ translateX: countTranslateX }],
+                  opacity: countOpacity,
+                },
+              ]}
+            >
+              {activeRefs.length} found
+            </Animated.Text>
+          )}
+        </View>
+      )}
+
+      {/* Active Tab References */}
+      {activeRefs.length > 0 && (
+        <View style={styles.section}>
+          {activeRefs.map((ref: any, idx: number) => (
             <ReferenceItem
-              key={`shia-${idx}`}
+              key={`${activeTab}-${idx}`}
               reference={ref}
-              type="shia"
+              type={activeTab}
               animationDelay={idx * 100}
             />
           ))}
         </View>
       )}
 
-      {/* Sunni References */}
-      {sunniRefs.length > 0 && (
-        <View
-          style={[
-            styles.section,
-            shiaRefs.length > 0 && styles.sectionWithBorder,
-            shiaRefs.length > 0 && { borderTopColor: colors.border },
-          ]}
-        >
-          <View style={styles.sectionHeader}>
-            <ThemedText type="subtitle" style={[styles.sectionTitle]}>
-              Sunni References
-            </ThemedText>
-            <View
-              style={[styles.badge, { backgroundColor: `${colors.primary}33` }]}
-            >
-              <Text style={[styles.badgeText, { color: colors.primary }]}>
-                {sunniRefs.length} found
-              </Text>
-            </View>
-          </View>
-          {sunniRefs.map((ref: any, idx: number) => (
-            <ReferenceItem
-              key={`sunni-${idx}`}
-              reference={ref}
-              type="sunni"
-              animationDelay={(shiaRefs.length + idx) * 100}
-            />
-          ))}
+      {/* No references message for active tab */}
+      {activeRefs.length === 0 && (hasShiaRefs || hasSunniRefs) && (
+        <View style={styles.emptyTabContainer}>
+          <ThemedText style={[styles.emptyTabText, { color: colors.textSecondary }]}>
+            No {activeTab === "shia" ? "Shia" : "Sunni"} references found
+          </ThemedText>
         </View>
       )}
 
@@ -281,21 +378,50 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
+  tabSection: {
+    marginBottom: 24,
+  },
+  tabContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  tabButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  countText: {
+    fontSize: 13,
+    textAlign: "left",
+    marginTop: 16,
+    fontWeight: "500",
+  },
   section: {
     marginBottom: 24,
   },
-  sectionWithBorder: {
-    paddingTop: 24,
-    borderTopWidth: 1,
-  },
-  sectionHeader: {
-    flexDirection: "row",
+  emptyTabContainer: {
+    paddingVertical: 40,
     alignItems: "center",
-    gap: 10,
-    marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 20,
+  emptyTabText: {
+    fontSize: 15,
+    textAlign: "center",
   },
   badge: {
     paddingHorizontal: 10,
