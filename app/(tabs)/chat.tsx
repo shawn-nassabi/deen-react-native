@@ -35,10 +35,16 @@ import {
   type Message,
 } from "@/utils/chatStorage";
 import { ERROR_MESSAGES, UI_CONSTANTS } from "@/utils/constants";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ChatScreen() {
+  const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+
+  const baseHeaderPadding = Platform.OS === "ios" ? 24 : 12;
+  const headerPaddingTop = Math.max(insets.top + 8, baseHeaderPadding);
+  const messagesPaddingTop = headerPaddingTop + 56;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -320,6 +326,7 @@ export default function ChatScreen() {
             styles.header,
             {
               borderBottomColor: colors.border,
+              paddingTop: headerPaddingTop,
             },
           ]}
         >
@@ -360,7 +367,10 @@ export default function ChatScreen() {
           data={messages}
           renderItem={renderMessage}
           keyExtractor={(_, index) => `message-${index}`}
-          contentContainerStyle={styles.messagesList}
+          contentContainerStyle={[
+            styles.messagesList,
+            { paddingTop: messagesPaddingTop },
+          ]}
           ListEmptyComponent={renderEmptyState}
           ListFooterComponent={renderFooter}
           onScroll={handleScroll}
@@ -397,7 +407,6 @@ const styles = StyleSheet.create({
   },
   header: {
     borderBottomWidth: 1,
-    paddingTop: Platform.OS === "ios" ? 50 : 10,
     paddingBottom: 12,
     paddingHorizontal: 16,
     position: "absolute",
@@ -433,7 +442,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   messagesList: {
-    paddingTop: Platform.OS === "ios" ? 118 : 78,
     paddingBottom: 8,
     flexGrow: 1,
   },

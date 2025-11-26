@@ -5,6 +5,8 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -12,20 +14,29 @@ import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { getHikmahTree, getLessonsByTreeId, HikmahTree, Lesson } from "@/utils/api";
+import {
+  getHikmahTree,
+  getLessonsByTreeId,
+  HikmahTree,
+  Lesson,
+} from "@/utils/api";
 import { useHikmahProgress } from "@/hooks/useHikmahProgress";
+import { BlurView } from "expo-blur";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TreeDetailScreen() {
   const { treeId } = useLocalSearchParams<{ treeId: string }>();
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const insets = useSafeAreaInsets();
 
   const [tree, setTree] = useState<HikmahTree | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -84,11 +95,18 @@ export default function TreeDetailScreen() {
   const { percent, isCompleted, completedCount, total } =
     useHikmahProgress(treeWithLessons);
 
+  const headerPaddingTop = Math.max(
+    insets.top + 12,
+    Platform.OS === "ios" ? 64 : 32
+  );
+  const estimatedHeaderOffset = headerPaddingTop + 72;
+  const contentTopOffset = (headerHeight || estimatedHeaderOffset) + 16;
+
   if (loading || !tree) {
     return (
       <ThemedView style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.center}>
+        <View style={[styles.center, { paddingTop: headerPaddingTop }]}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </ThemedView>
@@ -98,22 +116,59 @@ export default function TreeDetailScreen() {
   return (
     <ThemedView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      
-      {/* Custom Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={[styles.backButton, { backgroundColor: colors.panel }]}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <ThemedText type="subtitle" numberOfLines={1} style={styles.headerTitle}>
-          {tree.title}
-        </ThemedText>
-        <View style={{ width: 40 }} />
-      </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+      {/* Custom Header */}
+      <BlurView
+        intensity={60}
+        tint={colorScheme === "dark" ? "dark" : "light"}
+        style={[
+          styles.header,
+          {
+            borderBottomColor: colors.border,
+            paddingTop: headerPaddingTop,
+          },
+        ]}
+        onLayout={({ nativeEvent }) =>
+          setHeaderHeight(nativeEvent.layout.height)
+        }
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={[
+                styles.backButton,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: colors.panel,
+                },
+              ]}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="arrow-back" size={20} color={colors.text} />
+            </TouchableOpacity>
+            <Image
+              source={require("@/assets/images/deen-logo-icon.png")}
+              style={styles.headerLogo}
+            />
+            <ThemedText
+              type="subtitle"
+              numberOfLines={1}
+              style={[styles.headerTitle, { color: colors.text }]}
+            >
+              {tree.title}
+            </ThemedText>
+          </View>
+        </View>
+      </BlurView>
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: contentTopOffset },
+        ]}
+      >
         {/* Hero / Summary Card */}
         <View
           style={[
@@ -128,10 +183,7 @@ export default function TreeDetailScreen() {
           {tree.summary && (
             <View style={styles.summaryContainer}>
               <ThemedText
-                style={[
-                  styles.summaryText,
-                  { color: colors.textSecondary },
-                ]}
+                style={[styles.summaryText, { color: colors.textSecondary }]}
                 numberOfLines={isSummaryExpanded ? undefined : 3}
               >
                 {tree.summary}
@@ -150,7 +202,11 @@ export default function TreeDetailScreen() {
           {/* Meta Info */}
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
-              <Ionicons name="document-text-outline" size={16} color={colors.primary} />
+              <Ionicons
+                name="document-text-outline"
+                size={16}
+                color={colors.primary}
+              />
               <ThemedText style={{ color: colors.textSecondary, fontSize: 12 }}>
                 {total} lessons
               </ThemedText>
@@ -162,7 +218,9 @@ export default function TreeDetailScreen() {
                   size={16}
                   color={colors.primary}
                 />
-                <ThemedText style={{ color: colors.textSecondary, fontSize: 12 }}>
+                <ThemedText
+                  style={{ color: colors.textSecondary, fontSize: 12 }}
+                >
                   {completedCount} completed
                 </ThemedText>
               </View>
@@ -170,7 +228,12 @@ export default function TreeDetailScreen() {
           </View>
 
           {/* Progress Bar */}
-          <View style={[styles.progressContainer, { backgroundColor: colors.border }]}>
+          <View
+            style={[
+              styles.progressContainer,
+              { backgroundColor: colors.border },
+            ]}
+          >
             <View
               style={[
                 styles.progressBar,
@@ -188,11 +251,11 @@ export default function TreeDetailScreen() {
         {/* Lessons List */}
         <View style={styles.lessonsList}>
           {sortedLessons.length === 0 ? (
-             <View style={[styles.emptyCard, { borderColor: colors.border }]}>
-               <ThemedText style={{ color: colors.textSecondary }}>
-                 Lessons coming soon...
-               </ThemedText>
-             </View>
+            <View style={[styles.emptyCard, { borderColor: colors.border }]}>
+              <ThemedText style={{ color: colors.textSecondary }}>
+                Lessons coming soon...
+              </ThemedText>
+            </View>
           ) : (
             sortedLessons.map((lesson, idx) => {
               const done = isCompleted(lesson.id);
@@ -202,12 +265,16 @@ export default function TreeDetailScreen() {
                   style={[
                     styles.lessonItem,
                     {
-                      backgroundColor: done ? colors.panel + "80" : colors.panel, // slightly transparent if done
+                      backgroundColor: done
+                        ? colors.panel + "80"
+                        : colors.panel, // slightly transparent if done
                       borderColor: done ? colors.primary + "50" : colors.border,
                       borderWidth: 1,
                     },
                   ]}
-                  onPress={() => router.push(`/hikmah/lesson/${lesson.id}?treeId=${tree.id}`)}
+                  onPress={() =>
+                    router.push(`/hikmah/lesson/${lesson.id}?treeId=${tree.id}`)
+                  }
                   activeOpacity={0.7}
                 >
                   <View style={styles.lessonLeft}>
@@ -216,7 +283,9 @@ export default function TreeDetailScreen() {
                         styles.indexBadge,
                         {
                           borderColor: done ? colors.primary : colors.border,
-                          backgroundColor: done ? colors.primary + "20" : "transparent",
+                          backgroundColor: done
+                            ? colors.primary + "20"
+                            : "transparent",
                         },
                       ]}
                     >
@@ -246,7 +315,7 @@ export default function TreeDetailScreen() {
                       ) : null}
                     </View>
                   </View>
-                  
+
                   {done && (
                     <Ionicons
                       name="checkmark-circle"
@@ -274,25 +343,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   header: {
-    paddingTop: 60,
+    borderBottomWidth: 1,
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingBottom: 14,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    overflow: "hidden",
+  },
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderBottomWidth: 1,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
+  headerLogo: {
+    width: 26,
+    height: 26,
+  },
   headerTitle: {
     flex: 1,
-    textAlign: "center",
-    marginHorizontal: 16,
+    fontSize: 17,
   },
   scroll: {
     flex: 1,
@@ -383,8 +469,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     alignItems: "center",
-    borderStyle: 'dashed',
-  }
+    borderStyle: "dashed",
+  },
 });
-
-

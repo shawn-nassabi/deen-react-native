@@ -6,7 +6,10 @@ import {
   TextInput,
   RefreshControl,
   ActivityIndicator,
+  Platform,
+  Image,
 } from "react-native";
+import { BlurView } from "expo-blur";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -14,10 +17,13 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { getHikmahTrees, getLessonsByTreeId, HikmahTree } from "@/utils/api";
 import TreeCard from "@/components/hikmah/TreeCard";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HikmahScreen() {
+  const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const [headerHeight, setHeaderHeight] = useState(0);
   const [trees, setTrees] = useState<HikmahTree[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -83,13 +89,41 @@ export default function HikmahScreen() {
     });
   }, [trees, query]);
 
+  const headerPaddingTop = Math.max(
+    insets.top + 12,
+    Platform.OS === "ios" ? 64 : 32
+  );
+  const estimatedHeaderOffset = headerPaddingTop + 120;
+  const contentTopOffset = (headerHeight || estimatedHeaderOffset) + 16;
+
   return (
     <ThemedView style={styles.container}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <ThemedText type="title" style={styles.pageTitle}>
-          Hikmah Trees
-        </ThemedText>
-        
+      <BlurView
+        intensity={60}
+        tint={colorScheme === "dark" ? "dark" : "light"}
+        style={[
+          styles.header,
+          {
+            borderBottomColor: colors.border,
+            paddingTop: headerPaddingTop,
+          },
+        ]}
+        onLayout={({ nativeEvent }) =>
+          setHeaderHeight(nativeEvent.layout.height)
+        }
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <Image
+              source={require("@/assets/images/deen-logo-icon.png")}
+              style={styles.headerLogo}
+            />
+            <ThemedText type="subtitle" style={styles.headerTitle}>
+              Hikmah Trees
+            </ThemedText>
+          </View>
+        </View>
+
         {/* Search Bar */}
         <View
           style={[
@@ -115,17 +149,17 @@ export default function HikmahScreen() {
             />
           )}
         </View>
-      </View>
+      </BlurView>
 
       {loading && !refreshing ? (
-        <View style={styles.center}>
+        <View style={[styles.center, { paddingTop: contentTopOffset }]}>
           <ActivityIndicator size="large" color={colors.primary} />
           <ThemedText style={{ marginTop: 16, color: colors.textSecondary }}>
             Loading topics...
           </ThemedText>
         </View>
       ) : error ? (
-        <View style={styles.center}>
+        <View style={[styles.center, { paddingTop: contentTopOffset }]}>
           <ThemedText style={{ color: "red", textAlign: "center" }}>
             {error}
           </ThemedText>
@@ -143,7 +177,10 @@ export default function HikmahScreen() {
       ) : (
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: contentTopOffset },
+          ]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
@@ -167,7 +204,9 @@ export default function HikmahScreen() {
             <ThemedText type="subtitle" style={{ color: colors.textSecondary }}>
               More Coming Soon
             </ThemedText>
-            <ThemedText style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>
+            <ThemedText
+              style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}
+            >
               Inshallah...
             </ThemedText>
           </View>
@@ -182,13 +221,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
     borderBottomWidth: 1,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    overflow: "hidden",
+    gap: 16,
   },
-  pageTitle: {
-    marginBottom: 16,
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerLogo: {
+    width: 28,
+    height: 28,
+  },
+  headerTitle: {
+    fontSize: 17,
   },
   searchContainer: {
     flexDirection: "row",

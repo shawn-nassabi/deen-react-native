@@ -14,6 +14,7 @@ import {
   Easing,
   Platform,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -35,13 +36,13 @@ export default function ReferencesContainer({
 }: ReferencesContainerProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
-  
+
   // Tab state: 'shia' or 'sunni'
   const [activeTab, setActiveTab] = useState<"shia" | "sunni">("shia");
 
   // Pulsing animation for loading
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  
+
   // Animation for count text reveal
   const countTranslateX = useRef(new Animated.Value(-50)).current;
   const countOpacity = useRef(new Animated.Value(0)).current;
@@ -80,7 +81,7 @@ export default function ReferencesContainer({
       // Reset animation values
       countTranslateX.setValue(-50);
       countOpacity.setValue(0);
-      
+
       // Trigger reveal animation
       Animated.parallel([
         Animated.timing(countTranslateX, {
@@ -125,6 +126,10 @@ export default function ReferencesContainer({
   if (!searchPerformed) {
     return (
       <View style={styles.centerContainer}>
+        <Image
+          source={require("@/assets/images/deen-logo-icon.png")}
+          style={styles.logo}
+        />
         <ThemedText
           type="title"
           style={[styles.emptyTitle, { color: colors.text }]}
@@ -159,9 +164,7 @@ export default function ReferencesContainer({
             { backgroundColor: colors.panel2, borderColor: colors.border },
           ]}
         >
-          <ThemedText style={{ color: "#ff6b6b" }}>
-            {results.error}
-          </ThemedText>
+          <ThemedText style={{ color: "#ff6b6b" }}>{results.error}</ThemedText>
         </View>
       </View>
     );
@@ -171,7 +174,7 @@ export default function ReferencesContainer({
   const shiaRefs = results.shia || [];
   const sunniRefs = results.sunni || [];
   const totalRefs = shiaRefs.length + sunniRefs.length;
-  
+
   // Determine which references to display based on active tab
   const activeRefs = activeTab === "shia" ? shiaRefs : sunniRefs;
   const hasShiaRefs = shiaRefs.length > 0;
@@ -311,7 +314,9 @@ export default function ReferencesContainer({
       {/* No references message for active tab */}
       {activeRefs.length === 0 && (hasShiaRefs || hasSunniRefs) && (
         <View style={styles.emptyTabContainer}>
-          <ThemedText style={[styles.emptyTabText, { color: colors.textSecondary }]}>
+          <ThemedText
+            style={[styles.emptyTabText, { color: colors.textSecondary }]}
+          >
             No {activeTab === "shia" ? "Shia" : "Sunni"} references found
           </ThemedText>
         </View>
@@ -336,6 +341,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 32,
     paddingBottom: 120,
+  },
+  logo: {
+    width: 64,
+    height: 64,
+    opacity: 0.8,
+    marginBottom: 20,
   },
   loadingCircle: {
     width: 60,
@@ -436,4 +447,3 @@ const styles = StyleSheet.create({
     height: 100,
   },
 });
-
