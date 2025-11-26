@@ -13,6 +13,56 @@ import { STORAGE_KEYS } from "./constants";
 const API_BASE_URL = CONFIG.API_BASE_URL;
 const SESSION_KEY = STORAGE_KEYS.SESSION_ID;
 
+// ---- Types ----
+
+export interface HikmahTree {
+  id: number;
+  title: string;
+  subtitle?: string;
+  summary?: string;
+  tags?: string[];
+  skill_level?: string;
+  lessons?: { id: string; title: string }[]; // Added for progress computation
+}
+
+export interface Lesson {
+  id: number;
+  hikmah_tree_id: number;
+  title: string;
+  summary?: string;
+  order_position: number;
+  estimated_minutes?: number;
+  content?: string; // Sometimes used as fallback summary
+}
+
+export interface LessonContent {
+  id: number;
+  lesson_id: number;
+  content_body: string;
+  order_position: number;
+}
+
+export interface UserProgress {
+  id: number;
+  user_id: string;
+  hikmah_tree_id: number;
+  lesson_id: number;
+  content_id?: number;
+  is_completed: boolean;
+  last_position: number;
+  percent_complete: number;
+  updated_at: string;
+}
+
+export interface ElaborationPayload {
+  selected_text: string;
+  context_text: string;
+  hikmah_tree_name: string;
+  lesson_name: string;
+  lesson_summary: string;
+  user_id: string;
+}
+
 // ---- Session helpers ----
 
 /**
@@ -266,4 +316,238 @@ export async function searchReferences(userQuery: string): Promise<{
     console.error("❌ Reference search error:", error);
     throw error;
   }
+}
+
+// ---------------------------
+// Hikmah CRUD API helpers
+// ---------------------------
+
+function buildQuery(params: Record<string, any> = {}) {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    search.set(key, String(value));
+  });
+  const qs = search.toString();
+  return qs ? `?${qs}` : "";
+}
+
+/**
+ * GET /hikmah-trees
+ */
+export async function getHikmahTrees(params = {}): Promise<HikmahTree[]> {
+  const url = `${API_BASE_URL}/hikmah-trees${buildQuery(params)}`;
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+  }
+  return response.json();
+}
+
+/** GET /hikmah-trees/{tree_id} */
+export async function getHikmahTree(treeId: string | number): Promise<HikmahTree> {
+  const response = await fetch(`${API_BASE_URL}/hikmah-trees/${treeId}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+  }
+  return response.json();
+}
+
+/**
+ * GET /lessons filtered by tree
+ */
+export async function getLessonsByTreeId(
+  treeId: number,
+  params: Record<string, any> = { order_by: "order_position" }
+): Promise<Lesson[]> {
+  const query = { ...params, hikmah_tree_id: treeId };
+  const url = `${API_BASE_URL}/lessons${buildQuery(query)}`;
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+  }
+  const data = await response.json();
+  // Defensive: sort by order_position if present
+  return Array.isArray(data)
+    ? data.slice().sort((a, b) => {
+        const ao = a?.order_position ?? Number.MAX_SAFE_INTEGER;
+        const bo = b?.order_position ?? Number.MAX_SAFE_INTEGER;
+        return ao - bo;
+      })
+    : data;
+}
+
+/** GET /lessons/{lesson_id} */
+export async function getLessonById(lessonId: string | number): Promise<Lesson> {
+  const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+  }
+  return response.json();
+}
+
+/**
+ * GET /lesson-content by lessonId
+ */
+export async function getLessonContent(lessonId: number, params: Record<string, any> = {}): Promise<LessonContent[]> {
+  const query = { ...params, lesson_id: lessonId };
+  const url = `${API_BASE_URL}/lesson-content${buildQuery(query)}`;
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+  }
+  const data = await response.json();
+  return Array.isArray(data)
+    ? data.slice().sort((a, b) => {
+        const ao = a?.order_position ?? Number.MAX_SAFE_INTEGER;
+        const bo = b?.order_position ?? Number.MAX_SAFE_INTEGER;
+        return ao - bo;
+      })
+    : data;
+}
+
+// ---------------------------
+// User Progress API helpers
+// ---------------------------
+
+/** GET /user-progress */
+export async function listUserProgress(params = {}): Promise<UserProgress[]> {
+  const url = `${API_BASE_URL}/user-progress${buildQuery(params)}`;
+  const response = await fetch(url, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+  }
+  return response.json();
+}
+
+/** POST /user-progress */
+export async function createUserProgress(payload: Partial<UserProgress>): Promise<UserProgress> {
+  const response = await fetch(`${API_BASE_URL}/user-progress`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+  }
+  return response.json();
+}
+
+/** PATCH /user-progress/{progress_id} */
+export async function updateUserProgress(progressId: number, payload: Partial<UserProgress>): Promise<UserProgress> {
+  const response = await fetch(`${API_BASE_URL}/user-progress/${progressId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+  }
+  return response.json();
+}
+
+/**
+ * Upsert user progress by (user_id, lesson_id[, content_id])
+ * - If a record exists, PATCH it; else, POST a new one.
+ */
+export async function upsertUserProgress(progress: Partial<UserProgress>) {
+  const { user_id, hikmah_tree_id, lesson_id, content_id, ...rest } =
+    progress || {};
+  if (!user_id || !lesson_id) {
+    throw new Error("upsertUserProgress requires user_id and lesson_id");
+  }
+  const existing = await listUserProgress({
+    user_id,
+    hikmah_tree_id,
+    lesson_id,
+    content_id,
+  });
+  if (Array.isArray(existing) && existing.length > 0) {
+    const first = existing[0];
+    return updateUserProgress(first.id, rest);
+  }
+  return createUserProgress({
+    user_id,
+    hikmah_tree_id,
+    lesson_id,
+    content_id,
+    ...rest,
+  });
+}
+
+// ---------------------------
+// AI Elaboration Helper
+// ---------------------------
+
+/**
+ * Get streaming elaboration for selected text
+ * Reuses the same XMLHttpRequest approach as chat streaming for Expo Go compatibility
+ */
+export async function elaborateSelectionStream(
+  payload: ElaborationPayload,
+  onChunk: (text: string) => void
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    let accumulatedText = "";
+    let lastProcessedIndex = 0;
+
+    xhr.open("POST", `${API_BASE_URL}/hikmah/elaborate/stream`);
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    xhr.onprogress = () => {
+      const currentText = xhr.responseText;
+      if (currentText.length > lastProcessedIndex) {
+        accumulatedText = currentText;
+        lastProcessedIndex = currentText.length;
+        onChunk(accumulatedText);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const finalText = xhr.responseText;
+        if (finalText.length > accumulatedText.length) {
+          accumulatedText = finalText;
+          onChunk(accumulatedText);
+        }
+        resolve(accumulatedText);
+      } else {
+        const errorText = xhr.responseText || xhr.statusText;
+        reject(new Error(`HTTP ${xhr.status}: ${errorText}`));
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error("Network error during streaming"));
+    };
+
+    xhr.send(JSON.stringify(payload));
+  });
 }
