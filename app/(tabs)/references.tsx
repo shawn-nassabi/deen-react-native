@@ -110,20 +110,14 @@ export default function ReferencesScreen() {
         keyboardVerticalOffset={0}
       >
         {/* Content */}
-        <View
-          style={[
-            styles.content,
-            {
-              paddingTop: contentTopOffset,
-            },
-          ]}
-        >
+        <View style={styles.content}>
           <ReferencesContainer
             results={results}
             isLoading={isLoading}
             searchPerformed={searchPerformed}
             submittedQuery={submittedQuery}
             bottomPadding={bottomPadding}
+            topPadding={contentTopOffset}
           />
         </View>
 

@@ -29,6 +29,7 @@ interface ReferencesContainerProps {
   searchPerformed: boolean;
   submittedQuery: string;
   bottomPadding: number;
+  topPadding: number;
 }
 
 export default function ReferencesContainer({
@@ -37,6 +38,7 @@ export default function ReferencesContainer({
   searchPerformed,
   submittedQuery,
   bottomPadding,
+  topPadding,
 }: ReferencesContainerProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
@@ -109,7 +111,10 @@ export default function ReferencesContainer({
     return (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View
-          style={[styles.centerContainer, { paddingBottom: bottomPadding }]}
+          style={[
+            styles.centerContainer,
+            { paddingBottom: bottomPadding, paddingTop: topPadding },
+          ]}
         >
           <Animated.View
             style={[
@@ -135,7 +140,10 @@ export default function ReferencesContainer({
     return (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View
-          style={[styles.centerContainer, { paddingBottom: bottomPadding }]}
+          style={[
+            styles.centerContainer,
+            { paddingBottom: bottomPadding, paddingTop: topPadding },
+          ]}
         >
           <Image
             source={require("@/assets/images/deen-logo-icon.png")}
@@ -162,7 +170,10 @@ export default function ReferencesContainer({
     return (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View
-          style={[styles.centerContainer, { paddingBottom: bottomPadding }]}
+          style={[
+            styles.centerContainer,
+            { paddingBottom: bottomPadding, paddingTop: topPadding },
+          ]}
         >
           <ThemedText
             style={[styles.emptyText, { color: colors.textSecondary }]}
@@ -179,7 +190,10 @@ export default function ReferencesContainer({
     return (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View
-          style={[styles.centerContainer, { paddingBottom: bottomPadding }]}
+          style={[
+            styles.centerContainer,
+            { paddingBottom: bottomPadding, paddingTop: topPadding },
+          ]}
         >
           <View
             style={[
@@ -212,7 +226,7 @@ export default function ReferencesContainer({
       contentContainerStyle={[
         styles.resultsContainer,
         {
-          paddingTop: Platform.OS === "ios" ? 20 : 12,
+          paddingTop: topPadding,
           paddingBottom: bottomPadding,
         },
       ]}
