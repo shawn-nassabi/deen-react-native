@@ -1,10 +1,10 @@
 import React from "react";
 import {
   StyleSheet,
-  ScrollView,
   View,
   TouchableOpacity,
   Image,
+  Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
@@ -13,20 +13,28 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export default function HomeScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const insets = useSafeAreaInsets();
+
+  // Calculate vertical spacing based on screen height
+  // Increased base padding to push content lower
+  const topPadding = SCREEN_HEIGHT < 700 ? 80 : 160;
+  const headerMargin = SCREEN_HEIGHT < 700 ? 40 : 80;
 
   return (
     <ThemedView style={styles.container}>
       {/* Settings Button - Top Right */}
       <Animated.View
         entering={FadeIn.delay(200).duration(300)}
-        style={styles.settingsButtonContainer}
+        style={[styles.settingsButtonContainer, { top: insets.top + 10 }]}
       >
         <TouchableOpacity
           style={[
@@ -40,13 +48,20 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Animated.View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <View
+        style={[
+          styles.contentContainer,
+          {
+            paddingTop: topPadding,
+            paddingBottom: insets.bottom + 20,
+          },
+        ]}
       >
         {/* Logo and Header */}
-        <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
+        <Animated.View
+          entering={FadeIn.duration(400)}
+          style={[styles.header, { marginBottom: headerMargin }]}
+        >
           <Image
             source={require("@/assets/images/deen-logo-with-text.png")}
             style={styles.logo}
@@ -122,12 +137,14 @@ export default function HomeScreen() {
         </View>
 
         {/* Footer */}
-        <Animated.View entering={FadeIn.delay(400).duration(400)}>
-          <ThemedText style={[styles.footer, { color: colors.muted }]}>
-            © {new Date().getFullYear()} Deen. All rights reserved.
-          </ThemedText>
-        </Animated.View>
-      </ScrollView>
+        <View style={styles.footerContainer}>
+          <Animated.View entering={FadeIn.delay(400).duration(400)}>
+            <ThemedText style={[styles.footer, { color: colors.muted }]}>
+              © {new Date().getFullYear()} Deen. All rights reserved.
+            </ThemedText>
+          </Animated.View>
+        </View>
+      </View>
     </ThemedView>
   );
 }
@@ -138,7 +155,6 @@ const styles = StyleSheet.create({
   },
   settingsButtonContainer: {
     position: "absolute",
-    top: 60,
     right: 16,
     zIndex: 10,
   },
@@ -155,33 +171,31 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  scrollView: {
+  contentContainer: {
     flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingTop: 150,
+    paddingHorizontal: 20,
   },
   header: {
     alignItems: "center",
-    marginBottom: 80,
   },
   logo: {
-    width: 320,
-    height: 140,
+    width: "100%",
+    maxWidth: 320,
+    height: 120,
     marginBottom: 12,
   },
   tagline: {
-    fontSize: 15,
+    fontSize: 13,
     textAlign: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     fontFamily: "Montserrat_400Regular",
   },
   gridContainer: {
+    flex: 1,
     flexDirection: "row",
     gap: 12,
-    marginBottom: 20,
-    minHeight: 240,
+    maxHeight: 300,
+    marginBottom: "auto",
   },
   // Main Card - Left Column (spans 2 rows) - Equal width
   mainCard: {
@@ -201,13 +215,13 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   mainCardTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: "Montserrat_700Bold",
     color: "#fff",
     marginBottom: 6,
   },
   mainCardSubtitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontFamily: "Montserrat_400Regular",
     color: "rgba(255, 255, 255, 0.85)",
   },
@@ -229,7 +243,7 @@ const styles = StyleSheet.create({
   sideCard: {
     flex: 1,
     borderRadius: 20,
-    padding: 16,
+    padding: 12,
     justifyContent: "space-between",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -241,35 +255,38 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-start",
     paddingTop: 4,
-    paddingRight: 8,
+    paddingRight: 4,
   },
   sideCardTitle: {
-    fontSize: 17,
+    fontSize: 15,
     fontFamily: "Montserrat_700Bold",
     color: "#fff",
     marginBottom: 4,
+    lineHeight: 18,
   },
   sideCardSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: "Montserrat_400Regular",
     color: "rgba(255, 255, 255, 0.8)",
-    lineHeight: 16,
+    lineHeight: 14,
   },
   sideCardIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "flex-end",
-    marginTop: 6,
+    marginTop: 4,
+  },
+  footerContainer: {
+    marginTop: "auto",
   },
   footer: {
     textAlign: "center",
     fontSize: 11,
     fontFamily: "Montserrat_400Regular",
     marginTop: 4,
-    marginBottom: 20,
   },
 });
