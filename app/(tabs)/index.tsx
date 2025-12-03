@@ -137,13 +137,13 @@ export default function HomeScreen() {
         </View>
 
         {/* Footer */}
-        <View style={styles.footerContainer}>
+        {/* <View style={styles.footerContainer}>
           <Animated.View entering={FadeIn.delay(400).duration(400)}>
             <ThemedText style={[styles.footer, { color: colors.muted }]}>
               © {new Date().getFullYear()} Deen. All rights reserved.
             </ThemedText>
           </Animated.View>
-        </View>
+        </View> */}
       </View>
     </ThemedView>
   );

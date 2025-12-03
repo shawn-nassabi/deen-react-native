@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   emptyLogo: {
     width: 64,
     height: 64,
-    opacity: 0.5,
+    opacity: 0.8,
     marginBottom: 8,
   },
   emptyTitle: {

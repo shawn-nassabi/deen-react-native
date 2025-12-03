@@ -68,9 +68,6 @@ export default function SearchInput({
           },
         ]}
       >
-        <View style={styles.searchIconContainer}>
-          <Ionicons name="search" size={20} color={colors.textSecondary} />
-        </View>
         <TextInput
           ref={inputRef}
           style={[
@@ -84,9 +81,8 @@ export default function SearchInput({
           value={value}
           onChangeText={onChange}
           multiline
-          onSubmitEditing={handleSubmit}
           editable={!isLoading}
-          returnKeyType="search"
+          returnKeyType="default"
           blurOnSubmit={false}
           textAlignVertical="center"
         />
@@ -102,8 +98,8 @@ export default function SearchInput({
           activeOpacity={0.8}
         >
           <Ionicons
-            name="arrow-up"
-            size={20}
+            name="search"
+            size={18}
             color={isDisabled ? colors.muted : "#fff"}
           />
         </TouchableOpacity>
@@ -120,8 +116,8 @@ const styles = StyleSheet.create({
   },
   blurContainer: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    paddingLeft: 12,
+    alignItems: "center",
+    paddingLeft: 16,
     paddingRight: 8,
     paddingVertical: 8,
     borderRadius: 24,
@@ -138,10 +134,6 @@ const styles = StyleSheet.create({
         elevation: 8,
       },
     }),
-  },
-  searchIconContainer: {
-    marginRight: 8,
-    marginBottom: 12,
   },
   input: {
     flex: 1,
