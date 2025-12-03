@@ -111,11 +111,8 @@ export default function ChatScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isNewChatLoading, setIsNewChatLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [showScrollButton, setShowScrollButton] = useState(false);
-
   const flatListRef = useRef<FlatList>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isNearBottomRef = useRef(true);
 
   // Track if suggestions should show (separate state to avoid re-renders on every keystroke)
   const [showSuggestions, setShowSuggestions] = useState(true);
@@ -188,29 +185,6 @@ export default function ChatScreen() {
   }, [sessionId, messages]);
 
   // Smart auto-scroll
-  useEffect(() => {
-    if (messages.length > 0 && isNearBottomRef.current) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    }
-  }, [messages]);
-
-  const handleScroll = useCallback((event: any) => {
-    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const isNearBottom =
-      layoutMeasurement.height + contentOffset.y >= contentSize.height - 100;
-
-    isNearBottomRef.current = isNearBottom;
-    setShowScrollButton(!isNearBottom && messages.length > 0);
-  }, [messages.length]);
-
-  const scrollToBottom = useCallback(() => {
-    flatListRef.current?.scrollToEnd({ animated: true });
-    isNearBottomRef.current = true;
-    setShowScrollButton(false);
-  }, []);
-
   const hasStartedChat = messages.some((m) => m.sender === "user");
 
   const handleSuggestedQuestion = useCallback((question: string) => {
@@ -231,7 +205,6 @@ export default function ChatScreen() {
       setSessionId(newId);
       setMessages([]);
       setInput("");
-      setShowScrollButton(false);
       setShowSuggestions(true);
     } catch (e) {
       console.error("❌ Failed to start new chat:", e);
@@ -249,8 +222,6 @@ export default function ChatScreen() {
     setMessages((prev) => [...prev, userMessage, botPlaceholder]);
     setInput("");
     setIsLoading(true);
-    isNearBottomRef.current = true;
-
     try {
       await sendChatMessage(
         input,
@@ -437,8 +408,6 @@ export default function ChatScreen() {
           ]}
           ListEmptyComponent={emptyComponent}
           ListFooterComponent={renderFooter}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           removeClippedSubviews={false}
@@ -455,22 +424,6 @@ export default function ChatScreen() {
         </View>
       </KeyboardAvoidingView>
 
-      {/* Scroll to bottom button */}
-      {showScrollButton && (
-        <TouchableOpacity
-          style={[
-            styles.scrollToBottomButton,
-            {
-              backgroundColor: colors.primary,
-              bottom: INPUT_CONTAINER_HEIGHT + insets.bottom + 20,
-            },
-          ]}
-          onPress={scrollToBottom}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="arrow-down" size={24} color="#fff" />
-        </TouchableOpacity>
-      )}
     </View>
   );
 }
@@ -563,20 +516,5 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     borderTopWidth: 0,
-  },
-  scrollToBottomButton: {
-    position: "absolute",
-    right: 20,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    zIndex: 5,
   },
 });

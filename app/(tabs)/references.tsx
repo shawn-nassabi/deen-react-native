@@ -184,35 +184,3 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
   },
 });
-
-    borderBottomWidth: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    overflow: "hidden",
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  headerLogo: {
-    width: 28,
-    height: 28,
-  },
-  headerTitle: {
-    fontSize: 17,
-  },
-  inputContainer: {
-    borderTopWidth: 0,
-  },
-});
