@@ -2,13 +2,14 @@
  * References screen - Search and display Islamic references
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
-  KeyboardAvoidingView,
   Platform,
   View,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Colors } from "@/constants/theme";
@@ -19,6 +20,9 @@ import ReferencesContainer from "@/components/references/ReferencesContainer";
 import SearchInput from "@/components/references/SearchInput";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
+
+// Estimated input container height for padding calculations
+const INPUT_CONTAINER_HEIGHT = 70;
 
 export default function ReferencesScreen() {
   const insets = useSafeAreaInsets();
@@ -36,6 +40,9 @@ export default function ReferencesScreen() {
     if (!query.trim()) return;
 
     console.log(`🔍 User searching: "${query.substring(0, 50)}..."`);
+
+    // Dismiss keyboard after search
+    Keyboard.dismiss();
 
     setSubmittedQuery(query);
     setSearchPerformed(true);
@@ -63,8 +70,12 @@ export default function ReferencesScreen() {
   const estimatedHeaderOffset = headerPaddingTop + 64;
   const contentTopOffset = (headerHeight || estimatedHeaderOffset) + 16;
 
+  // Calculate bottom padding
+  const bottomPadding = INPUT_CONTAINER_HEIGHT + insets.bottom + 16;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
       <BlurView
         intensity={60}
         tint={colorScheme === "dark" ? "dark" : "light"}
@@ -91,12 +102,23 @@ export default function ReferencesScreen() {
           </View>
         </View>
       </BlurView>
+
+      {/* Main Content with KeyboardAvoidingView */}
       <KeyboardAvoidingView
-        style={styles.container}
+        style={styles.keyboardAvoid}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={0}
       >
-        <View style={[styles.content, { paddingTop: contentTopOffset }]}>
+        {/* Content */}
+        <View
+          style={[
+            styles.content,
+            {
+              paddingTop: contentTopOffset,
+              paddingBottom: bottomPadding,
+            },
+          ]}
+        >
           <ReferencesContainer
             results={results}
             isLoading={isLoading}
@@ -104,19 +126,26 @@ export default function ReferencesScreen() {
             submittedQuery={submittedQuery}
           />
         </View>
+
+        {/* Input at bottom */}
+        <View style={styles.inputContainer}>
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            onSubmit={handleSearch}
+            isLoading={isLoading}
+          />
+        </View>
       </KeyboardAvoidingView>
-      <SearchInput
-        value={query}
-        onChange={setQuery}
-        onSubmit={handleSearch}
-        isLoading={isLoading}
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  keyboardAvoid: {
     flex: 1,
   },
   content: {
@@ -150,5 +179,40 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 17,
+  },
+  inputContainer: {
+    borderTopWidth: 0,
+  },
+});
+
+    borderBottomWidth: 1,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    overflow: "hidden",
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerLogo: {
+    width: 28,
+    height: 28,
+  },
+  headerTitle: {
+    fontSize: 17,
+  },
+  inputContainer: {
+    borderTopWidth: 0,
   },
 });

@@ -2,16 +2,18 @@
  * Chat screen - Main chat interface with streaming AI responses
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   View,
   StyleSheet,
   FlatList,
-  KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Keyboard,
+  Dimensions,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,13 +39,71 @@ import {
 import { ERROR_MESSAGES, UI_CONSTANTS } from "@/utils/constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+// Estimated input container height for padding calculations
+const INPUT_CONTAINER_HEIGHT = 70;
+const INPUT_ACCESSORY_ID = "chatInputAccessory";
+const HEADER_HORIZONTAL_PADDING = 20;
+const HEADER_BOTTOM_PADDING = 12;
+const HEADER_ACTION_SIZE = 28;
+const HEADER_ACTION_HIT_SLOP = { top: 12, right: 12, bottom: 12, left: 12 };
+
+// Memoized empty state component to prevent re-renders
+const EmptyState = React.memo(({
+  showSuggestions,
+  onQuestionClick,
+  textSecondaryColor,
+  minHeight,
+}: {
+  showSuggestions: boolean;
+  onQuestionClick: (question: string) => void;
+  textSecondaryColor: string;
+  minHeight: number;
+}) => {
+  const verticalOffset = useMemo(() => {
+    if (!minHeight || minHeight <= 0) {
+      return 64;
+    }
+
+    const derivedOffset = minHeight * 0.12;
+    return Math.max(48, Math.min(derivedOffset, 120));
+  }, [minHeight]);
+
+  return (
+    <View
+      style={[
+        styles.emptyContainer,
+        { minHeight, paddingTop: verticalOffset },
+      ]}
+    >
+      <Image
+        source={require("@/assets/images/deen-logo-icon.png")}
+        style={styles.emptyLogo}
+      />
+      <ThemedText type="title" style={styles.emptyTitle}>
+        How can I help you today?
+      </ThemedText>
+      <ThemedText
+        style={[styles.emptySubtitle, { color: textSecondaryColor }]}
+      >
+        Ask any question about Islam and I'll do my best to provide a helpful
+        response.
+      </ThemedText>
+      {showSuggestions && (
+        <SuggestedQuestions onQuestionClick={onQuestionClick} />
+      )}
+    </View>
+  );
+});
+
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
-  const baseHeaderPadding = Platform.OS === "ios" ? 24 : 12;
-  const headerPaddingTop = Math.max(insets.top + 8, baseHeaderPadding);
+  const headerPaddingTop = Math.max(
+    insets.top + 12,
+    Platform.OS === "ios" ? 64 : 32
+  );
   const messagesPaddingTop = headerPaddingTop + 56;
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -55,7 +115,18 @@ export default function ChatScreen() {
 
   const flatListRef = useRef<FlatList>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isNearBottomRef = useRef(true); // Track if user is near bottom
+  const isNearBottomRef = useRef(true);
+
+  // Track if suggestions should show (separate state to avoid re-renders on every keystroke)
+  const [showSuggestions, setShowSuggestions] = useState(true);
+
+  // Update showSuggestions when input changes (debounced effect)
+  useEffect(() => {
+    const shouldShow = !input.trim();
+    if (shouldShow !== showSuggestions) {
+      setShowSuggestions(shouldShow);
+    }
+  }, [input, showSuggestions]);
 
   // Initialize session and clean up expired sessions
   useEffect(() => {
@@ -66,6 +137,21 @@ export default function ChatScreen() {
       setSessionId(sid);
     };
     initialize();
+  }, []);
+
+  // Scroll to bottom when keyboard opens
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    });
+
+    return () => {
+      showSub.remove();
+    };
   }, []);
 
   // Load messages when session ID changes
@@ -86,12 +172,10 @@ export default function ChatScreen() {
   useEffect(() => {
     if (!sessionId) return;
 
-    // Clear existing timer
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
     }
 
-    // Debounce save
     saveTimerRef.current = setTimeout(() => {
       saveMessages(sessionId, messages);
     }, UI_CONSTANTS.DEBOUNCE_DELAY);
@@ -103,7 +187,7 @@ export default function ChatScreen() {
     };
   }, [sessionId, messages]);
 
-  // Smart auto-scroll: only scroll if user is near bottom
+  // Smart auto-scroll
   useEffect(() => {
     if (messages.length > 0 && isNearBottomRef.current) {
       setTimeout(() => {
@@ -112,79 +196,52 @@ export default function ChatScreen() {
     }
   }, [messages]);
 
-  // Handle scroll events to track user position
-  const handleScroll = (event: any) => {
+  const handleScroll = useCallback((event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-
-    // Check if user is near bottom (within 100px)
     const isNearBottom =
       layoutMeasurement.height + contentOffset.y >= contentSize.height - 100;
 
     isNearBottomRef.current = isNearBottom;
-
-    // Show scroll button when user scrolls up
     setShowScrollButton(!isNearBottom && messages.length > 0);
-  };
+  }, [messages.length]);
 
-  // Scroll to bottom manually
-  const scrollToBottom = () => {
-    console.log("⬇️ User tapped 'Scroll to bottom' button");
+  const scrollToBottom = useCallback(() => {
     flatListRef.current?.scrollToEnd({ animated: true });
     isNearBottomRef.current = true;
     setShowScrollButton(false);
-  };
+  }, []);
 
-  // Check if chat has started (any user messages exist)
   const hasStartedChat = messages.some((m) => m.sender === "user");
 
-  // Handle suggested question click
-  const handleSuggestedQuestion = (question: string) => {
-    console.log(
-      `💡 Suggested question selected: "${question.substring(0, 50)}..."`
-    );
+  const handleSuggestedQuestion = useCallback((question: string) => {
     setInput(question);
-  };
+  }, []);
 
-  // Start a new conversation
-  const handleNewChat = async () => {
-    if (isLoading || isNewChatLoading) {
-      console.log("⏸️ New chat blocked - Operation already in progress");
-      return;
-    }
+  const handleNewChat = useCallback(async () => {
+    if (isLoading || isNewChatLoading) return;
 
-    console.log("🆕 User clicked 'New Chat' button");
     setIsNewChatLoading(true);
 
     try {
-      // Clear UI persistence for old session
       if (sessionId) {
-        console.log(`🗑️ Clearing old session: ${sessionId.substring(0, 8)}...`);
         await clearMessages(sessionId);
       }
 
-      // Create new session ID
       const newId = await startNewConversation();
       setSessionId(newId);
       setMessages([]);
       setInput("");
       setShowScrollButton(false);
-
-      console.log("✅ New chat created successfully");
+      setShowSuggestions(true);
     } catch (e) {
       console.error("❌ Failed to start new chat:", e);
     } finally {
       setIsNewChatLoading(false);
     }
-  };
+  }, [isLoading, isNewChatLoading, sessionId]);
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = useCallback(async () => {
     if (!input.trim() || !sessionId || isLoading) return;
-
-    console.log(
-      `📤 User sending message: "${input.substring(0, 50)}${
-        input.length > 50 ? "..." : ""
-      }"`
-    );
 
     const userMessage: Message = { sender: "user", text: input };
     const botPlaceholder: Message = { sender: "bot", text: "" };
@@ -192,8 +249,6 @@ export default function ChatScreen() {
     setMessages((prev) => [...prev, userMessage, botPlaceholder]);
     setInput("");
     setIsLoading(true);
-
-    // Always scroll to bottom when sending a new message
     isNearBottomRef.current = true;
 
     try {
@@ -202,7 +257,6 @@ export default function ChatScreen() {
         sessionId,
         "english",
         (fullMessage) => {
-          // Update bot message as chunks arrive
           setIsLoading(false);
           setMessages((prev) => {
             const updated = [...prev];
@@ -212,7 +266,6 @@ export default function ChatScreen() {
           });
         },
         (responseText, references) => {
-          // Stream completed - update with final parsed response
           setMessages((prev) => {
             const updated = [...prev];
             const lastIndex = updated.length - 1;
@@ -225,7 +278,7 @@ export default function ChatScreen() {
           });
         },
         (error) => {
-          console.error("❌ Chat error in callback:", error);
+          console.error("❌ Chat error:", error);
           setIsLoading(false);
           setMessages((prev) => {
             const updated = [...prev];
@@ -251,10 +304,9 @@ export default function ChatScreen() {
         return updated;
       });
     }
-  };
+  }, [input, sessionId, isLoading]);
 
-  const renderMessage = ({ item, index }: { item: Message; index: number }) => {
-    // Skip empty bot placeholder while loading
+  const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
     if (
       item.sender === "bot" &&
       !item.text &&
@@ -266,32 +318,32 @@ export default function ChatScreen() {
     }
 
     return <ChatMessage message={item} />;
-  };
+  }, [isLoading, messages.length]);
 
-  const renderEmptyState = () => {
+  const bottomPadding = INPUT_CONTAINER_HEIGHT + insets.bottom + 16;
+
+  // Calculate available height for empty state (screen - header - input - paddings)
+  const screenHeight = Dimensions.get("window").height;
+  const emptyStateHeight = Math.max(
+    0,
+    screenHeight - messagesPaddingTop - bottomPadding - INPUT_CONTAINER_HEIGHT
+  );
+
+  // Memoized empty state to prevent re-renders
+  const emptyComponent = useMemo(() => {
     if (isLoading && messages.length === 0) return null;
 
     return (
-      <View style={styles.emptyContainer}>
-        <Image
-          source={require("@/assets/images/deen-logo-icon.png")}
-          style={styles.emptyLogo}
-        />
-        <ThemedText type="title" style={styles.emptyTitle}>
-          How can I help you today?
-        </ThemedText>
-        <ThemedText
-          style={[styles.emptySubtitle, { color: colors.textSecondary }]}
-        >
-          Ask any question about Islam and I'll do my best to provide a helpful
-          response.
-        </ThemedText>
-        <SuggestedQuestions onQuestionClick={handleSuggestedQuestion} />
-      </View>
+      <EmptyState
+        showSuggestions={showSuggestions}
+        onQuestionClick={handleSuggestedQuestion}
+        textSecondaryColor={colors.textSecondary}
+        minHeight={emptyStateHeight}
+      />
     );
-  };
+  }, [isLoading, messages.length, showSuggestions, handleSuggestedQuestion, colors.textSecondary, emptyStateHeight]);
 
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (!isLoading) return null;
 
     return (
@@ -309,59 +361,68 @@ export default function ChatScreen() {
         </View>
       </View>
     );
-  };
+  }, [isLoading, colors.panel, colors.border]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      {/* Header */}
+      <BlurView
+        intensity={60}
+        tint={colorScheme === "dark" ? "dark" : "light"}
+        style={[
+          styles.header,
+          {
+            borderBottomColor: colors.border,
+            paddingTop: headerPaddingTop,
+          },
+        ]}
       >
-        {/* Header */}
-        <BlurView
-          intensity={60}
-          tint={colorScheme === "dark" ? "dark" : "light"}
-          style={[
-            styles.header,
-            {
-              borderBottomColor: colors.border,
-              paddingTop: headerPaddingTop,
-            },
-          ]}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <Image
-                source={require("@/assets/images/deen-logo-icon.png")}
-                style={styles.headerLogo}
-              />
-              <ThemedText type="subtitle" style={styles.headerTitle}>
-                Deen Chat
-              </ThemedText>
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.newChatButton,
-                {
-                  backgroundColor: hasStartedChat
-                    ? colors.panel2
-                    : "transparent",
-                  borderColor: colors.border,
-                },
-              ]}
-              onPress={handleNewChat}
-              disabled={isLoading || isNewChatLoading}
-              activeOpacity={0.7}
-            >
-              {isNewChatLoading ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <Ionicons name="add" size={20} color={colors.text} />
-              )}
-            </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <Image
+              source={require("@/assets/images/deen-logo-icon.png")}
+              style={styles.headerLogo}
+            />
+            <ThemedText type="subtitle" style={styles.headerTitle}>
+              Deen Chat
+            </ThemedText>
           </View>
-        </BlurView>
+          <TouchableOpacity
+            hitSlop={HEADER_ACTION_HIT_SLOP}
+            style={[
+              styles.newChatButton,
+              {
+                backgroundColor: hasStartedChat
+                  ? colors.panel2
+                  : "transparent",
+                borderColor: colors.border,
+              },
+            ]}
+            onPress={handleNewChat}
+            disabled={isLoading || isNewChatLoading}
+            activeOpacity={0.7}
+          >
+            {isNewChatLoading ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <>
+                <ThemedText style={[styles.newChatLabel, { color: colors.text }]}>
+                  New
+                </ThemedText>
+                <Ionicons name="add" size={20} color={colors.text} />
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </BlurView>
+
+      {/* Main Content with KeyboardAvoidingView */}
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
+      >
+        {/* Messages List */}
         <FlatList
           ref={flatListRef}
           data={messages}
@@ -369,34 +430,47 @@ export default function ChatScreen() {
           keyExtractor={(_, index) => `message-${index}`}
           contentContainerStyle={[
             styles.messagesList,
-            { paddingTop: messagesPaddingTop },
+            { 
+              paddingTop: messagesPaddingTop,
+              paddingBottom: bottomPadding,
+            },
           ]}
-          ListEmptyComponent={renderEmptyState}
+          ListEmptyComponent={emptyComponent}
           ListFooterComponent={renderFooter}
           onScroll={handleScroll}
           scrollEventThrottle={16}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          removeClippedSubviews={false}
         />
-        {showScrollButton && (
-          <TouchableOpacity
-            style={[
-              styles.scrollToBottomButton,
-              {
-                backgroundColor: colors.primary,
-              },
-            ]}
-            onPress={scrollToBottom}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="arrow-down" size={24} color="#fff" />
-          </TouchableOpacity>
-        )}
+
+        {/* Input at bottom */}
+        <View style={styles.inputContainer}>
+          <ChatInput
+            value={input}
+            onChange={setInput}
+            onSubmit={handleSendMessage}
+            isLoading={isLoading}
+          />
+        </View>
       </KeyboardAvoidingView>
-      <ChatInput
-        value={input}
-        onChange={setInput}
-        onSubmit={handleSendMessage}
-        isLoading={isLoading}
-      />
+
+      {/* Scroll to bottom button */}
+      {showScrollButton && (
+        <TouchableOpacity
+          style={[
+            styles.scrollToBottomButton,
+            {
+              backgroundColor: colors.primary,
+              bottom: INPUT_CONTAINER_HEIGHT + insets.bottom + 20,
+            },
+          ]}
+          onPress={scrollToBottom}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="arrow-down" size={24} color="#fff" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -405,10 +479,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  keyboardAvoid: {
+    flex: 1,
+  },
   header: {
     borderBottomWidth: 1,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
+    paddingBottom: HEADER_BOTTOM_PADDING,
+    paddingHorizontal: HEADER_HORIZONTAL_PADDING,
     position: "absolute",
     top: 0,
     left: 0,
@@ -420,6 +497,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    width: "100%",
   },
   headerLeft: {
     flexDirection: "row",
@@ -434,23 +512,27 @@ const styles = StyleSheet.create({
     fontSize: 17,
   },
   newChatButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
+    flexDirection: "row",
     alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    height: HEADER_ACTION_SIZE,
+    borderRadius: HEADER_ACTION_SIZE / 2,
+    borderWidth: 1,
     justifyContent: "center",
   },
+  newChatLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
   messagesList: {
-    paddingBottom: 8,
     flexGrow: 1,
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
-    paddingBottom: 60,
+    paddingBottom: 32,
     gap: 16,
   },
   emptyLogo: {
@@ -479,9 +561,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 12,
   },
+  inputContainer: {
+    borderTopWidth: 0,
+  },
   scrollToBottomButton: {
     position: "absolute",
-    bottom: 80,
     right: 20,
     width: 48,
     height: 48,
@@ -493,6 +577,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-    zIndex: 10,
+    zIndex: 5,
   },
 });

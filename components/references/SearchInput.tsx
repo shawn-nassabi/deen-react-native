@@ -1,9 +1,10 @@
 /**
  * Search input component for references
- * Bottom-fixed search bar with BlurView effect
+ * Bottom search bar with BlurView effect and auto-growing (up to 4 lines)
+ * ChatGPT-style input field
  */
 
-import React from "react";
+import React, { useRef } from "react";
 import {
   View,
   TextInput,
@@ -25,6 +26,10 @@ interface SearchInputProps {
   placeholder?: string;
 }
 
+// Height constants
+const MIN_INPUT_HEIGHT = 40;
+const MAX_INPUT_HEIGHT = 120; // Roughly 4 lines
+
 export default function SearchInput({
   value,
   onChange,
@@ -34,6 +39,7 @@ export default function SearchInput({
 }: SearchInputProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const inputRef = useRef<TextInput>(null);
 
   const handleSubmit = () => {
     if (!isLoading && value.trim()) {
@@ -44,97 +50,115 @@ export default function SearchInput({
   const isDisabled = isLoading || !value.trim();
 
   return (
-    <BlurView
-      intensity={20}
-      tint={colorScheme === "dark" ? "dark" : "light"}
-      style={styles.blurContainer}
-    >
-      <View style={styles.searchIcon}>
-        <Ionicons name="search" size={20} color={colors.textSecondary} />
-      </View>
-      <TextInput
+    <View style={styles.container}>
+      <BlurView
+        intensity={80}
+        tint={colorScheme === "dark" ? "dark" : "light"}
         style={[
-          styles.input,
+          styles.blurContainer,
           {
-            color: colors.text,
+            borderColor:
+              colorScheme === "dark"
+                ? "rgba(255, 255, 255, 0.15)"
+                : "rgba(0, 0, 0, 0.1)",
+            backgroundColor:
+              colorScheme === "dark"
+                ? "rgba(30, 30, 30, 0.8)"
+                : "rgba(255, 255, 255, 0.8)",
           },
         ]}
-        placeholder={placeholder}
-        placeholderTextColor={colors.textSecondary}
-        value={value}
-        onChangeText={onChange}
-        onSubmitEditing={handleSubmit}
-        editable={!isLoading}
-        returnKeyType="search"
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-      <TouchableOpacity
-        style={[
-          styles.submitButton,
-          {
-            backgroundColor: isDisabled ? colors.panel2 : colors.primary,
-          },
-        ]}
-        onPress={handleSubmit}
-        disabled={isDisabled}
-        activeOpacity={0.2}
       >
-        <Ionicons
-          name="arrow-forward"
-          size={20}
-          color={isDisabled ? colors.muted : "#fff"}
+        <View style={styles.searchIconContainer}>
+          <Ionicons name="search" size={20} color={colors.textSecondary} />
+        </View>
+        <TextInput
+          ref={inputRef}
+          style={[
+            styles.input,
+            {
+              color: colors.text,
+            },
+          ]}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textSecondary}
+          value={value}
+          onChangeText={onChange}
+          multiline
+          onSubmitEditing={handleSubmit}
+          editable={!isLoading}
+          returnKeyType="search"
+          blurOnSubmit={false}
+          textAlignVertical="center"
         />
-      </TouchableOpacity>
-    </BlurView>
+        <TouchableOpacity
+          style={[
+            styles.submitButton,
+            {
+              backgroundColor: isDisabled ? colors.panel2 : colors.primary,
+            },
+          ]}
+          onPress={handleSubmit}
+          disabled={isDisabled}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="arrow-up"
+            size={20}
+            color={isDisabled ? colors.muted : "#fff"}
+          />
+        </TouchableOpacity>
+      </BlurView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    paddingBottom: 10,
+  },
   blurContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 28,
-    marginHorizontal: 16,
-    marginBottom: Platform.OS === "ios" ? 12 : 16,
+    alignItems: "flex-end",
+    paddingLeft: 12,
+    paddingRight: 8,
+    paddingVertical: 8,
+    borderRadius: 24,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    zIndex: 1000,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
       },
       android: {
-        elevation: 12,
+        elevation: 8,
       },
     }),
   },
-  searchIcon: {
+  searchIconContainer: {
     marginRight: 8,
+    marginBottom: 12,
   },
   input: {
     flex: 1,
-    fontSize: 15,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    fontSize: 16,
+    lineHeight: 22,
+    minHeight: MIN_INPUT_HEIGHT,
+    maxHeight: MAX_INPUT_HEIGHT,
+    paddingTop: Platform.OS === "ios" ? 9 : 9,
+    paddingBottom: Platform.OS === "ios" ? 9 : 9,
+    paddingHorizontal: 0,
   },
   submitButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
   },
 });
-

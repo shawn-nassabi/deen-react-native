@@ -15,6 +15,8 @@ import {
   Platform,
   TouchableOpacity,
   Image,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -103,70 +105,84 @@ export default function ReferencesContainer({
   // Loading State
   if (isLoading) {
     return (
-      <View style={styles.centerContainer}>
-        <Animated.View
-          style={[
-            styles.loadingCircle,
-            {
-              backgroundColor: colors.primary,
-              transform: [{ scale: pulseAnim }],
-            },
-          ]}
-        />
-        <ThemedText
-          style={[styles.loadingText, { color: colors.textSecondary }]}
-        >
-          Searching references...
-        </ThemedText>
-      </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.centerContainer}>
+          <Animated.View
+            style={[
+              styles.loadingCircle,
+              {
+                backgroundColor: colors.primary,
+                transform: [{ scale: pulseAnim }],
+              },
+            ]}
+          />
+          <ThemedText
+            style={[styles.loadingText, { color: colors.textSecondary }]}
+          >
+            Searching references...
+          </ThemedText>
+        </View>
+      </TouchableWithoutFeedback>
     );
   }
 
   // No search performed yet
   if (!searchPerformed) {
     return (
-      <View style={styles.centerContainer}>
-        <Image
-          source={require("@/assets/images/deen-logo-icon.png")}
-          style={styles.logo}
-        />
-        <ThemedText
-          type="title"
-          style={[styles.emptyTitle, { color: colors.text }]}
-        >
-          Reference Lookup
-        </ThemedText>
-        <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}>
-          Search for authentic Islamic references and sources
-        </ThemedText>
-      </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.centerContainer}>
+          <Image
+            source={require("@/assets/images/deen-logo-icon.png")}
+            style={styles.logo}
+          />
+          <ThemedText
+            type="title"
+            style={[styles.emptyTitle, { color: colors.text }]}
+          >
+            Reference Lookup
+          </ThemedText>
+          <ThemedText
+            style={[styles.emptyText, { color: colors.textSecondary }]}
+          >
+            Search for authentic Islamic references and sources
+          </ThemedText>
+        </View>
+      </TouchableWithoutFeedback>
     );
   }
 
   // No results found
   if (!results || (!results.shia?.length && !results.sunni?.length)) {
     return (
-      <View style={styles.centerContainer}>
-        <ThemedText style={[styles.emptyText, { color: colors.textSecondary }]}>
-          No references found for your query.
-        </ThemedText>
-      </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.centerContainer}>
+          <ThemedText
+            style={[styles.emptyText, { color: colors.textSecondary }]}
+          >
+            No references found for your query.
+          </ThemedText>
+        </View>
+      </TouchableWithoutFeedback>
     );
   }
 
   // Error state
   if (results.error) {
     return (
-      <View style={styles.centerContainer}>
-        <View
-          style={[
-            styles.errorBox,
-            { backgroundColor: colors.panel2, borderColor: colors.border },
-          ]}
-        >
-          <ThemedText style={{ color: "#ff6b6b" }}>{results.error}</ThemedText>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.centerContainer}>
+          <View
+            style={[
+              styles.errorBox,
+              { backgroundColor: colors.panel2, borderColor: colors.border },
+            ]}
+          >
+            <ThemedText style={{ color: "#ff6b6b" }}>
+              {results.error}
+            </ThemedText>
+          </View>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     );
   }
 
@@ -188,6 +204,8 @@ export default function ReferencesContainer({
         { paddingTop: Platform.OS === "ios" ? 60 : 20 },
       ]}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
     >
       {/* Query Display */}
       <View

@@ -1,9 +1,10 @@
 /**
  * Chat input component
- * Text input with send button and auto-growing functionality
+ * Text input with send button and auto-growing functionality (up to 4 lines)
+ * ChatGPT-style input field
  */
 
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import {
   View,
   TextInput,
@@ -15,7 +16,7 @@ import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { UI_CONSTANTS, PLACEHOLDERS } from "@/utils/constants";
+import { PLACEHOLDERS } from "@/utils/constants";
 
 interface ChatInputProps {
   value: string;
@@ -24,6 +25,10 @@ interface ChatInputProps {
   isLoading: boolean;
   placeholder?: string;
 }
+
+// Height constants
+const MIN_INPUT_HEIGHT = 40;
+const MAX_INPUT_HEIGHT = 120; // Roughly 4 lines
 
 export default function ChatInput({
   value,
@@ -34,9 +39,7 @@ export default function ChatInput({
 }: ChatInputProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
-  const [inputHeight, setInputHeight] = useState<number>(
-    UI_CONSTANTS.MIN_INPUT_HEIGHT
-  );
+  const inputRef = useRef<TextInput>(null);
 
   const handleSubmit = () => {
     if (!isLoading && value.trim()) {
@@ -44,108 +47,111 @@ export default function ChatInput({
     }
   };
 
-  const handleContentSizeChange = (event: any) => {
-    const newHeight = Math.min(
-      Math.max(
-        UI_CONSTANTS.MIN_INPUT_HEIGHT,
-        event.nativeEvent.contentSize.height
-      ),
-      UI_CONSTANTS.MAX_INPUT_HEIGHT
-    );
-    setInputHeight(newHeight);
-  };
-
   const isDisabled = isLoading || !value.trim();
 
   return (
-    <BlurView
-      intensity={20}
-      tint={colorScheme === "dark" ? "dark" : "light"}
-      style={styles.blurContainer}
-    >
-      <TextInput
+    <View style={styles.container}>
+      <BlurView
+        intensity={80}
+        tint={colorScheme === "dark" ? "dark" : "light"}
         style={[
-          styles.input,
+          styles.blurContainer,
           {
-            color: colors.text,
-            height: inputHeight,
+            borderColor:
+              colorScheme === "dark"
+                ? "rgba(255, 255, 255, 0.15)"
+                : "rgba(0, 0, 0, 0.1)",
+            backgroundColor:
+              colorScheme === "dark"
+                ? "rgba(30, 30, 30, 0.8)"
+                : "rgba(255, 255, 255, 0.8)",
           },
         ]}
-        placeholder={placeholder}
-        placeholderTextColor={colors.textSecondary}
-        value={value}
-        onChangeText={onChange}
-        multiline
-        onContentSizeChange={handleContentSizeChange}
-        editable={!isLoading}
-        returnKeyType="default"
-        blurOnSubmit={false}
-      />
-      <TouchableOpacity
-        style={[
-          styles.sendButton,
-          {
-            backgroundColor: isDisabled ? colors.panel2 : colors.primary,
-          },
-        ]}
-        onPress={handleSubmit}
-        disabled={isDisabled}
-        activeOpacity={0.9}
       >
-        <Ionicons
-          name="arrow-forward"
-          size={20}
-          color={isDisabled ? colors.muted : "#fff"}
+        <TextInput
+          ref={inputRef}
+          style={[
+            styles.input,
+            {
+              color: colors.text,
+            },
+          ]}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textSecondary}
+          value={value}
+          onChangeText={onChange}
+          multiline
+          editable={!isLoading}
+          returnKeyType="default"
+          blurOnSubmit={false}
+          textAlignVertical="center"
         />
-      </TouchableOpacity>
-    </BlurView>
+        <TouchableOpacity
+          style={[
+            styles.sendButton,
+            {
+              backgroundColor: isDisabled ? colors.panel2 : colors.primary,
+            },
+          ]}
+          onPress={handleSubmit}
+          disabled={isDisabled}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="arrow-up"
+            size={20}
+            color={isDisabled ? colors.muted : "#fff"}
+          />
+        </TouchableOpacity>
+      </BlurView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    paddingBottom: 10,
+  },
   blurContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: "row",
     alignItems: "flex-end",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 28,
-    marginHorizontal: 16,
-    marginBottom: Platform.OS === "ios" ? 12 : 16,
+    paddingLeft: 16,
+    paddingRight: 8,
+    paddingVertical: 8,
+    borderRadius: 24,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    zIndex: 1000,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
       },
       android: {
-        elevation: 12,
+        elevation: 8,
       },
     }),
   },
   input: {
     flex: 1,
-    fontSize: 15,
-    paddingTop: Platform.OS === "ios" ? 8 : 6,
-    paddingBottom: Platform.OS === "ios" ? 8 : 6,
-    paddingHorizontal: 4,
-    maxHeight: UI_CONSTANTS.MAX_INPUT_HEIGHT,
+    fontSize: 16,
+    lineHeight: 22,
+    minHeight: MIN_INPUT_HEIGHT,
+    maxHeight: MAX_INPUT_HEIGHT,
+    paddingTop: Platform.OS === "ios" ? 9 : 9,
+    paddingBottom: Platform.OS === "ios" ? 9 : 9,
+    paddingHorizontal: 0,
   },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
-    marginBottom: 2,
+    marginBottom: 4,
   },
 });
