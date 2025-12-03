@@ -28,6 +28,7 @@ interface ReferencesContainerProps {
   isLoading: boolean;
   searchPerformed: boolean;
   submittedQuery: string;
+  bottomPadding: number;
 }
 
 export default function ReferencesContainer({
@@ -35,6 +36,7 @@ export default function ReferencesContainer({
   isLoading,
   searchPerformed,
   submittedQuery,
+  bottomPadding,
 }: ReferencesContainerProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
@@ -106,7 +108,9 @@ export default function ReferencesContainer({
   if (isLoading) {
     return (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.centerContainer}>
+        <View
+          style={[styles.centerContainer, { paddingBottom: bottomPadding }]}
+        >
           <Animated.View
             style={[
               styles.loadingCircle,
@@ -130,7 +134,9 @@ export default function ReferencesContainer({
   if (!searchPerformed) {
     return (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.centerContainer}>
+        <View
+          style={[styles.centerContainer, { paddingBottom: bottomPadding }]}
+        >
           <Image
             source={require("@/assets/images/deen-logo-icon.png")}
             style={styles.logo}
@@ -155,7 +161,9 @@ export default function ReferencesContainer({
   if (!results || (!results.shia?.length && !results.sunni?.length)) {
     return (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.centerContainer}>
+        <View
+          style={[styles.centerContainer, { paddingBottom: bottomPadding }]}
+        >
           <ThemedText
             style={[styles.emptyText, { color: colors.textSecondary }]}
           >
@@ -170,7 +178,9 @@ export default function ReferencesContainer({
   if (results.error) {
     return (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.centerContainer}>
+        <View
+          style={[styles.centerContainer, { paddingBottom: bottomPadding }]}
+        >
           <View
             style={[
               styles.errorBox,
@@ -201,7 +211,10 @@ export default function ReferencesContainer({
       style={styles.scrollContainer}
       contentContainerStyle={[
         styles.resultsContainer,
-        { paddingTop: Platform.OS === "ios" ? 60 : 20 },
+        {
+          paddingTop: Platform.OS === "ios" ? 20 : 12,
+          paddingBottom: bottomPadding,
+        },
       ]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
@@ -339,9 +352,6 @@ export default function ReferencesContainer({
           </ThemedText>
         </View>
       )}
-
-      {/* Bottom padding to account for fixed search input */}
-      <View style={styles.bottomPadding} />
     </ScrollView>
   );
 }
@@ -358,7 +368,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 32,
-    paddingBottom: 120,
   },
   logo: {
     width: 64,
@@ -460,8 +469,5 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     fontWeight: "600",
-  },
-  bottomPadding: {
-    height: 100,
   },
 });

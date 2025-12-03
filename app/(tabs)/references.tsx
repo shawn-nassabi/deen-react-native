@@ -2,7 +2,7 @@
  * References screen - Search and display Islamic references
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   Platform,
@@ -115,7 +115,6 @@ export default function ReferencesScreen() {
             styles.content,
             {
               paddingTop: contentTopOffset,
-              paddingBottom: bottomPadding,
             },
           ]}
         >
@@ -124,6 +123,7 @@ export default function ReferencesScreen() {
             isLoading={isLoading}
             searchPerformed={searchPerformed}
             submittedQuery={submittedQuery}
+            bottomPadding={bottomPadding}
           />
         </View>
 
