@@ -28,6 +28,9 @@ export default function ReferencesScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const blurIntensity = Platform.OS === "android" ? 120 : 60;
+  const headerOverlayColor =
+    colorScheme === "dark" ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
 
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
@@ -77,13 +80,14 @@ export default function ReferencesScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <BlurView
-        intensity={60}
+        intensity={blurIntensity}
         tint={colorScheme === "dark" ? "dark" : "light"}
         style={[
           styles.header,
           {
             borderBottomColor: colors.border,
             paddingTop: headerPaddingTop,
+            backgroundColor: headerOverlayColor,
           },
         ]}
         onLayout={({ nativeEvent }) =>

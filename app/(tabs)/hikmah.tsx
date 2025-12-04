@@ -14,21 +14,76 @@ import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { getHikmahTrees, getLessonsByTreeId, HikmahTree } from "@/utils/api";
+import {
+  getHikmahTrees,
+  getLessonsByTreeId,
+  HikmahTree,
+  listUserProgress,
+} from "@/utils/api";
+import { setProgress } from "@/utils/hikmahStorage";
 import TreeCard from "@/components/hikmah/TreeCard";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+// TODO: replace with authenticated user identity when available
+const USER_ID = "snassabi7@gmail.com";
 
 export default function HikmahScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const blurIntensity = Platform.OS === "android" ? 120 : 60;
+  const headerOverlayColor =
+    colorScheme === "dark" ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
   const [headerHeight, setHeaderHeight] = useState(0);
   const [trees, setTrees] = useState<HikmahTree[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+
+  const hydrateBackendProgress = async (treesWithLessons: HikmahTree[]) => {
+    try {
+      const progress = await listUserProgress({ user_id: USER_ID });
+      if (!Array.isArray(progress) || progress.length === 0) return;
+
+      // Map treeId -> valid lesson ids (to filter out stale backend data)
+      const lessonMap = new Map<number | string, Set<string>>();
+      treesWithLessons.forEach((tree) => {
+        if (tree?.id && Array.isArray(tree.lessons)) {
+          lessonMap.set(
+            tree.id,
+            new Set(tree.lessons.map((l) => String(l.id)))
+          );
+        }
+      });
+
+      // Group completed lessons by tree
+      const grouped = new Map<number | string, Set<string>>();
+      progress.forEach((p: any) => {
+        const treeId = p?.hikmah_tree_id;
+        const lessonId = p?.lesson_id;
+        if (treeId == null || lessonId == null || !p?.is_completed) return;
+        const validLessons = lessonMap.get(treeId);
+        if (!validLessons) return;
+        const lessonIdStr = String(lessonId);
+        if (!validLessons.has(lessonIdStr)) return;
+        if (!grouped.has(treeId)) grouped.set(treeId, new Set());
+        grouped.get(treeId)!.add(lessonIdStr);
+      });
+
+      if (grouped.size === 0) return;
+
+      // Persist to local storage so useHikmahProgress picks it up
+      await Promise.all(
+        Array.from(grouped.entries()).map(([treeId, lessonIds]) =>
+          setProgress(treeId, Array.from(lessonIds))
+        )
+      );
+    } catch (err) {
+      console.warn("⚠️ Progress hydration failed:", err);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -58,6 +113,9 @@ export default function HikmahScreen() {
           }
         })
       );
+
+      // Pull down latest completion data from backend so first-time installs show progress
+      await hydrateBackendProgress(treesWithLessons);
 
       setTrees(treesWithLessons);
     } catch (err: any) {
@@ -99,13 +157,14 @@ export default function HikmahScreen() {
   return (
     <ThemedView style={styles.container}>
       <BlurView
-        intensity={60}
+        intensity={blurIntensity}
         tint={colorScheme === "dark" ? "dark" : "light"}
         style={[
           styles.header,
           {
             borderBottomColor: colors.border,
             paddingTop: headerPaddingTop,
+            backgroundColor: headerOverlayColor,
           },
         ]}
         onLayout={({ nativeEvent }) =>
