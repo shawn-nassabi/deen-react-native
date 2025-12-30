@@ -27,6 +27,15 @@ export interface Reference {
   hadith_url?: string;
   text?: string;
   text_ar?: string;
+  sect?: string; // "shia" or "sunni"
+  collection?: string;
+  volume?: string;
+  book_number?: string;
+  chapter_number?: string;
+  grade_en?: string;
+  grade_ar?: string;
+  hadith_id?: string;
+  lang?: string;
 }
 
 export interface Message {
@@ -53,6 +62,15 @@ function compactMessage(msg: Message): Message {
       hadith_url: r.hadith_url,
       text: r.text,
       text_ar: r.text_ar,
+      sect: r.sect,
+      collection: r.collection,
+      volume: r.volume,
+      book_number: r.book_number,
+      chapter_number: r.chapter_number,
+      grade_en: r.grade_en,
+      grade_ar: r.grade_ar,
+      hadith_id: r.hadith_id,
+      lang: r.lang,
     }));
   }
   return base;

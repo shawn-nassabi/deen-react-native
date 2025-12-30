@@ -3,12 +3,14 @@
  * Displays individual user or bot messages
  */
 
-import React from "react";
-import { View, StyleSheet, Image } from "react-native";
+import React, { useState } from "react";
+import { View, StyleSheet, Image, TouchableOpacity } from "react-native";
 import Markdown from "react-native-markdown-display";
+import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import ReferencesModal from "./ReferencesModal";
 import type { Message } from "@/utils/chatStorage";
 
 interface ChatMessageProps {
@@ -19,6 +21,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const isUser = message.sender === "user";
+  const [showReferencesModal, setShowReferencesModal] = useState(false);
 
   if (isUser) {
     return (
@@ -194,22 +197,37 @@ export default function ChatMessage({ message }: ChatMessageProps) {
           </Markdown>
         </View>
         {message.references && message.references.length > 0 && (
-          <View
-            style={[
-              styles.referencesHint,
-              {
-                backgroundColor: colors.panel2,
-                borderColor: colors.border,
-              },
-            ]}
-          >
-            <ThemedText
-              style={[styles.referencesText, { color: colors.textSecondary }]}
+          <>
+            <TouchableOpacity
+              style={[
+                styles.referencesHint,
+                {
+                  backgroundColor: colors.panel2,
+                  borderColor: colors.border,
+                },
+              ]}
+              onPress={() => setShowReferencesModal(true)}
+              activeOpacity={0.7}
             >
-              {message.references.length} reference
-              {message.references.length !== 1 ? "s" : ""} available
-            </ThemedText>
-          </View>
+              <ThemedText
+                style={[styles.referencesText, { color: colors.textSecondary }]}
+              >
+                {message.references.length} reference
+                {message.references.length !== 1 ? "s" : ""} available
+              </ThemedText>
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.primary}
+                style={styles.chevronIcon}
+              />
+            </TouchableOpacity>
+            <ReferencesModal
+              visible={showReferencesModal}
+              onClose={() => setShowReferencesModal(false)}
+              references={message.references}
+            />
+          </>
         )}
       </View>
     </View>
@@ -276,8 +294,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   referencesText: {
     fontSize: 12,
+    flex: 1,
+  },
+  chevronIcon: {
+    marginLeft: 8,
   },
 });

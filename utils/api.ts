@@ -13,6 +13,9 @@ import { STORAGE_KEYS } from "./constants";
 const API_BASE_URL = CONFIG.API_BASE_URL;
 const SESSION_KEY = STORAGE_KEYS.SESSION_ID;
 
+// Helpful when debugging real-device networking (phone must be able to reach this host:port)
+console.log("🌐 API_BASE_URL =", API_BASE_URL);
+
 // ---- Types ----
 
 export interface HikmahTree {
@@ -135,8 +138,12 @@ export async function sendChatMessageStream(
     let accumulatedText = "";
     let lastProcessedIndex = 0;
 
-    xhr.open("POST", `${API_BASE_URL}/chat/stream`);
+    const url = `${API_BASE_URL}/chat/stream`;
+    console.log("➡️ POST", url);
+    xhr.open("POST", url);
     xhr.setRequestHeader("Content-Type", "application/json");
+    // Ensure we fail fast instead of hanging forever on unreachable hosts
+    xhr.timeout = 30000;
 
     // Handle progress events - this fires as chunks arrive!
     xhr.onprogress = () => {
@@ -173,7 +180,12 @@ export async function sendChatMessageStream(
 
     xhr.onerror = () => {
       console.error(
-        "❌ Network error - Check your connection and backend availability"
+        "❌ Network error - Check your connection and backend availability",
+        {
+          url,
+          status: xhr.status,
+          readyState: xhr.readyState,
+        }
       );
       reject(new Error("Network error during streaming"));
     };
@@ -302,14 +314,18 @@ export async function searchReferences(userQuery: string): Promise<{
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "");
-      console.error(`❌ Reference search failed - HTTP ${response.status}: ${errorText}`);
+      console.error(
+        `❌ Reference search failed - HTTP ${response.status}: ${errorText}`
+      );
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
     const shiaCount = data.response?.shia?.length || 0;
     const sunniCount = data.response?.sunni?.length || 0;
-    console.log(`✅ Found ${shiaCount} Shia and ${sunniCount} Sunni reference(s)`);
+    console.log(
+      `✅ Found ${shiaCount} Shia and ${sunniCount} Sunni reference(s)`
+    );
 
     return data;
   } catch (error) {
@@ -349,7 +365,9 @@ export async function getHikmahTrees(params = {}): Promise<HikmahTree[]> {
 }
 
 /** GET /hikmah-trees/{tree_id} */
-export async function getHikmahTree(treeId: string | number): Promise<HikmahTree> {
+export async function getHikmahTree(
+  treeId: string | number
+): Promise<HikmahTree> {
   const response = await fetch(`${API_BASE_URL}/hikmah-trees/${treeId}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
@@ -390,7 +408,9 @@ export async function getLessonsByTreeId(
 }
 
 /** GET /lessons/{lesson_id} */
-export async function getLessonById(lessonId: string | number): Promise<Lesson> {
+export async function getLessonById(
+  lessonId: string | number
+): Promise<Lesson> {
   const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
@@ -405,7 +425,10 @@ export async function getLessonById(lessonId: string | number): Promise<Lesson> 
 /**
  * GET /lesson-content by lessonId
  */
-export async function getLessonContent(lessonId: number, params: Record<string, any> = {}): Promise<LessonContent[]> {
+export async function getLessonContent(
+  lessonId: number,
+  params: Record<string, any> = {}
+): Promise<LessonContent[]> {
   const query = { ...params, lesson_id: lessonId };
   const url = `${API_BASE_URL}/lesson-content${buildQuery(query)}`;
   const response = await fetch(url, {
@@ -445,7 +468,9 @@ export async function listUserProgress(params = {}): Promise<UserProgress[]> {
 }
 
 /** POST /user-progress */
-export async function createUserProgress(payload: Partial<UserProgress>): Promise<UserProgress> {
+export async function createUserProgress(
+  payload: Partial<UserProgress>
+): Promise<UserProgress> {
   const response = await fetch(`${API_BASE_URL}/user-progress`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -459,7 +484,10 @@ export async function createUserProgress(payload: Partial<UserProgress>): Promis
 }
 
 /** PATCH /user-progress/{progress_id} */
-export async function updateUserProgress(progressId: number, payload: Partial<UserProgress>): Promise<UserProgress> {
+export async function updateUserProgress(
+  progressId: number,
+  payload: Partial<UserProgress>
+): Promise<UserProgress> {
   const response = await fetch(`${API_BASE_URL}/user-progress/${progressId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
