@@ -114,8 +114,7 @@ const EmptyState = React.memo(({
       <ThemedText
         style={[styles.emptySubtitle, { color: textSecondaryColor }]}
       >
-        Ask any question about Islam and I'll do my best to provide a helpful
-        response.
+        {"Ask any question about Islam and I'll do my best to provide a helpful response."}
       </ThemedText>
       {showLanguageSelector && (
         <TouchableOpacity
@@ -146,6 +145,8 @@ const EmptyState = React.memo(({
     </View>
   );
 });
+
+EmptyState.displayName = "EmptyState";
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();

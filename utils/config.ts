@@ -17,6 +17,11 @@ import Constants from "expo-constants";
 // Best option: explicitly set this via Expo env var (works in dev + EAS builds).
 // Example: EXPO_PUBLIC_API_BASE_URL="http://192.168.2.19:8080"
 const ENV_API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+const ENV_COGNITO_DOMAIN = process.env.EXPO_PUBLIC_COGNITO_DOMAIN;
+const ENV_COGNITO_CLIENT_ID = process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID;
+const ENV_COGNITO_ISSUER = process.env.EXPO_PUBLIC_COGNITO_ISSUER;
+const ENV_COGNITO_SCOPES = process.env.EXPO_PUBLIC_COGNITO_SCOPES;
+const ENV_AUTH_REDIRECT_URI = process.env.EXPO_PUBLIC_AUTH_REDIRECT_URI;
 
 function getDevMachineIpFromExpo(): string | undefined {
   // In Expo Go / dev, we can often infer the LAN IP from the dev server host.
@@ -86,4 +91,20 @@ const DEFAULT_API_BASE_URL = `http://${getDefaultHost()}:8080`;
 export const CONFIG = {
   API_BASE_URL: ENV_API_BASE_URL || DEFAULT_API_BASE_URL,
   CHAT_EXPIRY_SECONDS: 1440, // align with backend TTL (seconds)
+  // Cognito / OIDC (public values; safe to ship in a client app)
+  // Defaults match the pool you referenced in chat; override with EXPO_PUBLIC_* for other envs.
+  COGNITO_DOMAIN:
+    ENV_COGNITO_DOMAIN ||
+    "https://eu-north-1nko9a23pf.auth.eu-north-1.amazoncognito.com",
+  COGNITO_CLIENT_ID: ENV_COGNITO_CLIENT_ID || "1bukdrndjlh653q4ddfnmelunq",
+  COGNITO_ISSUER:
+    ENV_COGNITO_ISSUER ||
+    "https://cognito-idp.eu-north-1.amazonaws.com/eu-north-1_nKO9a23pF",
+  // Space-delimited scopes (Cognito expects this format)
+  COGNITO_SCOPES:
+    ENV_COGNITO_SCOPES || "openid email phone",
+  // For Expo Go (AuthSession proxy), this should match the callback/logout URL you registered in Cognito.
+  // Example: https://auth.expo.io/@snassabi7/deen-react-native
+  AUTH_REDIRECT_URI:
+    ENV_AUTH_REDIRECT_URI || "https://auth.expo.io/@snassabi7/deen-react-native",
 } as const;

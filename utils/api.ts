@@ -9,6 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import uuid from "react-native-uuid";
 import { CONFIG } from "./config";
 import { STORAGE_KEYS } from "./constants";
+import { getValidAccessToken } from "./auth";
 
 const API_BASE_URL = CONFIG.API_BASE_URL;
 const SESSION_KEY = STORAGE_KEYS.SESSION_ID;
@@ -114,6 +115,18 @@ export async function startNewConversation(): Promise<string> {
 
 // ---- API calls ----
 
+async function withAuthHeaders(
+  headers: Record<string, string> = {}
+): Promise<Record<string, string>> {
+  try {
+    const token = await getValidAccessToken();
+    if (!token) return headers;
+    return { ...headers, Authorization: `Bearer ${token}` };
+  } catch {
+    return headers;
+  }
+}
+
 /**
  * Send a chat message with TRUE streaming using XMLHttpRequest
  * Works in Expo Go without native modules!
@@ -133,6 +146,8 @@ export async function sendChatMessageStream(
     `💬 Sending message (${userQuery.length} chars) in ${targetLanguage}`
   );
 
+  const bearer = await getValidAccessToken().catch(() => null);
+
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     let accumulatedText = "";
@@ -142,6 +157,9 @@ export async function sendChatMessageStream(
     console.log("➡️ POST", url);
     xhr.open("POST", url);
     xhr.setRequestHeader("Content-Type", "application/json");
+    if (bearer) {
+      xhr.setRequestHeader("Authorization", `Bearer ${bearer}`);
+    }
     // Ensure we fail fast instead of hanging forever on unreachable hosts
     xhr.timeout = 30000;
 
@@ -308,7 +326,7 @@ export async function searchReferences(userQuery: string): Promise<{
   try {
     const response = await fetch(`${API_BASE_URL}/references/`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await withAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ user_query: userQuery }),
     });
 
@@ -355,7 +373,7 @@ export async function getHikmahTrees(params = {}): Promise<HikmahTree[]> {
   const url = `${API_BASE_URL}/hikmah-trees${buildQuery(params)}`;
   const response = await fetch(url, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: await withAuthHeaders({ "Content-Type": "application/json" }),
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
@@ -370,7 +388,7 @@ export async function getHikmahTree(
 ): Promise<HikmahTree> {
   const response = await fetch(`${API_BASE_URL}/hikmah-trees/${treeId}`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: await withAuthHeaders({ "Content-Type": "application/json" }),
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
@@ -390,7 +408,7 @@ export async function getLessonsByTreeId(
   const url = `${API_BASE_URL}/lessons${buildQuery(query)}`;
   const response = await fetch(url, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: await withAuthHeaders({ "Content-Type": "application/json" }),
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
@@ -413,7 +431,7 @@ export async function getLessonById(
 ): Promise<Lesson> {
   const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: await withAuthHeaders({ "Content-Type": "application/json" }),
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
@@ -433,7 +451,7 @@ export async function getLessonContent(
   const url = `${API_BASE_URL}/lesson-content${buildQuery(query)}`;
   const response = await fetch(url, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: await withAuthHeaders({ "Content-Type": "application/json" }),
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
@@ -458,7 +476,7 @@ export async function listUserProgress(params = {}): Promise<UserProgress[]> {
   const url = `${API_BASE_URL}/user-progress${buildQuery(params)}`;
   const response = await fetch(url, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: await withAuthHeaders({ "Content-Type": "application/json" }),
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
@@ -473,7 +491,7 @@ export async function createUserProgress(
 ): Promise<UserProgress> {
   const response = await fetch(`${API_BASE_URL}/user-progress`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await withAuthHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
@@ -490,7 +508,7 @@ export async function updateUserProgress(
 ): Promise<UserProgress> {
   const response = await fetch(`${API_BASE_URL}/user-progress/${progressId}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: await withAuthHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
@@ -541,6 +559,7 @@ export async function elaborateSelectionStream(
   payload: ElaborationPayload,
   onChunk: (text: string) => void
 ): Promise<string> {
+  const bearer = await getValidAccessToken().catch(() => null);
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     let accumulatedText = "";
@@ -548,6 +567,9 @@ export async function elaborateSelectionStream(
 
     xhr.open("POST", `${API_BASE_URL}/hikmah/elaborate/stream`);
     xhr.setRequestHeader("Content-Type", "application/json");
+    if (bearer) {
+      xhr.setRequestHeader("Authorization", `Bearer ${bearer}`);
+    }
 
     xhr.onprogress = () => {
       const currentText = xhr.responseText;

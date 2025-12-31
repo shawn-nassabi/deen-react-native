@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuth } from "@/hooks/useAuth";
 import { elaborateSelectionStream, ElaborationPayload } from "@/utils/api";
 import * as Haptics from "expo-haptics";
 import Markdown from "react-native-markdown-display";
@@ -41,6 +42,7 @@ export default function ElaborationModal({
 }: ElaborationModalProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
@@ -80,16 +82,21 @@ export default function ElaborationModal({
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
+    const userId = user?.email || user?.sub;
+    if (!userId) {
+      setLoading(false);
+      setError("Please sign in again to continue.");
+      return;
+    }
+
     const payload: ElaborationPayload = {
       selected_text: textToAsk,
       context_text: contextText,
       hikmah_tree_name: treeTitle,
       lesson_name: lessonTitle,
       lesson_summary: lessonSummary,
-      user_id: "snassabi7@gmail.com", // Hardcoded as per plan
+      user_id: userId,
     };
-
-    console.log("Ask Deen Payload:", payload);
 
     try {
       await elaborateSelectionStream(payload, (chunk) => {
@@ -159,7 +166,7 @@ export default function ElaborationModal({
                 SELECTED TEXT
               </ThemedText>
               <ThemedText style={{ fontStyle: "italic", color: colors.text }}>
-                "{initialQuery}"
+                {`"${initialQuery}"`}
               </ThemedText>
             </View>
           )}

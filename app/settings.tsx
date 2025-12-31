@@ -3,6 +3,7 @@ import { StyleSheet, ScrollView, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemePreference } from "@/hooks/use-theme-preference";
+import { useAuth } from "@/hooks/useAuth";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -11,8 +12,11 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 export default function SettingsScreen() {
   const router = useRouter();
   const { themePreference, setThemePreference } = useThemePreference();
+  const { user, signOut } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const [authError, setAuthError] = React.useState<string | null>(null);
+  const [authBusy, setAuthBusy] = React.useState(false);
 
   const themeOptions = [
     {
@@ -105,6 +109,74 @@ export default function SettingsScreen() {
                 )}
               </TouchableOpacity>
             ))}
+          </View>
+        </ThemedView>
+
+        <ThemedView style={styles.section}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Account
+          </ThemedText>
+          <ThemedText
+            style={[styles.sectionDescription, { color: colors.textSecondary }]}
+          >
+            Manage your account
+          </ThemedText>
+
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: colors.panel, borderColor: colors.border },
+            ]}
+          >
+            {user?.email ? (
+              <ThemedText
+                style={[styles.infoText, { color: colors.textSecondary }]}
+              >
+                Email: {user.email}
+              </ThemedText>
+            ) : null}
+
+            {user?.sub ? (
+              <ThemedText
+                style={[styles.infoText, { color: colors.textSecondary }]}
+              >
+                User ID (sub): {user.sub}
+              </ThemedText>
+            ) : null}
+
+            {authError ? (
+              <ThemedText style={[styles.versionText, { color: "#ef4444" }]}>
+                Auth error: {authError}
+              </ThemedText>
+            ) : null}
+          </View>
+
+          <View style={{ gap: 12, marginTop: 12 }}>
+            <TouchableOpacity
+              style={[
+                styles.primaryButton,
+                {
+                  backgroundColor: colors.primary,
+                  opacity: authBusy ? 0.6 : 1,
+                },
+              ]}
+              onPress={async () => {
+                if (authBusy) return;
+                setAuthError(null);
+                setAuthBusy(true);
+                try {
+                  await signOut();
+                } catch (e: any) {
+                  setAuthError(e?.message || String(e));
+                } finally {
+                  setAuthBusy(false);
+                }
+              }}
+              activeOpacity={0.8}
+              disabled={authBusy}
+            >
+              <ThemedText style={styles.primaryButtonText}>Sign out</ThemedText>
+            </TouchableOpacity>
           </View>
         </ThemedView>
 
@@ -210,5 +282,29 @@ const styles = StyleSheet.create({
   },
   versionText: {
     fontSize: 12,
+  },
+  primaryButton: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  secondaryButton: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  secondaryButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
 });

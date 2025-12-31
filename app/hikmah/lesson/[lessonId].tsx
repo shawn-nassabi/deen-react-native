@@ -30,8 +30,7 @@ import { setLastRead } from "@/utils/hikmahStorage";
 import ElaborationModal from "@/components/hikmah/ElaborationModal";
 import { useHikmahProgress } from "@/hooks/useHikmahProgress";
 import LessonContentWebView from "@/components/hikmah/LessonContentWebView";
-
-const USER_ID = "snassabi7@gmail.com";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function LessonReaderScreen() {
   const { lessonId, treeId } = useLocalSearchParams<{
@@ -41,6 +40,8 @@ export default function LessonReaderScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { user } = useAuth();
+  const userId = user?.email || user?.sub;
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [tree, setTree] = useState<HikmahTree | null>(null);
@@ -139,10 +140,11 @@ export default function LessonReaderScreen() {
   // Hydrate Progress (Last Position)
   useEffect(() => {
     if (!pages.length || !treeId || !lessonId || !progressLoaded) return;
+    if (!userId) return;
 
     let mounted = true;
     listUserProgress({
-      user_id: USER_ID,
+      user_id: userId,
       hikmah_tree_id: Number(treeId),
       lesson_id: Number(lessonId),
     })
@@ -177,11 +179,12 @@ export default function LessonReaderScreen() {
     return () => {
       mounted = false;
     };
-  }, [pages.length, lessonId, treeId, progressLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pages.length, lessonId, treeId, progressLoaded, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Upsert Progress on Page Change
   useEffect(() => {
     if (!pages.length || !treeId || !lessonId) return;
+    if (!userId) return;
 
     // Clear selection on page change
     setSelection({ text: "", context: "" });
@@ -197,13 +200,13 @@ export default function LessonReaderScreen() {
     );
 
     upsertUserProgress({
-      user_id: USER_ID,
+      user_id: userId,
       hikmah_tree_id: Number(treeId),
       lesson_id: Number(lessonId),
       last_position: currentPageIndex,
       percent_complete: percent,
     }).catch((err) => console.warn("Progress upsert failed:", err));
-  }, [currentPageIndex, pages.length, lessonId, treeId]);
+  }, [currentPageIndex, pages.length, lessonId, treeId, userId]);
 
   const handleNextPage = () => {
     if (currentPageIndex < pages.length - 1) {
@@ -227,7 +230,7 @@ export default function LessonReaderScreen() {
     try {
       // Optimistic upsert
       upsertUserProgress({
-        user_id: USER_ID,
+        user_id: userId,
         hikmah_tree_id: Number(treeId),
         lesson_id: Number(lessonId),
         is_completed: true,
@@ -324,10 +327,11 @@ export default function LessonReaderScreen() {
             {currentPageIndex >= pages.length - 1 ? (
               <TouchableOpacity
                 onPress={() => {
+                  if (!userId) return;
                   skipCompletionSyncRef.current = true;
                   toggleComplete(lessonId!);
                   upsertUserProgress({
-                    user_id: USER_ID,
+                    user_id: userId,
                     hikmah_tree_id: Number(treeId),
                     lesson_id: Number(lessonId),
                     is_completed: !done,

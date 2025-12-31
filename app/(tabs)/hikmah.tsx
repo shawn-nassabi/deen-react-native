@@ -24,14 +24,14 @@ import { setProgress } from "@/utils/hikmahStorage";
 import TreeCard from "@/components/hikmah/TreeCard";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-// TODO: replace with authenticated user identity when available
-const USER_ID = "snassabi7@gmail.com";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function HikmahScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { user } = useAuth();
+  const userId = user?.email || user?.sub;
   const blurIntensity = Platform.OS === "android" ? 120 : 60;
   const headerOverlayColor =
     colorScheme === "dark" ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
@@ -44,7 +44,8 @@ export default function HikmahScreen() {
 
   const hydrateBackendProgress = async (treesWithLessons: HikmahTree[]) => {
     try {
-      const progress = await listUserProgress({ user_id: USER_ID });
+      if (!userId) return;
+      const progress = await listUserProgress({ user_id: userId });
       if (!Array.isArray(progress) || progress.length === 0) return;
 
       // Map treeId -> valid lesson ids (to filter out stale backend data)
@@ -247,7 +248,7 @@ export default function HikmahScreen() {
           {filtered.length === 0 ? (
             <View style={styles.emptyState}>
               <ThemedText style={{ color: colors.textSecondary }}>
-                No topics found matching "{query}"
+                {`No topics found matching "${query}"`}
               </ThemedText>
             </View>
           ) : (

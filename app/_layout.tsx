@@ -6,7 +6,7 @@ import {
   DefaultTheme,
   ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import {
@@ -23,6 +23,7 @@ import {
   ThemeProvider,
   useThemePreference,
 } from "@/hooks/use-theme-preference";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -33,12 +34,28 @@ export const unstable_settings = {
 
 function RootNavigator() {
   const { colorScheme } = useThemePreference();
+  const { status } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "loading") return;
+
+    const isOnLogin = segments?.[0] === "login";
+
+    if (status !== "signedIn" && !isOnLogin) {
+      router.replace("/login");
+    } else if (status === "signedIn" && isOnLogin) {
+      router.replace("/(tabs)");
+    }
+  }, [status, segments, router]);
 
   return (
     <NavigationThemeProvider
       value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
     >
       <Stack>
+        <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="settings"
@@ -70,7 +87,9 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <RootNavigator />
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
