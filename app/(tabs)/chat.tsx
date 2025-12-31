@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Modal,
   KeyboardAvoidingView,
   Keyboard,
   Dimensions,
@@ -34,6 +35,10 @@ import {
   saveMessages,
   clearMessages,
   purgeExpiredSessions,
+  getChatLanguage,
+  setChatLanguage,
+  getLastChatLanguage,
+  setLastChatLanguage,
   type Message,
 } from "@/utils/chatStorage";
 import { ERROR_MESSAGES, UI_CONSTANTS } from "@/utils/constants";
@@ -47,15 +52,39 @@ const HEADER_BOTTOM_PADDING = 12;
 const HEADER_ACTION_SIZE = 28;
 const HEADER_ACTION_HIT_SLOP = { top: 12, right: 12, bottom: 12, left: 12 };
 
+type ChatLanguage = "english" | "arabic" | "french" | "urdu" | "farsi";
+
+const CHAT_LANGUAGES: { value: ChatLanguage; label: string }[] = [
+  { value: "english", label: "English" },
+  { value: "arabic", label: "العربية" },
+  { value: "french", label: "Français" },
+  { value: "urdu", label: "اردو" },
+  { value: "farsi", label: "فارسی" },
+];
+
+const DEFAULT_LANGUAGE: ChatLanguage = "english";
+
 // Memoized empty state component to prevent re-renders
 const EmptyState = React.memo(({
   showSuggestions,
   onQuestionClick,
+  showLanguageSelector,
+  selectedLanguageLabel,
+  onPressLanguageSelector,
+  pillBackgroundColor,
+  pillBorderColor,
+  pillTextColor,
   textSecondaryColor,
   minHeight,
 }: {
   showSuggestions: boolean;
   onQuestionClick: (question: string) => void;
+  showLanguageSelector: boolean;
+  selectedLanguageLabel: string;
+  onPressLanguageSelector: () => void;
+  pillBackgroundColor: string;
+  pillBorderColor: string;
+  pillTextColor: string;
   textSecondaryColor: string;
   minHeight: number;
 }) => {
@@ -88,6 +117,29 @@ const EmptyState = React.memo(({
         Ask any question about Islam and I'll do my best to provide a helpful
         response.
       </ThemedText>
+      {showLanguageSelector && (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={[
+            styles.languagePill,
+            {
+              backgroundColor: pillBackgroundColor,
+              borderColor: pillBorderColor,
+            },
+          ]}
+          onPress={onPressLanguageSelector}
+        >
+          <ThemedText style={[styles.languagePillTitle, { color: pillTextColor }]}>
+            Language
+          </ThemedText>
+          <View style={styles.languagePillRight}>
+            <ThemedText style={[styles.languagePillValue, { color: pillTextColor }]}>
+              {selectedLanguageLabel}
+            </ThemedText>
+            <Ionicons name="chevron-down" size={16} color={pillTextColor} />
+          </View>
+        </TouchableOpacity>
+      )}
       {showSuggestions && (
         <SuggestedQuestions onQuestionClick={onQuestionClick} />
       )}
@@ -114,6 +166,9 @@ export default function ChatScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isNewChatLoading, setIsNewChatLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] =
+    useState<ChatLanguage>(DEFAULT_LANGUAGE);
+  const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -168,6 +223,38 @@ export default function ChatScreen() {
     loadInitialMessages();
   }, [sessionId]);
 
+  // Load / resolve language when session ID changes
+  useEffect(() => {
+    if (!sessionId) return;
+
+    let isCancelled = false;
+
+    const loadInitialLanguage = async () => {
+      const sessionLanguage = (await getChatLanguage(sessionId)) as
+        | ChatLanguage
+        | null;
+      const lastLanguage = (await getLastChatLanguage()) as ChatLanguage | null;
+
+      const resolved: ChatLanguage =
+        sessionLanguage || lastLanguage || DEFAULT_LANGUAGE;
+
+      if (!isCancelled) {
+        setSelectedLanguage(resolved);
+      }
+
+      // Ensure the session has a stored language for consistent reloads
+      if (!sessionLanguage) {
+        await setChatLanguage(sessionId, resolved);
+      }
+    };
+
+    loadInitialLanguage();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [sessionId]);
+
   // Save messages with debouncing
   useEffect(() => {
     if (!sessionId) return;
@@ -190,9 +277,35 @@ export default function ChatScreen() {
   // Smart auto-scroll
   const hasStartedChat = messages.some((m) => m.sender === "user");
 
+  const canSelectLanguage = !hasStartedChat;
+
+  const selectedLanguageLabel =
+    CHAT_LANGUAGES.find((l) => l.value === selectedLanguage)?.label ||
+    selectedLanguage;
+
   const handleSuggestedQuestion = useCallback((question: string) => {
     setInput(question);
   }, []);
+
+  const handleOpenLanguagePicker = useCallback(() => {
+    if (!canSelectLanguage) return;
+    setIsLanguageModalVisible(true);
+  }, [canSelectLanguage]);
+
+  const handleSelectLanguage = useCallback(
+    async (language: ChatLanguage) => {
+      if (!canSelectLanguage) return;
+
+      setSelectedLanguage(language);
+      setIsLanguageModalVisible(false);
+
+      await setLastChatLanguage(language);
+      if (sessionId) {
+        await setChatLanguage(sessionId, language);
+      }
+    },
+    [canSelectLanguage, sessionId]
+  );
 
   const handleNewChat = useCallback(async () => {
     if (isLoading || isNewChatLoading) return;
@@ -209,6 +322,12 @@ export default function ChatScreen() {
       setMessages([]);
       setInput("");
       setShowSuggestions(true);
+
+      // Default new chats to the last selected language (or English)
+      const lastLanguage = (await getLastChatLanguage()) as ChatLanguage | null;
+      const resolved = lastLanguage || DEFAULT_LANGUAGE;
+      setSelectedLanguage(resolved);
+      await setChatLanguage(newId, resolved);
     } catch (e) {
       console.error("❌ Failed to start new chat:", e);
     } finally {
@@ -229,7 +348,7 @@ export default function ChatScreen() {
       await sendChatMessage(
         input,
         sessionId,
-        "english",
+        selectedLanguage,
         (fullMessage) => {
           setIsLoading(false);
           setMessages((prev) => {
@@ -278,7 +397,7 @@ export default function ChatScreen() {
         return updated;
       });
     }
-  }, [input, sessionId, isLoading]);
+  }, [input, sessionId, selectedLanguage, isLoading]);
 
   const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
     if (
@@ -311,11 +430,30 @@ export default function ChatScreen() {
       <EmptyState
         showSuggestions={showSuggestions}
         onQuestionClick={handleSuggestedQuestion}
+        showLanguageSelector={canSelectLanguage}
+        selectedLanguageLabel={selectedLanguageLabel}
+        onPressLanguageSelector={handleOpenLanguagePicker}
+        pillBackgroundColor={colors.panel2}
+        pillBorderColor={colors.border}
+        pillTextColor={colors.text}
         textSecondaryColor={colors.textSecondary}
         minHeight={emptyStateHeight}
       />
     );
-  }, [isLoading, messages.length, showSuggestions, handleSuggestedQuestion, colors.textSecondary, emptyStateHeight]);
+  }, [
+    isLoading,
+    messages.length,
+    showSuggestions,
+    handleSuggestedQuestion,
+    canSelectLanguage,
+    selectedLanguageLabel,
+    handleOpenLanguagePicker,
+    colors.panel2,
+    colors.border,
+    colors.text,
+    colors.textSecondary,
+    emptyStateHeight,
+  ]);
 
   const renderFooter = useCallback(() => {
     if (!isLoading) return null;
@@ -339,6 +477,58 @@ export default function ChatScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Modal
+        transparent
+        animationType="fade"
+        visible={isLanguageModalVisible}
+        onRequestClose={() => setIsLanguageModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            activeOpacity={1}
+            style={StyleSheet.absoluteFill}
+            onPress={() => setIsLanguageModalVisible(false)}
+          />
+          <View
+            style={[
+              styles.modalCard,
+              { backgroundColor: colors.panel, borderColor: colors.border },
+            ]}
+          >
+            <ThemedText type="subtitle" style={styles.modalTitle}>
+              Choose language
+            </ThemedText>
+            <View style={styles.modalOptions}>
+              {CHAT_LANGUAGES.map((lang) => {
+                const isSelected = lang.value === selectedLanguage;
+                return (
+                  <TouchableOpacity
+                    key={lang.value}
+                    activeOpacity={0.8}
+                    onPress={() => handleSelectLanguage(lang.value)}
+                    style={[
+                      styles.modalOptionRow,
+                      { borderColor: colors.border },
+                    ]}
+                  >
+                    <ThemedText style={[styles.modalOptionLabel, { color: colors.text }]}>
+                      {lang.label}
+                    </ThemedText>
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark"
+                        size={18}
+                        color={colors.primary}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Header */}
       <BlurView
         intensity={blurIntensity}
@@ -507,6 +697,61 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
     marginBottom: 16,
+  },
+  languagePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    maxWidth: 340,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: -4,
+  },
+  languagePillTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  languagePillRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  languagePillValue: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  modalCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+  },
+  modalTitle: {
+    marginBottom: 10,
+  },
+  modalOptions: {
+    gap: 6,
+  },
+  modalOptionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+  },
+  modalOptionLabel: {
+    fontSize: 16,
+    fontWeight: "500",
   },
   loadingContainer: {
     paddingHorizontal: 16,

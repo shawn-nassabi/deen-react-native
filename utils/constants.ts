@@ -28,4 +28,6 @@ export const STORAGE_KEYS = {
   SESSION_ID: "deen:sessionId",
   MESSAGES_PREFIX: "deen:msgs:",
   MESSAGES_VERSION: "v1",
+  CHAT_LANGUAGE_PREFIX: "deen:chatLanguage:",
+  CHAT_LAST_LANGUAGE: "deen:lastChatLanguage",
 } as const;

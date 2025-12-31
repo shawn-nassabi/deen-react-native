@@ -12,6 +12,8 @@ const VERSION = STORAGE_KEYS.MESSAGES_VERSION;
 const EXPIRES_MS = CONFIG.CHAT_EXPIRY_SECONDS * 1000;
 
 const keyFor = (sessionId: string) => `${MSGS_PREFIX}${sessionId}:${VERSION}`;
+const languageKeyFor = (sessionId: string) =>
+  `${STORAGE_KEYS.CHAT_LANGUAGE_PREFIX}${sessionId}`;
 
 const now = () => Date.now();
 
@@ -193,5 +195,67 @@ export async function clearMessages(sessionId: string): Promise<void> {
     );
   } catch (e) {
     console.warn("⚠️ clearMessages failed:", e);
+  }
+}
+
+/**
+ * Get chat language for a specific session (null if not set).
+ */
+export async function getChatLanguage(
+  sessionId: string
+): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(languageKeyFor(sessionId));
+  } catch (e) {
+    console.warn("⚠️ getChatLanguage failed:", e);
+    return null;
+  }
+}
+
+/**
+ * Set chat language for a specific session.
+ */
+export async function setChatLanguage(
+  sessionId: string,
+  language: string
+): Promise<void> {
+  try {
+    await AsyncStorage.setItem(languageKeyFor(sessionId), language);
+  } catch (e) {
+    console.warn("⚠️ setChatLanguage failed:", e);
+  }
+}
+
+/**
+ * Clear chat language for a specific session.
+ */
+export async function clearChatLanguage(sessionId: string): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(languageKeyFor(sessionId));
+  } catch (e) {
+    console.warn("⚠️ clearChatLanguage failed:", e);
+  }
+}
+
+/**
+ * Get last selected chat language (global), or null if not set.
+ */
+export async function getLastChatLanguage(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(STORAGE_KEYS.CHAT_LAST_LANGUAGE);
+  } catch (e) {
+    console.warn("⚠️ getLastChatLanguage failed:", e);
+    return null;
+  }
+}
+
+/**
+ * Set last selected chat language (global).
+ */
+export async function setLastChatLanguage(language: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.CHAT_LAST_LANGUAGE, language);
+  } catch (e) {
+    console.warn("⚠️ setLastChatLanguage failed:", e);
   }
 }
