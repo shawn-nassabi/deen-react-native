@@ -86,10 +86,27 @@ function getDefaultHost() {
   return DEFAULT_DEV_MACHINE_IP;
 }
 
-const DEFAULT_API_BASE_URL = `http://${getDefaultHost()}:8080`;
+const PROD_API_BASE_URL = "https://deen-fastapi.duckdns.org";
+
+function getDefaultApiBaseUrl(): string {
+  // Explicit env always wins (dev or prod).
+  if (ENV_API_BASE_URL) return ENV_API_BASE_URL;
+
+  // Expo Go / dev-client should keep pointing to your dev box by default.
+  const ownership = (Constants as any)?.appOwnership;
+  const isExpoGo = ownership === "expo";
+  if (isExpoGo) {
+    return `http://${getDefaultHost()}:8080`;
+  }
+
+  // Standalone / App Store build fallback to production API.
+  return PROD_API_BASE_URL;
+}
+
+const DEFAULT_API_BASE_URL = getDefaultApiBaseUrl();
 
 export const CONFIG = {
-  API_BASE_URL: ENV_API_BASE_URL || DEFAULT_API_BASE_URL,
+  API_BASE_URL: DEFAULT_API_BASE_URL,
   CHAT_EXPIRY_SECONDS: 1440, // align with backend TTL (seconds)
   // Cognito / OIDC (public values; safe to ship in a client app)
   // Defaults match the pool you referenced in chat; override with EXPO_PUBLIC_* for other envs.

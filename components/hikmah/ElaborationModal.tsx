@@ -49,14 +49,12 @@ export default function ElaborationModal({
   const [error, setError] = useState("");
   const abortControllerRef = useRef<AbortController | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
-  const hasAutoSentRef = useRef(false);
 
   useEffect(() => {
     if (visible) {
       setQuery(initialQuery || "");
       setResponse("");
       setError("");
-      hasAutoSentRef.current = false;
 
       if (initialQuery) {
         // Auto-send if we have an initial query (selected text)
@@ -74,7 +72,6 @@ export default function ElaborationModal({
     setLoading(true);
     setResponse("");
     setError("");
-    hasAutoSentRef.current = true;
 
     // Haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -99,9 +96,13 @@ export default function ElaborationModal({
     };
 
     try {
-      await elaborateSelectionStream(payload, (chunk) => {
-        setResponse(chunk);
-      });
+      await elaborateSelectionStream(
+        payload,
+        (chunk) => {
+          setResponse(chunk);
+        },
+        { signal: controller.signal }
+      );
     } catch (err: any) {
       if (!err.message?.includes("aborted")) {
         console.error("Elaboration failed:", err);

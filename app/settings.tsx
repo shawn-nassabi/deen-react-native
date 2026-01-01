@@ -179,27 +179,6 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         </ThemedView>
-
-        <ThemedView style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            About
-          </ThemedText>
-          <View
-            style={[
-              styles.infoCard,
-              { backgroundColor: colors.panel, borderColor: colors.border },
-            ]}
-          >
-            <ThemedText
-              style={[styles.infoText, { color: colors.textSecondary }]}
-            >
-              Deen - Revolutionizing Islamic Education with AI
-            </ThemedText>
-            <ThemedText style={[styles.versionText, { color: colors.muted }]}>
-              Version 1.0.0
-            </ThemedText>
-          </View>
-        </ThemedView>
       </ScrollView>
     </View>
   );

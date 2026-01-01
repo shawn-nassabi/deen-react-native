@@ -92,47 +92,9 @@ function isExpired(expiresAt: number, skewMs = 30_000) {
 async function storageGetItem(key: string): Promise<string | null> {
   // SecureStore is not supported on web; use AsyncStorage fallback there.
   if (Platform.OS === "web") return AsyncStorage.getItem(key);
-  // #region agent log
-  fetch("http://127.0.0.1:7242/ingest/e98b8e4b-003d-4eec-a247-2ae31da71993", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sessionId: "debug-session",
-      runId: "pre-fix",
-      hypothesisId: "A",
-      location: "utils/auth.ts:storageGetItem",
-      message: "SecureStore.getItemAsync key validation check",
-      data: {
-        platform: Platform.OS,
-        key,
-        keyLen: key.length,
-        keyRegexOk: /^[A-Za-z0-9._-]+$/.test(key),
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion agent log
   try {
     return await SecureStore.getItemAsync(key);
   } catch (e: any) {
-    // #region agent log
-    fetch(
-      "http://127.0.0.1:7242/ingest/e98b8e4b-003d-4eec-a247-2ae31da71993",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: "debug-session",
-          runId: "pre-fix",
-          hypothesisId: "B",
-          location: "utils/auth.ts:storageGetItem",
-          message: "SecureStore.getItemAsync threw",
-          data: { platform: Platform.OS, key, err: e?.message || String(e) },
-          timestamp: Date.now(),
-        }),
-      }
-    ).catch(() => {});
-    // #endregion agent log
     throw e;
   }
 }
@@ -142,49 +104,11 @@ async function storageSetItem(key: string, value: string): Promise<void> {
     await AsyncStorage.setItem(key, value);
     return;
   }
-  // #region agent log
-  fetch("http://127.0.0.1:7242/ingest/e98b8e4b-003d-4eec-a247-2ae31da71993", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sessionId: "debug-session",
-      runId: "pre-fix",
-      hypothesisId: "A",
-      location: "utils/auth.ts:storageSetItem",
-      message: "SecureStore.setItemAsync key validation check",
-      data: {
-        platform: Platform.OS,
-        key,
-        keyLen: key.length,
-        keyRegexOk: /^[A-Za-z0-9._-]+$/.test(key),
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion agent log
   try {
     await SecureStore.setItemAsync(key, value, {
       keychainAccessible: SecureStore.WHEN_UNLOCKED,
     });
   } catch (e: any) {
-    // #region agent log
-    fetch(
-      "http://127.0.0.1:7242/ingest/e98b8e4b-003d-4eec-a247-2ae31da71993",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: "debug-session",
-          runId: "pre-fix",
-          hypothesisId: "B",
-          location: "utils/auth.ts:storageSetItem",
-          message: "SecureStore.setItemAsync threw",
-          data: { platform: Platform.OS, key, err: e?.message || String(e) },
-          timestamp: Date.now(),
-        }),
-      }
-    ).catch(() => {});
-    // #endregion agent log
     throw e;
   }
 }
@@ -210,24 +134,6 @@ export async function loadTokens(): Promise<StoredTokens | null> {
 }
 
 export async function saveTokens(tokens: StoredTokens): Promise<void> {
-  // #region agent log
-  fetch("http://127.0.0.1:7242/ingest/e98b8e4b-003d-4eec-a247-2ae31da71993", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sessionId: "debug-session",
-      runId: "pre-fix",
-      hypothesisId: "A",
-      location: "utils/auth.ts:saveTokens",
-      message: "saveTokens called (no secrets)",
-      data: {
-        storageKey: STORAGE_KEYS.tokens,
-        storageKeyRegexOk: /^[A-Za-z0-9._-]+$/.test(STORAGE_KEYS.tokens),
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion agent log
   await storageSetItem(STORAGE_KEYS.tokens, JSON.stringify(tokens));
 }
 
@@ -505,5 +411,4 @@ export function getAuthDebugInfo() {
     lastReturnUrl,
   };
 }
-
 

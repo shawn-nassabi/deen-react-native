@@ -557,13 +557,27 @@ export async function upsertUserProgress(progress: Partial<UserProgress>) {
  */
 export async function elaborateSelectionStream(
   payload: ElaborationPayload,
-  onChunk: (text: string) => void
+  onChunk: (text: string) => void,
+  options?: { signal?: AbortSignal }
 ): Promise<string> {
   const bearer = await getValidAccessToken().catch(() => null);
+  const { signal } = options || {};
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     let accumulatedText = "";
     let lastProcessedIndex = 0;
+
+    const handleAbort = () => {
+      xhr.abort();
+      reject(new Error("aborted"));
+    };
+
+    if (signal) {
+      if (signal.aborted) {
+        return handleAbort();
+      }
+      signal.addEventListener("abort", handleAbort, { once: true });
+    }
 
     xhr.open("POST", `${API_BASE_URL}/hikmah/elaborate/stream`);
     xhr.setRequestHeader("Content-Type", "application/json");

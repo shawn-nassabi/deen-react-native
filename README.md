@@ -48,3 +48,14 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## API base URL and auth config
+
+- The API base URL is resolved in `utils/config.ts`. Priority:
+  1) `EXPO_PUBLIC_API_BASE_URL` env var (set this for any environment to override)
+  2) In Expo Go/dev: falls back to your dev host (Android emulator `10.0.2.2`, iOS simulator `127.0.0.1`, physical device uses Expo’s inferred LAN IP)
+  3) In standalone/TestFlight/App Store builds: falls back to `https://deen-fastapi.duckdns.org`
+- Cognito/OIDC settings are also in `utils/config.ts` and can be overridden with `EXPO_PUBLIC_COGNITO_*` vars. The default redirect is the Expo proxy URL; for production/dev-client builds, set `EXPO_PUBLIC_AUTH_REDIRECT_URI` to your custom app scheme (e.g., `deenreactnative://auth`) and register it in Cognito.
+- To change these values:
+  - Temporary: run with env vars, e.g. `EXPO_PUBLIC_API_BASE_URL=http://192.168.x.y:8080 npx expo start`
+  - Persistent: edit the defaults inside `utils/config.ts` (but prefer env vars for per-env overrides)

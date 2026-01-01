@@ -31,6 +31,26 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      {/* Feedback Button - Top Left */}
+      <Animated.View
+        entering={FadeIn.delay(200).duration(300)}
+        style={[styles.feedbackButtonContainer, { top: insets.top + 10 }]}
+      >
+        <TouchableOpacity
+          style={[
+            styles.feedbackButton,
+            { backgroundColor: colors.panel, borderColor: colors.border },
+          ]}
+          onPress={() => router.push("/feedback")}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chatbubble-ellipses" size={18} color={colors.primary} />
+          <ThemedText style={[styles.feedbackButtonText, { color: colors.text }]}>
+            Provide Feedback
+          </ThemedText>
+        </TouchableOpacity>
+      </Animated.View>
+
       {/* Settings Button - Top Right */}
       <Animated.View
         entering={FadeIn.delay(200).duration(300)}
@@ -153,10 +173,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  feedbackButtonContainer: {
+    position: "absolute",
+    left: 16,
+    zIndex: 10,
+  },
   settingsButtonContainer: {
     position: "absolute",
     right: 16,
     zIndex: 10,
+  },
+  feedbackButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  feedbackButtonText: {
+    fontSize: 14,
+    fontFamily: "Montserrat_600SemiBold",
   },
   settingsButton: {
     width: 44,
