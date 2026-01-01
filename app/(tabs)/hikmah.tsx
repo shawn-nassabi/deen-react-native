@@ -22,9 +22,16 @@ import {
 } from "@/utils/api";
 import { setProgress } from "@/utils/hikmahStorage";
 import TreeCard from "@/components/hikmah/TreeCard";
+import ComingSoonCard from "@/components/hikmah/ComingSoonCard";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
+
+const COMING_SOON_COURSES = [
+  { id: "foundations-islam", title: "The Foundations of Islam" },
+  { id: "14-masumeen", title: "The 14 Masumeen" },
+  { id: "tawheed", title: "Tawheed" },
+];
 
 export default function HikmahScreen() {
   const insets = useSafeAreaInsets();
@@ -148,6 +155,14 @@ export default function HikmahScreen() {
     });
   }, [trees, query]);
 
+  const filteredComingSoon = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return COMING_SOON_COURSES;
+    return COMING_SOON_COURSES.filter((c) =>
+      c.title.toLowerCase().includes(q)
+    );
+  }, [query]);
+
   const headerPaddingTop = Math.max(
     insets.top + 12,
     Platform.OS === "ios" ? 64 : 32
@@ -245,14 +260,21 @@ export default function HikmahScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {filtered.length === 0 ? (
+          {filtered.length === 0 && filteredComingSoon.length === 0 ? (
             <View style={styles.emptyState}>
               <ThemedText style={{ color: colors.textSecondary }}>
                 {`No topics found matching "${query}"`}
               </ThemedText>
             </View>
           ) : (
-            filtered.map((tree) => <TreeCard key={tree.id} tree={tree} />)
+            <>
+              {filtered.map((tree) => (
+                <TreeCard key={tree.id} tree={tree} />
+              ))}
+              {filteredComingSoon.map((course) => (
+                <ComingSoonCard key={course.id} title={course.title} />
+              ))}
+            </>
           )}
 
           <View
