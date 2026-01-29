@@ -1,18 +1,22 @@
 {
   "expo": {
-    "name": "deen-react-native",
+    "name": "Deen",
     "slug": "deen-react-native",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/deen_homescreen_icon.png",
     "scheme": "deenreactnative",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.deen-react-native"
+      "bundleIdentifier": "com.anonymous.deen-react-native",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.snassabi7.deenreactnative",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -46,6 +50,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bc90507a-a612-4748-8916-54470073f4d4"
+      }
     }
   }
 }

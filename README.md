@@ -52,10 +52,44 @@ Join our community of developers creating universal apps.
 ## API base URL and auth config
 
 - The API base URL is resolved in `utils/config.ts`. Priority:
-  1) `EXPO_PUBLIC_API_BASE_URL` env var (set this for any environment to override)
-  2) In Expo Go/dev: falls back to your dev host (Android emulator `10.0.2.2`, iOS simulator `127.0.0.1`, physical device uses Expo’s inferred LAN IP)
-  3) In standalone/TestFlight/App Store builds: falls back to `https://deen-fastapi.duckdns.org`
+  1. `EXPO_PUBLIC_API_BASE_URL` env var (set this for any environment to override)
+  2. In Expo Go/dev: falls back to your dev host (Android emulator `10.0.2.2`, iOS simulator `127.0.0.1`, physical device uses Expo’s inferred LAN IP)
+  3. In standalone/TestFlight/App Store builds: falls back to `https://deen-fastapi.duckdns.org`
 - Cognito/OIDC settings are also in `utils/config.ts` and can be overridden with `EXPO_PUBLIC_COGNITO_*` vars. The default redirect is the Expo proxy URL; for production/dev-client builds, set `EXPO_PUBLIC_AUTH_REDIRECT_URI` to your custom app scheme (e.g., `deenreactnative://auth`) and register it in Cognito.
 - To change these values:
   - Temporary: run with env vars, e.g. `EXPO_PUBLIC_API_BASE_URL=http://192.168.x.y:8080 npx expo start`
   - Persistent: edit the defaults inside `utils/config.ts` (but prefer env vars for per-env overrides)
+
+## Building for TestFlight / App Store (env vars + EAS)
+
+- Env file example (`.env.appstore` in repo):
+
+  ```
+  EXPO_PUBLIC_API_BASE_URL=
+  EXPO_PUBLIC_AUTH_REDIRECT_URI=
+  EXPO_PUBLIC_COGNITO_DOMAIN=
+  EXPO_PUBLIC_COGNITO_CLIENT_ID=
+  EXPO_PUBLIC_COGNITO_ISSUER=
+  ```
+
+  (Add your own Cognito values if you switch pools/clients.)
+
+- Push envs to Expo Application Services (EAS):
+
+  ```
+  npx eas-cli env:push --environment appstore --path .env.appstore
+  ```
+
+  Use whatever environment name you like (e.g., `appstore`, `production`).
+
+- Build using that environment:
+
+  ```
+  npx eas-cli build --platform ios --environment appstore
+  # or Android:
+  npx eas-cli build --platform android --environment appstore
+  ```
+
+- Local dev with these envs (optional): export them before `expo start`, e.g. `export $(cat .env.appstore | xargs)` then `npx expo start`.
+
+- Cognito callbacks: keep the Expo proxy URLs for Expo Go, and add `deenreactnative://auth` to Allowed Callback and Sign-out URLs for standalone/dev-client/TestFlight/App Store builds.
