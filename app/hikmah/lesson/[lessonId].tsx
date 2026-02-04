@@ -2,12 +2,9 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   StyleSheet,
   View,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   Image,
-  Keyboard,
-  TouchableWithoutFeedback,
 } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,8 +17,10 @@ import {
   getHikmahTree,
   getLessonContent,
   getLessonsByTreeId,
+  getBaselinePrimer,
   upsertUserProgress,
   listUserProgress,
+  streamPersonalizedPrimer,
   HikmahTree,
   Lesson,
   LessonContent,
@@ -30,6 +29,7 @@ import { setLastRead } from "@/utils/hikmahStorage";
 import ElaborationModal from "@/components/hikmah/ElaborationModal";
 import { useHikmahProgress } from "@/hooks/useHikmahProgress";
 import LessonContentWebView from "@/components/hikmah/LessonContentWebView";
+import LessonPrimerCard from "@/components/hikmah/LessonPrimerCard";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function LessonReaderScreen() {
@@ -48,6 +48,16 @@ export default function LessonReaderScreen() {
   const [lessons, setLessons] = useState<Lesson[]>([]); // Full list for navigation
   const [pages, setPages] = useState<LessonContent[]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [baselinePrimerBullets, setBaselinePrimerBullets] = useState<string[]>(
+    []
+  );
+  const [personalizedPrimerBullets, setPersonalizedPrimerBullets] = useState<
+    string[]
+  >([]);
+  const [personalizedPrimerLoading, setPersonalizedPrimerLoading] =
+    useState(false);
+  const [personalizedPrimerUnavailable, setPersonalizedPrimerUnavailable] =
+    useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -60,6 +70,7 @@ export default function LessonReaderScreen() {
   // Prevent hydration from overwriting manual toggles
   const pageUpsertSkipRef = useRef(false);
   const skipCompletionSyncRef = useRef(false);
+  const personalizedPrimerAbortRef = useRef<AbortController | null>(null);
 
   // Load Data
   useEffect(() => {
@@ -102,6 +113,91 @@ export default function LessonReaderScreen() {
       mounted = false;
     };
   }, [lessonId, treeId]);
+
+  // Load baseline + personalized primers for lesson page 1
+  useEffect(() => {
+    if (!lessonId) return;
+
+    const parsedLessonId = Number(lessonId);
+    if (!Number.isFinite(parsedLessonId)) return;
+
+    let mounted = true;
+    personalizedPrimerAbortRef.current?.abort();
+    personalizedPrimerAbortRef.current = null;
+
+    setBaselinePrimerBullets([]);
+    setPersonalizedPrimerBullets([]);
+    setPersonalizedPrimerLoading(Boolean(userId));
+    setPersonalizedPrimerUnavailable(!userId);
+
+    getBaselinePrimer(parsedLessonId)
+      .then((data) => {
+        if (!mounted) return;
+        setBaselinePrimerBullets(data?.baseline_bullets ?? []);
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        console.warn("Baseline primer fetch failed:", err);
+      });
+
+    if (!userId) {
+      setPersonalizedPrimerLoading(false);
+      setPersonalizedPrimerUnavailable(true);
+      return () => {
+        mounted = false;
+      };
+    }
+
+    const abortController = new AbortController();
+    personalizedPrimerAbortRef.current = abortController;
+    let receivedBullet = false;
+    let metadataAvailable: boolean | undefined = undefined;
+    let hasError = false;
+
+    streamPersonalizedPrimer(
+      {
+        user_id: userId,
+        lesson_id: parsedLessonId,
+        filter: true,
+      },
+      {
+        onBullet: ({ content }) => {
+          if (!mounted) return;
+          const cleaned = content.trim();
+          if (!cleaned) return;
+          receivedBullet = true;
+          setPersonalizedPrimerBullets((prev) =>
+            prev.includes(cleaned) ? prev : [...prev, cleaned]
+          );
+        },
+        onMetadata: (metadata) => {
+          metadataAvailable = metadata.personalized_available;
+        },
+        onError: () => {
+          hasError = true;
+        },
+      },
+      { signal: abortController.signal }
+    )
+      .catch((err) => {
+        if (!mounted) return;
+        if (err?.message === "aborted") return;
+        hasError = true;
+        console.warn("Personalized primer stream failed:", err);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        const unavailable =
+          hasError || metadataAvailable === false || !receivedBullet;
+        setPersonalizedPrimerUnavailable(unavailable);
+        setPersonalizedPrimerLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+      abortController.abort();
+    };
+  }, [lessonId, userId]);
 
   // Sort lessons for next/prev logic
   const sortedLessons = useMemo(() => {
@@ -262,6 +358,7 @@ export default function LessonReaderScreen() {
 
   const currentPage = pages[currentPageIndex];
   const hasSelection = !!selection.text;
+  const showPrimerCard = currentPageIndex === 0 && baselinePrimerBullets.length > 0;
 
   return (
     <ThemedView style={styles.container}>
@@ -291,10 +388,28 @@ export default function LessonReaderScreen() {
       {/* Content Area - Using WebView for content */}
       <View style={styles.contentContainer}>
         {currentPage ? (
-          <LessonContentWebView
-            markdown={currentPage.content_body}
-            onSelectionChange={setSelection}
-          />
+          showPrimerCard ? (
+            <View style={styles.firstPageContent}>
+              <LessonPrimerCard
+                baselineBullets={baselinePrimerBullets}
+                personalizedBullets={personalizedPrimerBullets}
+                personalizedLoading={personalizedPrimerLoading}
+                personalizedUnavailable={personalizedPrimerUnavailable}
+                defaultExpanded={true}
+              />
+              <View style={styles.webViewContainer}>
+                <LessonContentWebView
+                  markdown={currentPage.content_body}
+                  onSelectionChange={setSelection}
+                />
+              </View>
+            </View>
+          ) : (
+            <LessonContentWebView
+              markdown={currentPage.content_body}
+              onSelectionChange={setSelection}
+            />
+          )
         ) : (
           <View style={styles.center}>
             <ThemedText style={{ color: colors.textSecondary }}>
@@ -487,6 +602,17 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     // Remove padding here, handle in WebView CSS
+  },
+  firstPageContent: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    gap: 12,
+  },
+  webViewContainer: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: "hidden",
   },
   bottomControls: {
     padding: 16,
