@@ -67,6 +67,34 @@ export interface ElaborationPayload {
   user_id: string;
 }
 
+export interface BaselinePrimerResponse {
+  lesson_id: number;
+  baseline_bullets: string[];
+  updated_at: string | null;
+}
+
+export interface PersonalizedPrimerRequest {
+  user_id: string;
+  lesson_id: number;
+  force_refresh?: boolean;
+  filter?: boolean;
+}
+
+export interface PersonalizedPrimerMetadata {
+  from_cache: boolean;
+  generated_at: string | null;
+  stale: boolean;
+  personalized_available: boolean;
+}
+
+type PrimerStreamHandlers = {
+  onStatus?: (message: string) => void;
+  onBullet?: (bullet: { index: number; content: string }) => void;
+  onMetadata?: (metadata: PersonalizedPrimerMetadata) => void;
+  onError?: (payload: Record<string, unknown>) => void;
+  onDone?: (payload: { success?: boolean }) => void;
+};
+
 // ---- Session helpers ----
 
 /**
@@ -350,6 +378,210 @@ export async function searchReferences(userQuery: string): Promise<{
     console.error("❌ Reference search error:", error);
     throw error;
   }
+}
+
+// ---------------------------
+// Primers API helpers
+// ---------------------------
+
+/** GET /primers/{lesson_id}/baseline */
+export async function getBaselinePrimer(
+  lessonId: number
+): Promise<BaselinePrimerResponse | null> {
+  const response = await fetch(`${API_BASE_URL}/primers/${lessonId}/baseline`, {
+    method: "GET",
+    headers: await withAuthHeaders({ "Content-Type": "application/json" }),
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+  }
+
+  const data = await response.json();
+  return {
+    lesson_id: Number(data?.lesson_id ?? lessonId),
+    baseline_bullets: Array.isArray(data?.baseline_bullets)
+      ? data.baseline_bullets.filter(
+          (item: unknown): item is string => typeof item === "string"
+        )
+      : [],
+    updated_at: data?.updated_at ?? null,
+  };
+}
+
+/**
+ * POST /primers/personalized/stream
+ * Streams SSE primer events via XMLHttpRequest for Expo compatibility.
+ */
+export async function streamPersonalizedPrimer(
+  request: PersonalizedPrimerRequest,
+  handlers: PrimerStreamHandlers = {},
+  options?: { signal?: AbortSignal }
+): Promise<void> {
+  const bearer = await getValidAccessToken().catch(() => null);
+  const { signal } = options || {};
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    let lastProcessedIndex = 0;
+    let buffer = "";
+    let settled = false;
+    const clearAbortListener = () => {
+      if (signal) {
+        signal.removeEventListener("abort", handleAbort);
+      }
+    };
+
+    const settleResolve = () => {
+      if (settled) return;
+      settled = true;
+      clearAbortListener();
+      resolve();
+    };
+
+    const settleReject = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      clearAbortListener();
+      reject(error);
+    };
+
+    const handleAbort = () => {
+      xhr.abort();
+      settleReject(new Error("aborted"));
+    };
+
+    if (signal) {
+      if (signal.aborted) {
+        return handleAbort();
+      }
+      signal.addEventListener("abort", handleAbort, { once: true });
+    }
+
+    const parseData = (rawData: string): Record<string, unknown> => {
+      const trimmed = rawData.trim();
+      if (!trimmed) return {};
+      try {
+        return JSON.parse(trimmed) as Record<string, unknown>;
+      } catch {
+        return { raw: trimmed };
+      }
+    };
+
+    const dispatchFrame = (frame: string) => {
+      const trimmedFrame = frame.trim();
+      if (!trimmedFrame) return;
+
+      const lines = trimmedFrame.split(/\r?\n/);
+      let eventName = "message";
+      const dataLines: string[] = [];
+
+      for (const line of lines) {
+        if (line.startsWith("event:")) {
+          eventName = line.slice(6).trim();
+          continue;
+        }
+        if (line.startsWith("data:")) {
+          dataLines.push(line.slice(5).trimStart());
+        }
+      }
+
+      const payload = parseData(dataLines.join("\n"));
+
+      if (eventName === "status") {
+        handlers.onStatus?.(String(payload.message ?? ""));
+        return;
+      }
+
+      if (eventName === "bullet") {
+        const content = payload.content;
+        if (typeof content === "string") {
+          const index =
+            typeof payload.index === "number" ? payload.index : -1;
+          handlers.onBullet?.({ index, content });
+        }
+        return;
+      }
+
+      if (eventName === "metadata") {
+        handlers.onMetadata?.({
+          from_cache: Boolean(payload.from_cache),
+          generated_at:
+            typeof payload.generated_at === "string" ? payload.generated_at : null,
+          stale: Boolean(payload.stale),
+          personalized_available: Boolean(payload.personalized_available),
+        });
+        return;
+      }
+
+      if (eventName === "error") {
+        handlers.onError?.(payload);
+        return;
+      }
+
+      if (eventName === "done") {
+        handlers.onDone?.(payload as { success?: boolean });
+        settleResolve();
+      }
+    };
+
+    const processChunk = (chunk: string) => {
+      if (!chunk) return;
+      buffer += chunk;
+
+      while (true) {
+        const match = buffer.match(/\r?\n\r?\n/);
+        if (!match || typeof match.index !== "number") break;
+
+        const frame = buffer.slice(0, match.index);
+        buffer = buffer.slice(match.index + match[0].length);
+        dispatchFrame(frame);
+      }
+    };
+
+    xhr.open("POST", `${API_BASE_URL}/primers/personalized/stream`);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Accept", "text/event-stream");
+    if (bearer) {
+      xhr.setRequestHeader("Authorization", `Bearer ${bearer}`);
+    }
+    xhr.timeout = 30000;
+
+    xhr.onprogress = () => {
+      const currentText = xhr.responseText;
+      if (currentText.length <= lastProcessedIndex) return;
+      const nextChunk = currentText.slice(lastProcessedIndex);
+      lastProcessedIndex = currentText.length;
+      processChunk(nextChunk);
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        if (buffer.trim()) {
+          dispatchFrame(buffer);
+        }
+        settleResolve();
+      } else {
+        const errorText = xhr.responseText || xhr.statusText;
+        settleReject(new Error(`HTTP ${xhr.status}: ${errorText}`));
+      }
+    };
+
+    xhr.onerror = () => {
+      settleReject(new Error("Network error during primer streaming"));
+    };
+
+    xhr.ontimeout = () => {
+      settleReject(new Error("Primer streaming timeout"));
+    };
+
+    xhr.send(JSON.stringify(request));
+  });
 }
 
 // ---------------------------

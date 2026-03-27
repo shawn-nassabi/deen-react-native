@@ -2,12 +2,9 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   StyleSheet,
   View,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   Image,
-  Keyboard,
-  TouchableWithoutFeedback,
 } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,8 +17,10 @@ import {
   getHikmahTree,
   getLessonContent,
   getLessonsByTreeId,
+  getBaselinePrimer,
   upsertUserProgress,
   listUserProgress,
+  streamPersonalizedPrimer,
   HikmahTree,
   Lesson,
   LessonContent,
@@ -30,6 +29,7 @@ import { setLastRead } from "@/utils/hikmahStorage";
 import ElaborationModal from "@/components/hikmah/ElaborationModal";
 import { useHikmahProgress } from "@/hooks/useHikmahProgress";
 import LessonContentWebView from "@/components/hikmah/LessonContentWebView";
+import LessonPrimerPage from "@/components/hikmah/LessonPrimerPage";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function LessonReaderScreen() {
@@ -48,6 +48,17 @@ export default function LessonReaderScreen() {
   const [lessons, setLessons] = useState<Lesson[]>([]); // Full list for navigation
   const [pages, setPages] = useState<LessonContent[]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [baselinePrimerBullets, setBaselinePrimerBullets] = useState<string[]>(
+    []
+  );
+  const [baselinePrimerLoading, setBaselinePrimerLoading] = useState(false);
+  const [personalizedPrimerBullets, setPersonalizedPrimerBullets] = useState<
+    string[]
+  >([]);
+  const [personalizedPrimerLoading, setPersonalizedPrimerLoading] =
+    useState(false);
+  const [personalizedPrimerUnavailable, setPersonalizedPrimerUnavailable] =
+    useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -60,6 +71,7 @@ export default function LessonReaderScreen() {
   // Prevent hydration from overwriting manual toggles
   const pageUpsertSkipRef = useRef(false);
   const skipCompletionSyncRef = useRef(false);
+  const personalizedPrimerAbortRef = useRef<AbortController | null>(null);
 
   // Load Data
   useEffect(() => {
@@ -103,6 +115,96 @@ export default function LessonReaderScreen() {
     };
   }, [lessonId, treeId]);
 
+  // Load baseline + personalized primers for lesson page 1
+  useEffect(() => {
+    if (!lessonId) return;
+
+    const parsedLessonId = Number(lessonId);
+    if (!Number.isFinite(parsedLessonId)) return;
+
+    let mounted = true;
+    personalizedPrimerAbortRef.current?.abort();
+    personalizedPrimerAbortRef.current = null;
+
+    setBaselinePrimerBullets([]);
+    setBaselinePrimerLoading(true);
+    setPersonalizedPrimerBullets([]);
+    setPersonalizedPrimerLoading(Boolean(userId));
+    setPersonalizedPrimerUnavailable(!userId);
+
+    getBaselinePrimer(parsedLessonId)
+      .then((data) => {
+        if (!mounted) return;
+        setBaselinePrimerBullets(data?.baseline_bullets ?? []);
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        console.warn("Baseline primer fetch failed:", err);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setBaselinePrimerLoading(false);
+      });
+
+    if (!userId) {
+      setPersonalizedPrimerLoading(false);
+      setPersonalizedPrimerUnavailable(true);
+      return () => {
+        mounted = false;
+      };
+    }
+
+    const abortController = new AbortController();
+    personalizedPrimerAbortRef.current = abortController;
+    let receivedBullet = false;
+    let metadataAvailable: boolean | undefined = undefined;
+    let hasError = false;
+
+    streamPersonalizedPrimer(
+      {
+        user_id: userId,
+        lesson_id: parsedLessonId,
+        filter: true,
+      },
+      {
+        onBullet: ({ content }) => {
+          if (!mounted) return;
+          const cleaned = content.trim();
+          if (!cleaned) return;
+          receivedBullet = true;
+          setPersonalizedPrimerBullets((prev) =>
+            prev.includes(cleaned) ? prev : [...prev, cleaned]
+          );
+        },
+        onMetadata: (metadata) => {
+          metadataAvailable = metadata.personalized_available;
+        },
+        onError: () => {
+          hasError = true;
+        },
+      },
+      { signal: abortController.signal }
+    )
+      .catch((err) => {
+        if (!mounted) return;
+        if (err?.message === "aborted") return;
+        hasError = true;
+        console.warn("Personalized primer stream failed:", err);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        const unavailable =
+          hasError || metadataAvailable === false || !receivedBullet;
+        setPersonalizedPrimerUnavailable(unavailable);
+        setPersonalizedPrimerLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+      abortController.abort();
+    };
+  }, [lessonId, userId]);
+
   // Sort lessons for next/prev logic
   const sortedLessons = useMemo(() => {
     return lessons
@@ -136,6 +238,28 @@ export default function LessonReaderScreen() {
     isLoaded: progressLoaded,
   } = useHikmahProgress(treeWithLessons);
   const done = isCompleted(lessonId!);
+  const hasPrimerPage = baselinePrimerLoading || baselinePrimerBullets.length > 0;
+  const totalPages = pages.length + (hasPrimerPage ? 1 : 0);
+  const isPrimerPage = hasPrimerPage && currentPageIndex === 0;
+
+  const getContentPageIndex = (displayIndex: number) =>
+    hasPrimerPage ? displayIndex - 1 : displayIndex;
+
+  const getPercentFromDisplayIndex = (displayIndex: number) => {
+    const contentIndex = getContentPageIndex(displayIndex);
+    if (contentIndex < 0 || pages.length === 0) return 0;
+    return Math.max(
+      0,
+      Math.min(100, Math.round(((contentIndex + 1) / pages.length) * 100))
+    );
+  };
+
+  useEffect(() => {
+    if (totalPages <= 0) return;
+    if (currentPageIndex > totalPages - 1) {
+      setCurrentPageIndex(totalPages - 1);
+    }
+  }, [currentPageIndex, totalPages]);
 
   // Hydrate Progress (Last Position)
   useEffect(() => {
@@ -157,7 +281,7 @@ export default function LessonReaderScreen() {
             Number.isInteger(lp) &&
             lp >= 0 &&
             lp < pages.length &&
-            lp !== currentPageIndex
+            !hasPrimerPage
           ) {
             setCurrentPageIndex(lp);
             pageUpsertSkipRef.current = true;
@@ -179,7 +303,7 @@ export default function LessonReaderScreen() {
     return () => {
       mounted = false;
     };
-  }, [pages.length, lessonId, treeId, progressLoaded, userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pages.length, lessonId, treeId, progressLoaded, userId, hasPrimerPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Upsert Progress on Page Change
   useEffect(() => {
@@ -189,27 +313,52 @@ export default function LessonReaderScreen() {
     // Clear selection on page change
     setSelection({ text: "", context: "" });
 
+    if (isPrimerPage) {
+      return;
+    }
+
     if (pageUpsertSkipRef.current) {
       pageUpsertSkipRef.current = false;
       return;
     }
 
-    const percent = Math.max(
-      0,
-      Math.min(100, Math.round(((currentPageIndex + 1) / pages.length) * 100))
-    );
+    const contentPosition = hasPrimerPage
+      ? currentPageIndex - 1
+      : currentPageIndex;
+    const percent =
+      contentPosition < 0 || pages.length === 0
+        ? 0
+        : Math.max(
+            0,
+            Math.min(
+              100,
+              Math.round(((contentPosition + 1) / pages.length) * 100)
+            )
+          );
+
+    if (contentPosition < 0) {
+      return;
+    }
 
     upsertUserProgress({
       user_id: userId,
       hikmah_tree_id: Number(treeId),
       lesson_id: Number(lessonId),
-      last_position: currentPageIndex,
+      last_position: contentPosition,
       percent_complete: percent,
     }).catch((err) => console.warn("Progress upsert failed:", err));
-  }, [currentPageIndex, pages.length, lessonId, treeId, userId]);
+  }, [
+    currentPageIndex,
+    pages.length,
+    lessonId,
+    treeId,
+    userId,
+    isPrimerPage,
+    hasPrimerPage,
+  ]);
 
   const handleNextPage = () => {
-    if (currentPageIndex < pages.length - 1) {
+    if (currentPageIndex < totalPages - 1) {
       setCurrentPageIndex((i) => i + 1);
     }
   };
@@ -221,7 +370,6 @@ export default function LessonReaderScreen() {
   };
 
   const handleCompleteAndNext = async () => {
-    const nextDone = !done;
     if (!done) {
       skipCompletionSyncRef.current = true;
       toggleComplete(lessonId!);
@@ -236,7 +384,7 @@ export default function LessonReaderScreen() {
         is_completed: true,
         percent_complete: 100,
       }).catch((err) => console.warn("Progress complete upsert failed:", err));
-    } catch (_) {}
+    } catch {}
 
     if (nextLesson) {
       // Replace current screen with next lesson to avoid stack buildup if user reads many lessons
@@ -254,14 +402,25 @@ export default function LessonReaderScreen() {
       <ThemedView style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          {loading ? (
+            <ActivityIndicator size="large" color={colors.primary} />
+          ) : (
+            <ThemedText style={{ color: colors.textSecondary }}>
+              {error || "Unable to load lesson."}
+            </ThemedText>
+          )}
         </View>
       </ThemedView>
     );
   }
 
-  const currentPage = pages[currentPageIndex];
+  const contentPageIndex = getContentPageIndex(currentPageIndex);
+  const currentPage =
+    contentPageIndex >= 0 && contentPageIndex < pages.length
+      ? pages[contentPageIndex]
+      : null;
   const hasSelection = !!selection.text;
+  const isLastPage = totalPages > 0 && currentPageIndex >= totalPages - 1;
 
   return (
     <ThemedView style={styles.container}>
@@ -281,7 +440,8 @@ export default function LessonReaderScreen() {
             {lesson.title}
           </ThemedText>
           <ThemedText style={{ fontSize: 10, color: colors.textSecondary }}>
-            Page {currentPageIndex + 1} of {pages.length || 1}
+            Page {Math.min(currentPageIndex + 1, Math.max(totalPages, 1))} of{" "}
+            {Math.max(totalPages, 1)}
           </ThemedText>
         </View>
 
@@ -290,7 +450,18 @@ export default function LessonReaderScreen() {
 
       {/* Content Area - Using WebView for content */}
       <View style={styles.contentContainer}>
-        {currentPage ? (
+        {isPrimerPage ? (
+          <LessonPrimerPage
+            lessonTitle={lesson.title}
+            baselineBullets={baselinePrimerBullets}
+            personalizedBullets={personalizedPrimerBullets}
+            personalizedLoading={personalizedPrimerLoading}
+            personalizedUnavailable={personalizedPrimerUnavailable}
+            onStartLesson={() =>
+              setCurrentPageIndex(totalPages > 1 ? 1 : 0)
+            }
+          />
+        ) : currentPage ? (
           <LessonContentWebView
             markdown={currentPage.content_body}
             onSelectionChange={setSelection}
@@ -324,7 +495,7 @@ export default function LessonReaderScreen() {
           </TouchableOpacity>
 
           <View style={styles.pageIndicator}>
-            {currentPageIndex >= pages.length - 1 ? (
+            {isLastPage ? (
               <TouchableOpacity
                 onPress={() => {
                   if (!userId) return;
@@ -337,15 +508,7 @@ export default function LessonReaderScreen() {
                     is_completed: !done,
                     percent_complete: !done
                       ? 100
-                      : Math.max(
-                          0,
-                          Math.min(
-                            100,
-                            Math.round(
-                              ((currentPageIndex + 1) / pages.length) * 100
-                            )
-                          )
-                        ),
+                      : getPercentFromDisplayIndex(currentPageIndex),
                   }).catch(console.warn);
                 }}
                 style={[
@@ -370,12 +533,12 @@ export default function LessonReaderScreen() {
               </TouchableOpacity>
             ) : (
               <ThemedText style={{ color: colors.textSecondary, fontSize: 12 }}>
-                {currentPageIndex + 1} / {pages.length}
+                {currentPageIndex + 1} / {Math.max(totalPages, 1)}
               </ThemedText>
             )}
           </View>
 
-          {currentPageIndex < pages.length - 1 ? (
+          {!isLastPage ? (
             <TouchableOpacity onPress={handleNextPage} style={styles.navBtn}>
               <Ionicons name="chevron-forward" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -397,45 +560,47 @@ export default function LessonReaderScreen() {
       </View>
 
       {/* Ask Deen FAB */}
-      <TouchableOpacity
-        style={[
-          styles.fab,
-          {
-            backgroundColor: colors.panel,
-            borderColor: hasSelection ? colors.primary : colors.border,
-            borderWidth: hasSelection ? 2 : 1,
-            shadowColor: hasSelection ? colors.primary : "#000",
-            shadowOpacity: hasSelection ? 0.3 : 0.2,
-          },
-        ]}
-        onPress={() => setModalVisible(true)}
-        activeOpacity={0.8}
-      >
-        <View
+      {!isPrimerPage ? (
+        <TouchableOpacity
           style={[
-            styles.fabIcon,
+            styles.fab,
             {
-              backgroundColor: hasSelection
-                ? colors.primary
-                : colors.textSecondary,
+              backgroundColor: colors.panel,
+              borderColor: hasSelection ? colors.primary : colors.border,
+              borderWidth: hasSelection ? 2 : 1,
+              shadowColor: hasSelection ? colors.primary : "#000",
+              shadowOpacity: hasSelection ? 0.3 : 0.2,
             },
           ]}
+          onPress={() => setModalVisible(true)}
+          activeOpacity={0.8}
         >
-          <Image
-            source={require("@/assets/images/deen-logo-icon.png")}
-            style={{ width: 20, height: 20, tintColor: "#fff" }}
-            resizeMode="contain"
-          />
-        </View>
-        <ThemedText
-          style={{
-            fontWeight: "600",
-            color: hasSelection ? colors.primary : colors.text,
-          }}
-        >
-          {hasSelection ? "Ask Deen" : "Ask Deen"}
-        </ThemedText>
-      </TouchableOpacity>
+          <View
+            style={[
+              styles.fabIcon,
+              {
+                backgroundColor: hasSelection
+                  ? colors.primary
+                  : colors.textSecondary,
+              },
+            ]}
+          >
+            <Image
+              source={require("@/assets/images/deen-logo-icon.png")}
+              style={{ width: 20, height: 20, tintColor: "#fff" }}
+              resizeMode="contain"
+            />
+          </View>
+          <ThemedText
+            style={{
+              fontWeight: "600",
+              color: hasSelection ? colors.primary : colors.text,
+            }}
+          >
+            {hasSelection ? "Ask Deen" : "Ask Deen"}
+          </ThemedText>
+        </TouchableOpacity>
+      ) : null}
 
       <ElaborationModal
         visible={modalVisible}
