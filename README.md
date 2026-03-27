@@ -85,9 +85,9 @@ Join our community of developers creating universal apps.
 - Build using that environment:
 
   ```
-  npx eas-cli build --platform ios --environment appstore
+  npx eas-cli build --platform ios --profile production
   # or Android:
-  npx eas-cli build --platform android --environment appstore
+  npx eas-cli build --platform android --profile production
   ```
 
 - Local dev with these envs (optional): export them before `expo start`, e.g. `export $(cat .env.appstore | xargs)` then `npx expo start`.
