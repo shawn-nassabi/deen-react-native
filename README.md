@@ -1,95 +1,201 @@
-# Welcome to your Expo app 👋
+# Deen — React Native App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An Expo / React Native app for the Deen platform, built with [Expo Router](https://docs.expo.dev/router/introduction/) (file-based routing).
 
-## Get started
+---
 
-1. Install dependencies
+## Prerequisites
 
-   ```bash
-   npm install
-   ```
+| Tool | Version | Notes |
+|---|---|---|
+| Node.js | 18 LTS or later | |
+| npm | comes with Node | |
+| Expo Go (mobile) | latest | for quick dev on a physical device |
+| Xcode | 15+ | iOS simulator / native builds (macOS only) |
+| CocoaPods | latest | iOS native dependencies (`sudo gem install cocoapods`) |
+| Android Studio | latest | Android emulator / native builds |
+| EAS CLI | ≥ 16.28.0 | production builds (`npm install -g eas-cli`) |
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## Cloning
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+This repo is used as a git submodule inside `deen-mobile-frontend`. To clone it standalone:
 
 ```bash
-npm run reset-project
+git clone <repo-url> deen-react-native
+cd deen-react-native
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Or, when cloning the parent repo, make sure to initialise submodules:
 
-## Learn more
+```bash
+git clone --recurse-submodules <parent-repo-url>
+# or, if already cloned:
+git submodule update --init --recursive
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+---
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Install dependencies
 
-## Join the community
+```bash
+npm install
+```
 
-Join our community of developers creating universal apps.
+For iOS, also install native pod dependencies:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+cd ios && pod install && cd ..
+```
 
-## API base URL and auth config
+> Re-run `pod install` whenever you add or update packages that include native code.
 
-- The API base URL is resolved in `utils/config.ts`. Priority:
-  1. `EXPO_PUBLIC_API_BASE_URL` env var (set this for any environment to override)
-  2. In Expo Go/dev: falls back to your dev host (Android emulator `10.0.2.2`, iOS simulator `127.0.0.1`, physical device uses Expo’s inferred LAN IP)
-  3. In standalone/TestFlight/App Store builds: falls back to `https://deen-fastapi.duckdns.org`
-- Cognito/OIDC settings are also in `utils/config.ts` and can be overridden with `EXPO_PUBLIC_COGNITO_*` vars. The default redirect is the Expo proxy URL; for production/dev-client builds, set `EXPO_PUBLIC_AUTH_REDIRECT_URI` to your custom app scheme (e.g., `deenreactnative://auth`) and register it in Cognito.
-- To change these values:
-  - Temporary: run with env vars, e.g. `EXPO_PUBLIC_API_BASE_URL=http://192.168.x.y:8080 npx expo start`
-  - Persistent: edit the defaults inside `utils/config.ts` (but prefer env vars for per-env overrides)
+---
 
-## Building for TestFlight / App Store (env vars + EAS)
+## Environment setup
 
-- Env file example (`.env.appstore` in repo):
+Runtime configuration lives in `utils/config.ts` and is driven by `EXPO_PUBLIC_*` environment variables.
 
-  ```
-  EXPO_PUBLIC_API_BASE_URL=
-  EXPO_PUBLIC_AUTH_REDIRECT_URI=
-  EXPO_PUBLIC_COGNITO_DOMAIN=
-  EXPO_PUBLIC_COGNITO_CLIENT_ID=
-  EXPO_PUBLIC_COGNITO_ISSUER=
-  ```
+### Quick start (no env file needed)
 
-  (Add your own Cognito values if you switch pools/clients.)
+In Expo Go / dev mode the app automatically points to your local machine:
 
-- Push envs to Expo Application Services (EAS):
+- **Android emulator** → `10.0.2.2:8080`
+- **iOS simulator / web** → `127.0.0.1:8080`
+- **Physical device** → inferred from the Expo dev server's LAN IP
 
-  ```
-  npx eas-cli env:push --environment appstore --path .env.appstore
-  ```
+No `.env` file is required for local development against a locally running backend.
 
-  Use whatever environment name you like (e.g., `appstore`, `production`).
+### Overriding the API URL
 
-- Build using that environment:
+```bash
+EXPO_PUBLIC_API_BASE_URL=http://192.168.1.100:8080 npx expo start
+```
 
-  ```
-  npx eas-cli build --platform ios --profile production
-  # or Android:
-  npx eas-cli build --platform android --profile production
-  ```
+### Auth (AWS Cognito)
 
-- Local dev with these envs (optional): export them before `expo start`, e.g. `export $(cat .env.appstore | xargs)` then `npx expo start`.
+`utils/config.ts` ships with default Cognito values that point to the shared dev pool. If you need to use a different pool, set these env vars:
 
-- Cognito callbacks: keep the Expo proxy URLs for Expo Go, and add `deenreactnative://auth` to Allowed Callback and Sign-out URLs for standalone/dev-client/TestFlight/App Store builds.
+```
+EXPO_PUBLIC_COGNITO_DOMAIN=
+EXPO_PUBLIC_COGNITO_CLIENT_ID=
+EXPO_PUBLIC_COGNITO_ISSUER=
+EXPO_PUBLIC_AUTH_REDIRECT_URI=
+```
+
+For **Expo Go**, leave `AUTH_REDIRECT_URI` unset — it defaults to the Expo proxy URL (`https://auth.expo.io/@snassabi7/deen-react-native`), which must be registered as a Cognito callback/logout URL.
+
+For **standalone / dev-client / TestFlight / App Store builds**, set `EXPO_PUBLIC_AUTH_REDIRECT_URI=deenreactnative://auth` and ensure both `deenreactnative://auth` and the Expo proxy URL are registered in your Cognito App Client's Allowed Callback and Sign-out URLs.
+
+### `.env.appstore` template
+
+A `.env.appstore` file is included in the repo as a reference template. Use it as a starting point when pushing env vars to EAS (see [Building for production](#building-for-testflight--app-store) below). Do **not** commit real secrets — the file contains only non-sensitive public values.
+
+---
+
+## Running locally
+
+### Expo Go (fastest, no native build required)
+
+```bash
+npm run start
+```
+
+Scan the QR code with the Expo Go app on your phone, or press `i` for iOS simulator / `a` for Android emulator.
+
+### iOS simulator (native build)
+
+```bash
+npm run ios
+```
+
+### Android emulator or device (native build)
+
+```bash
+npm run android
+```
+
+### Web
+
+```bash
+npm run web
+```
+
+---
+
+## Project structure
+
+```
+app/                  # Expo Router routes (file-based navigation)
+  (tabs)/             # Bottom-tab screens (chat, references, hikmah)
+  hikmah/             # Lesson and tree sub-routes
+  login.tsx           # Auth entry point
+  settings.tsx        # Settings screen
+components/           # Reusable UI components, grouped by feature
+hooks/                # Shared React hooks (auth, theme, progress)
+utils/                # App services and shared logic
+  api.ts              # HTTP client
+  auth.ts             # Cognito auth helpers
+  config.ts           # Env-driven runtime configuration
+constants/            # Theme tokens and shared constants
+assets/               # Images and fonts
+ios/                  # Native iOS project (tracked in git)
+```
+
+---
+
+## Linting
+
+```bash
+npm run lint
+```
+
+Run this before every PR.
+
+---
+
+## Building for TestFlight / App Store
+
+### 1. Fill in your env file
+
+Edit `.env.appstore` with the correct production values:
+
+```
+EXPO_PUBLIC_API_BASE_URL=https://deen-fastapi.duckdns.org
+EXPO_PUBLIC_AUTH_REDIRECT_URI=deenreactnative://auth
+EXPO_PUBLIC_COGNITO_DOMAIN=https://eu-north-1nko9a23pf.auth.eu-north-1.amazoncognito.com
+EXPO_PUBLIC_COGNITO_CLIENT_ID=1bukdrndjlh653q4ddfnmelunq
+EXPO_PUBLIC_COGNITO_ISSUER=https://cognito-idp.eu-north-1.amazonaws.com/eu-north-1_nKO9a23pF
+```
+
+### 2. Push env vars to EAS
+
+```bash
+npx eas-cli env:push --environment appstore --path .env.appstore
+```
+
+### 3. Trigger a build
+
+```bash
+# iOS
+npx eas-cli build --platform ios --profile production
+
+# Android
+npx eas-cli build --platform android --profile production
+```
+
+### 4. Local dev with production env vars (optional)
+
+```bash
+export $(cat .env.appstore | xargs) && npx expo start
+```
+
+---
+
+## Useful links
+
+- [Expo documentation](https://docs.expo.dev/)
+- [Expo Router](https://docs.expo.dev/router/introduction/)
+- [EAS Build](https://docs.expo.dev/build/introduction/)
+- [AWS Cognito](https://docs.aws.amazon.com/cognito/)
