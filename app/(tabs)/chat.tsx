@@ -46,6 +46,7 @@ import { ERROR_MESSAGES, UI_CONSTANTS } from "@/utils/constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
 import ChatHistoryDrawer from "@/components/chat/ChatHistoryDrawer";
+import ElaborationModal from "@/components/hikmah/ElaborationModal";
 
 // Estimated input container height for padding calculations
 const INPUT_CONTAINER_HEIGHT = 70;
@@ -178,8 +179,12 @@ export default function ChatScreen() {
     useState<ChatLanguage>(DEFAULT_LANGUAGE);
   const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selection, setSelection] = useState<{ text: string; context: string }>({ text: "", context: "" });
+  const [isElaborationModalVisible, setIsElaborationModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const hasSelection = !!selection.text;
 
   // Track if suggestions should show (separate state to avoid re-renders on every keystroke)
   const [showSuggestions, setShowSuggestions] = useState(true);
@@ -296,6 +301,10 @@ export default function ChatScreen() {
     setInput(question);
   }, []);
 
+  const handleSelectionChange = useCallback((sel: { text: string; context: string }) => {
+    setSelection(sel);
+  }, []);
+
   const handleOpenLanguagePicker = useCallback(() => {
     if (!canSelectLanguage) return;
     setIsLanguageModalVisible(true);
@@ -331,6 +340,7 @@ export default function ChatScreen() {
       setMessages([]);
       setInput("");
       setShowSuggestions(true);
+      setSelection({ text: "", context: "" });
 
       // Default new chats to the last selected language (or English)
       const lastLanguage = (await getLastChatLanguage()) as ChatLanguage | null;
@@ -361,6 +371,7 @@ export default function ChatScreen() {
         setSessionId(selectedSessionId);
         setInput("");
         setShowSuggestions(false);
+        setSelection({ text: "", context: "" });
 
         // Warm the local cache so future loads are instant
         await saveMessages(selectedSessionId, hydrated);
@@ -383,6 +394,7 @@ export default function ChatScreen() {
     setInput("");
     setIsLoading(true);
     setStatusMessage("Thinking...");
+    setSelection({ text: "", context: "" });
     try {
       await sendChatMessage(
         input,
@@ -454,8 +466,13 @@ export default function ChatScreen() {
       return null;
     }
 
-    return <ChatMessage message={item} />;
-  }, [isLoading, messages.length]);
+    return (
+      <ChatMessage
+        message={item}
+        onSelectionChange={handleSelectionChange}
+      />
+    );
+  }, [isLoading, messages.length, handleSelectionChange]);
 
   const bottomPadding = INPUT_CONTAINER_HEIGHT + insets.bottom + 16;
 
@@ -669,6 +686,45 @@ export default function ChatScreen() {
         </View>
       </KeyboardAvoidingView>
 
+      {/* Ask Deen FAB — visible only when text is selected */}
+      {hasSelection && (
+        <TouchableOpacity
+          style={[
+            styles.askDeenFab,
+            {
+              backgroundColor: colors.panel,
+              borderColor: colors.primary,
+              shadowColor: colors.primary,
+              bottom: INPUT_CONTAINER_HEIGHT + insets.bottom + 12,
+            },
+          ]}
+          onPress={() => setIsElaborationModalVisible(true)}
+          activeOpacity={0.8}
+        >
+          <View style={[styles.askDeenFabIcon, { backgroundColor: colors.primary }]}>
+            <Image
+              source={require("@/assets/images/deen-logo-icon.png")}
+              style={{ width: 20, height: 20, tintColor: "#fff" }}
+              resizeMode="contain"
+            />
+          </View>
+          <ThemedText style={{ fontWeight: "600", color: colors.primary }}>
+            Ask Deen
+          </ThemedText>
+        </TouchableOpacity>
+      )}
+
+      {/* Elaboration Modal */}
+      <ElaborationModal
+        visible={isElaborationModalVisible}
+        onClose={() => setIsElaborationModalVisible(false)}
+        contextText={selection.context}
+        lessonTitle=""
+        treeTitle=""
+        lessonSummary=""
+        initialQuery={selection.text}
+      />
+
       {/* Chat history side drawer — renders as absolute overlay */}
       <ChatHistoryDrawer
         visible={isDrawerOpen}
@@ -826,5 +882,28 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     borderTopWidth: 0,
+  },
+  askDeenFab: {
+    position: "absolute",
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    borderWidth: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 6,
+    zIndex: 5,
+  },
+  askDeenFabIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
