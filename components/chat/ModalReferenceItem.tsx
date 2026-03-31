@@ -34,11 +34,16 @@ export default function ModalReferenceItem({
   const [isExpanded, setIsExpanded] = useState(false);
 
   const metadata = reference || {};
-  const en = (reference?.text || "").trim();
-  const ar = (reference?.text_ar || "").trim();
 
-  // Build condensed preview with essential metadata
-  const buildMetadataLine = () => {
+  // Detect quran references either by explicit type or presence of surah_name
+  const isQuran =
+    reference?.type === "quran" || Boolean(reference?.surah_name);
+
+  // ---- Hadith preview helpers ----
+  const hadithText = (reference?.text || "").trim();
+  const hadithAr = (reference?.text_ar || "").trim();
+
+  const buildHadithMetadataLine = () => {
     const parts = [];
     if (metadata.collection) parts.push(metadata.collection);
     if (metadata.author) parts.push(metadata.author);
@@ -46,7 +51,7 @@ export default function ModalReferenceItem({
     return parts.filter(Boolean).join(" • ");
   };
 
-  const buildSecondaryLine = () => {
+  const buildHadithSecondaryLine = () => {
     const parts = [];
     if (metadata.chapter_number) parts.push(`Ch. ${metadata.chapter_number}`);
     if (metadata.chapter_title) parts.push(metadata.chapter_title);
@@ -55,9 +60,33 @@ export default function ModalReferenceItem({
     return parts.filter(Boolean).join(" • ");
   };
 
-  const metadataLine1 = buildMetadataLine() || "Reference";
-  const metadataLine2 = buildSecondaryLine();
-  const textPreview = en ? en.substring(0, 80) : "No text available";
+  // ---- Quran preview helpers ----
+  const buildQuranMetadataLine = () => {
+    const parts = [];
+    if (metadata.surah_name) parts.push(metadata.surah_name);
+    if (metadata.verses_covered) parts.push(`Verses ${metadata.verses_covered}`);
+    if (metadata.title) parts.push(metadata.title);
+    return parts.filter(Boolean).join(" • ");
+  };
+
+  const buildQuranSecondaryLine = () => {
+    const parts = [];
+    if (metadata.author) parts.push(metadata.author);
+    if (metadata.collection) parts.push(metadata.collection);
+    if (metadata.volume) parts.push(`Vol. ${metadata.volume}`);
+    return parts.filter(Boolean).join(" • ");
+  };
+
+  const metadataLine1 = isQuran
+    ? buildQuranMetadataLine() || "Quran Reference"
+    : buildHadithMetadataLine() || "Reference";
+  const metadataLine2 = isQuran
+    ? buildQuranSecondaryLine()
+    : buildHadithSecondaryLine();
+
+  const textPreview = isQuran
+    ? (metadata.quran_translation || "").substring(0, 80) || "No translation available"
+    : hadithText ? hadithText.substring(0, 80) : "No text available";
 
   const handleToggle = () => {
     if (Platform.OS === "ios" || Platform.OS === "android") {
@@ -104,40 +133,81 @@ export default function ModalReferenceItem({
         // Expanded View
         <>
           <View style={styles.metadataGrid}>
-            {renderField("Author", metadata.author)}
-            {renderField("Reference", metadata.reference)}
-            {renderField("Source", metadata.collection)}
-            {renderField("Volume", metadata.volume)}
-            {renderField("Book number", metadata.book_number)}
-            {renderField("Book title", metadata.book_title)}
-            {renderField("Chapter number", metadata.chapter_number)}
-            {renderField("Chapter title", metadata.chapter_title)}
-            {renderField("Hadith number", metadata.hadith_no)}
-            {renderField("Authenticity", metadata.grade_en)}
+            {isQuran ? (
+              <>
+                {renderField("Surah", metadata.surah_name)}
+                {renderField("Tafsir", metadata.title)}
+                {renderField("Verses", metadata.verses_covered)}
+                {renderField("Author", metadata.author)}
+                {renderField("Source", metadata.collection)}
+                {renderField("Volume", metadata.volume)}
+                {renderField("Sect", metadata.sect)}
+              </>
+            ) : (
+              <>
+                {renderField("Author", metadata.author)}
+                {renderField("Reference", metadata.reference)}
+                {renderField("Source", metadata.collection)}
+                {renderField("Volume", metadata.volume)}
+                {renderField("Book number", metadata.book_number)}
+                {renderField("Book title", metadata.book_title)}
+                {renderField("Chapter number", metadata.chapter_number)}
+                {renderField("Chapter title", metadata.chapter_title)}
+                {renderField("Hadith number", metadata.hadith_no)}
+                {renderField("Authenticity", metadata.grade_en)}
+              </>
+            )}
           </View>
 
           <View style={styles.textSection}>
-            <Text style={[styles.textLabel, { color: colors.textSecondary }]}>
-              Text
-            </Text>
-            <View>
-              {en && (
-                <Text style={[styles.textContent, { color: colors.text }]}>
-                  {en}
+            {isQuran ? (
+              <>
+                {metadata.quran_translation ? (
+                  <>
+                    <Text style={[styles.textLabel, { color: colors.textSecondary }]}>
+                      Translation
+                    </Text>
+                    <Text style={[styles.textContent, { color: colors.text }]}>
+                      {metadata.quran_translation}
+                    </Text>
+                  </>
+                ) : null}
+                {metadata.tafsir_text ? (
+                  <>
+                    <Text style={[styles.textLabel, { color: colors.textSecondary, marginTop: 12 }]}>
+                      Tafsir
+                    </Text>
+                    <Text style={[styles.textContent, { color: colors.text }]}>
+                      {metadata.tafsir_text}
+                    </Text>
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <Text style={[styles.textLabel, { color: colors.textSecondary }]}>
+                  Text
                 </Text>
-              )}
-              {ar && (
-                <Text
-                  style={[
-                    styles.textContent,
-                    styles.arabicText,
-                    { color: colors.text },
-                  ]}
-                >
-                  {ar}
-                </Text>
-              )}
-            </View>
+                <View>
+                  {hadithText ? (
+                    <Text style={[styles.textContent, { color: colors.text }]}>
+                      {hadithText}
+                    </Text>
+                  ) : null}
+                  {hadithAr ? (
+                    <Text
+                      style={[
+                        styles.textContent,
+                        styles.arabicText,
+                        { color: colors.text },
+                      ]}
+                    >
+                      {hadithAr}
+                    </Text>
+                  ) : null}
+                </View>
+              </>
+            )}
           </View>
 
           <View style={styles.chevronContainer}>
@@ -155,7 +225,7 @@ export default function ModalReferenceItem({
             >
               {metadataLine1}
             </Text>
-            {metadataLine2 && (
+            {metadataLine2 ? (
               <Text
                 style={[styles.condensedLine2, { color: colors.textSecondary }]}
                 numberOfLines={1}
@@ -163,7 +233,7 @@ export default function ModalReferenceItem({
               >
                 {metadataLine2}
               </Text>
-            )}
+            ) : null}
             <Text
               style={[styles.condensedLine3, { color: colors.textSecondary }]}
               numberOfLines={1}

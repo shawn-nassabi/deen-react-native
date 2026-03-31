@@ -165,6 +165,7 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("Thinking...");
   const [isNewChatLoading, setIsNewChatLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] =
@@ -345,12 +346,14 @@ export default function ChatScreen() {
     setMessages((prev) => [...prev, userMessage, botPlaceholder]);
     setInput("");
     setIsLoading(true);
+    setStatusMessage("Thinking...");
     try {
       await sendChatMessage(
         input,
         sessionId,
         selectedLanguage,
         (fullMessage) => {
+          // First chunk has arrived — hide the loading indicator and show the text
           setIsLoading(false);
           setMessages((prev) => {
             const updated = [...prev];
@@ -383,6 +386,10 @@ export default function ChatScreen() {
             };
             return updated;
           });
+        },
+        (status) => {
+          // Show the current agentic step as the loading message
+          setStatusMessage(status.message || "Thinking...");
         }
       );
     } catch (error) {
@@ -470,11 +477,11 @@ export default function ChatScreen() {
             },
           ]}
         >
-          <LoadingIndicator message="Thinking..." />
+          <LoadingIndicator message={statusMessage} />
         </View>
       </View>
     );
-  }, [isLoading, colors.panel, colors.border]);
+  }, [isLoading, statusMessage, colors.panel, colors.border]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

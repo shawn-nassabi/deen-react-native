@@ -21,6 +21,10 @@ const now = () => Date.now();
 const MAX_REFS_PER_MSG = 10;
 
 export interface Reference {
+  // Discriminator -- "hadith" for hadith/source docs, "quran" for Quran/Tafsir docs
+  type?: "hadith" | "quran";
+
+  // Hadith fields
   author?: string;
   book_title?: string;
   chapter_title?: string;
@@ -38,6 +42,15 @@ export interface Reference {
   grade_ar?: string;
   hadith_id?: string;
   lang?: string;
+
+  // Quran / Tafsir fields
+  surah_name?: string;
+  title?: string;
+  verses_covered?: string;
+  starting_verse?: string;
+  ending_verse?: string;
+  quran_translation?: string;
+  tafsir_text?: string;
 }
 
 export interface Message {
@@ -56,6 +69,9 @@ function compactMessage(msg: Message): Message {
   const base: Message = { sender: msg.sender, text: msg.text || "" };
   if (Array.isArray(msg.references) && msg.references.length > 0) {
     base.references = msg.references.slice(0, MAX_REFS_PER_MSG).map((r) => ({
+      // Discriminator
+      type: r.type,
+      // Hadith fields
       author: r.author,
       book_title: r.book_title,
       chapter_title: r.chapter_title,
@@ -73,6 +89,14 @@ function compactMessage(msg: Message): Message {
       grade_ar: r.grade_ar,
       hadith_id: r.hadith_id,
       lang: r.lang,
+      // Quran / Tafsir fields
+      surah_name: r.surah_name,
+      title: r.title,
+      verses_covered: r.verses_covered,
+      starting_verse: r.starting_verse,
+      ending_verse: r.ending_verse,
+      quran_translation: r.quran_translation,
+      tafsir_text: r.tafsir_text,
     }));
   }
   return base;
