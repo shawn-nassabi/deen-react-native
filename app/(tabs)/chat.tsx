@@ -29,6 +29,7 @@ import {
   getOrCreateSessionId,
   sendChatMessage,
   startNewConversation,
+  fetchSavedChatDetail,
 } from "@/utils/api";
 import {
   loadMessages,
@@ -43,6 +44,8 @@ import {
 } from "@/utils/chatStorage";
 import { ERROR_MESSAGES, UI_CONSTANTS } from "@/utils/constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAuth } from "@/hooks/useAuth";
+import ChatHistoryDrawer from "@/components/chat/ChatHistoryDrawer";
 
 // Estimated input container height for padding calculations
 const INPUT_CONTAINER_HEIGHT = 70;
@@ -156,6 +159,9 @@ export default function ChatScreen() {
   const headerOverlayColor =
     colorScheme === "dark" ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
 
+  const { status: authStatus } = useAuth();
+  const isAuthenticated = authStatus === "signedIn";
+
   const headerPaddingTop = Math.max(
     insets.top + 12,
     Platform.OS === "ios" ? 64 : 32
@@ -171,6 +177,7 @@ export default function ChatScreen() {
   const [selectedLanguage, setSelectedLanguage] =
     useState<ChatLanguage>(DEFAULT_LANGUAGE);
   const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -336,6 +343,35 @@ export default function ChatScreen() {
       setIsNewChatLoading(false);
     }
   }, [isLoading, isNewChatLoading, sessionId]);
+
+  const handleSelectChat = useCallback(
+    async (selectedSessionId: string) => {
+      if (isLoading) return;
+
+      try {
+        const detail = await fetchSavedChatDetail(selectedSessionId);
+        if (!detail) return;
+
+        const hydrated: Message[] = detail.messages.map((m) => ({
+          sender: m.role === "user" ? "user" : "bot",
+          text: m.content,
+        }));
+
+        setMessages(hydrated);
+        setSessionId(selectedSessionId);
+        setInput("");
+        setShowSuggestions(false);
+
+        // Warm the local cache so future loads are instant
+        await saveMessages(selectedSessionId, hydrated);
+      } catch (e) {
+        console.error("❌ Failed to load saved chat:", e);
+      }
+
+      setIsDrawerOpen(false);
+    },
+    [isLoading]
+  );
 
   const handleSendMessage = useCallback(async () => {
     if (!input.trim() || !sessionId || isLoading) return;
@@ -552,6 +588,13 @@ export default function ChatScreen() {
       >
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
+            <TouchableOpacity
+              hitSlop={HEADER_ACTION_HIT_SLOP}
+              onPress={() => setIsDrawerOpen(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="menu" size={22} color={colors.text} />
+            </TouchableOpacity>
             <Image
               source={require("@/assets/images/deen-logo-icon.png")}
               style={styles.headerLogo}
@@ -626,6 +669,16 @@ export default function ChatScreen() {
         </View>
       </KeyboardAvoidingView>
 
+      {/* Chat history side drawer — renders as absolute overlay */}
+      <ChatHistoryDrawer
+        visible={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onSelectChat={handleSelectChat}
+        onNewChat={handleNewChat}
+        activeSessionId={sessionId}
+        isAuthenticated={isAuthenticated}
+        isLoadingChat={isLoading}
+      />
     </View>
   );
 }

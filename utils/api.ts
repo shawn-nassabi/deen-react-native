@@ -828,6 +828,119 @@ export async function streamPersonalizedPrimer(
 }
 
 // ---------------------------
+// Saved Chat API helpers
+// ---------------------------
+
+export interface SavedChatListItem {
+  session_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string;
+  message_count: number;
+}
+
+export interface SavedChatMessage {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
+export interface SavedChatListResponse {
+  items: SavedChatListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface SavedChatDetailResponse {
+  session_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string;
+  messages: SavedChatMessage[];
+  total_messages: number;
+  limit: number;
+  offset: number;
+}
+
+/**
+ * Fetch the current user's saved chat sessions, sorted by most recently active.
+ * Requires authentication. Returns null if no token is available.
+ */
+export async function fetchSavedChats(
+  limit = 20,
+  offset = 0
+): Promise<SavedChatListResponse | null> {
+  try {
+    const token = await getValidAccessToken().catch(() => null);
+    if (!token) return null;
+
+    const url = `${API_BASE_URL}/chat/saved?limit=${limit}&offset=${offset}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error(`❌ fetchSavedChats failed - HTTP ${response.status}: ${text}`);
+      throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+    }
+
+    return response.json();
+  } catch (e) {
+    console.error("❌ fetchSavedChats error:", e);
+    throw e;
+  }
+}
+
+/**
+ * Fetch a single saved chat with its full message history.
+ * Requires authentication. Returns null if no token is available.
+ */
+export async function fetchSavedChatDetail(
+  sessionId: string,
+  limit = 200,
+  offset = 0
+): Promise<SavedChatDetailResponse | null> {
+  try {
+    const token = await getValidAccessToken().catch(() => null);
+    if (!token) return null;
+
+    const url = `${API_BASE_URL}/chat/saved/${encodeURIComponent(sessionId)}?limit=${limit}&offset=${offset}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.status === 404) {
+      console.warn(`⚠️ Saved chat not found: ${sessionId.substring(0, 8)}...`);
+      return null;
+    }
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error(`❌ fetchSavedChatDetail failed - HTTP ${response.status}: ${text}`);
+      throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+    }
+
+    return response.json();
+  } catch (e) {
+    console.error("❌ fetchSavedChatDetail error:", e);
+    throw e;
+  }
+}
+
+// ---------------------------
 // Hikmah CRUD API helpers
 // ---------------------------
 
