@@ -16,6 +16,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
@@ -48,6 +49,7 @@ export default function ReferenceItem({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const [isExpanded, setIsExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Animation values for reveal
   const translateX = useRef(new Animated.Value(-50)).current;
@@ -102,6 +104,57 @@ export default function ReferenceItem({
   const metadataLine1 = buildMetadataLine() || "Reference";
   const metadataLine2 = buildSecondaryLine();
   const textPreview = en ? en.substring(0, 80) : "No text available";
+
+  const buildCopyText = () => {
+    const lines: string[] = [];
+
+    const add = (label: string, value?: string) => {
+      if (value && value.trim() && value.trim() !== "N/A" && value.trim() !== "unspecified") {
+        lines.push(`${label}: ${value.trim()}`);
+      }
+    };
+
+    // Header line
+    const header = [metadata.collection, metadata.hadith_no ? `Hadith #${metadata.hadith_no}` : ""].filter(Boolean).join(" — ");
+    if (header) lines.push(header);
+
+    add("Author", metadata.author);
+    add("Reference", metadata.reference);
+
+    // Book line
+    const bookParts = [
+      metadata.book_title,
+      metadata.volume ? `Vol. ${metadata.volume}` : "",
+      metadata.book_number ? `Book ${metadata.book_number}` : "",
+    ].filter(Boolean);
+    if (bookParts.length) lines.push(`Book: ${bookParts.join(", ")}`);
+
+    // Chapter line
+    const chapterParts = [
+      metadata.chapter_number ? `Chapter ${metadata.chapter_number}` : "",
+      metadata.chapter_title,
+    ].filter(Boolean);
+    if (chapterParts.length) lines.push(chapterParts.join(": "));
+
+    add("Grade", metadata.grade_en);
+
+    if (en) {
+      lines.push("");
+      lines.push(en);
+    }
+    if (ar) {
+      lines.push("");
+      lines.push(ar);
+    }
+
+    return lines.join("\n");
+  };
+
+  const handleCopy = async () => {
+    await Clipboard.setStringAsync(buildCopyText());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   // Toggle expand/collapse with animation
   const handleToggle = () => {
@@ -196,13 +249,19 @@ export default function ReferenceItem({
               </View>
             </View>
 
-            {/* Chevron Up Icon */}
-            <View style={styles.chevronContainer} key="chevron-up">
-              <Ionicons
-                name="chevron-up"
-                size={20}
-                color={colors.primary}
-              />
+            {/* Expanded Footer: Copy + Chevron Up */}
+            <View style={styles.expandedFooter}>
+              <TouchableOpacity onPress={handleCopy} style={styles.copyButton}>
+                <Ionicons
+                  name={copied ? "checkmark-done" : "copy-outline"}
+                  size={18}
+                  color={colors.primary}
+                />
+                <Text style={[styles.copyButtonText, { color: colors.primary }]}>
+                  {copied ? "Copied!" : "Copy"}
+                </Text>
+              </TouchableOpacity>
+              <Ionicons name="chevron-up" size={20} color={colors.primary} />
             </View>
           </>
         ) : (
@@ -307,6 +366,21 @@ const styles = StyleSheet.create({
     height: 20,
     justifyContent: "center",
     alignItems: "center",
+  },
+  expandedFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 16,
+  },
+  copyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  copyButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   metadataGrid: {
     gap: 12,

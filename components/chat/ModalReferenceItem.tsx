@@ -14,6 +14,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import type { Reference } from "@/utils/chatStorage";
@@ -32,6 +33,7 @@ export default function ModalReferenceItem({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const [isExpanded, setIsExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const metadata = reference || {};
 
@@ -87,6 +89,85 @@ export default function ModalReferenceItem({
   const textPreview = isQuran
     ? (metadata.quran_translation || "").substring(0, 80) || "No translation available"
     : hadithText ? hadithText.substring(0, 80) : "No text available";
+
+  const buildCopyText = () => {
+    const lines: string[] = [];
+
+    const add = (label: string, value?: string) => {
+      if (value && value.trim() && value.trim() !== "N/A" && value.trim() !== "unspecified") {
+        lines.push(`${label}: ${value.trim()}`);
+      }
+    };
+
+    if (isQuran) {
+      // Header line
+      const header = [
+        metadata.surah_name,
+        metadata.verses_covered ? `Verses ${metadata.verses_covered}` : "",
+      ].filter(Boolean).join(" — ");
+      if (header) lines.push(header);
+
+      if (metadata.title) lines.push(metadata.title);
+      const sourceParts = [
+        metadata.author ? `Author: ${metadata.author}` : "",
+        metadata.collection ? `Source: ${metadata.collection}` : "",
+      ].filter(Boolean);
+      if (sourceParts.length) lines.push(sourceParts.join(" | "));
+
+      if (metadata.quran_translation) {
+        lines.push("");
+        lines.push("Translation:");
+        lines.push(metadata.quran_translation);
+      }
+      if (metadata.tafsir_text) {
+        lines.push("");
+        lines.push("Tafsir:");
+        lines.push(metadata.tafsir_text);
+      }
+    } else {
+      // Hadith format
+      const header = [
+        metadata.collection,
+        metadata.hadith_no ? `Hadith #${metadata.hadith_no}` : "",
+      ].filter(Boolean).join(" — ");
+      if (header) lines.push(header);
+
+      add("Author", metadata.author);
+      add("Reference", metadata.reference);
+
+      const bookParts = [
+        metadata.book_title,
+        metadata.volume ? `Vol. ${metadata.volume}` : "",
+        metadata.book_number ? `Book ${metadata.book_number}` : "",
+      ].filter(Boolean);
+      if (bookParts.length) lines.push(`Book: ${bookParts.join(", ")}`);
+
+      const chapterParts = [
+        metadata.chapter_number ? `Chapter ${metadata.chapter_number}` : "",
+        metadata.chapter_title,
+      ].filter(Boolean);
+      if (chapterParts.length) lines.push(chapterParts.join(": "));
+
+      add("Grade", metadata.grade_en);
+
+      if (hadithText) {
+        lines.push("");
+        lines.push(hadithText);
+      }
+      if (hadithAr) {
+        lines.push("");
+        lines.push(hadithAr);
+      }
+    }
+
+    return lines.join("\n");
+  };
+
+  const handleCopy = async () => {
+    await Clipboard.setStringAsync(buildCopyText());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleToggle = () => {
     if (Platform.OS === "ios" || Platform.OS === "android") {
@@ -210,7 +291,18 @@ export default function ModalReferenceItem({
             )}
           </View>
 
-          <View style={styles.chevronContainer}>
+          {/* Expanded Footer: Copy + Chevron Up */}
+          <View style={styles.expandedFooter}>
+            <TouchableOpacity onPress={handleCopy} style={styles.copyButton}>
+              <Ionicons
+                name={copied ? "checkmark-done" : "copy-outline"}
+                size={18}
+                color={colors.primary}
+              />
+              <Text style={[styles.copyButtonText, { color: colors.primary }]}>
+                {copied ? "Copied!" : "Copy"}
+              </Text>
+            </TouchableOpacity>
             <Ionicons name="chevron-up" size={20} color={colors.primary} />
           </View>
         </>
@@ -305,6 +397,21 @@ const styles = StyleSheet.create({
     height: 20,
     justifyContent: "center",
     alignItems: "center",
+  },
+  expandedFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 16,
+  },
+  copyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  copyButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   metadataGrid: {
     gap: 12,
