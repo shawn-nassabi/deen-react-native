@@ -59,6 +59,34 @@ export interface UserProgress {
   updated_at: string;
 }
 
+export interface QuizChoiceResponse {
+  id: number;
+  choice_key: string;
+  choice_text: string;
+  order_position: number;
+}
+
+export interface QuizQuestionResponse {
+  id: number;
+  prompt: string;
+  order_position: number;
+  choices: QuizChoiceResponse[];
+  correct_choice_id: number;
+  explanation: string | null;
+}
+
+export interface LessonPageQuizQuestionsResponse {
+  lesson_content_id: number;
+  questions: QuizQuestionResponse[];
+}
+
+export interface SubmitLessonPageQuizAnswerRequest {
+  user_id: string;
+  question_id: number;
+  selected_choice_id: number;
+  answered_at?: string;
+}
+
 export interface ElaborationPayload {
   selected_text: string;
   context_text: string;
@@ -1053,6 +1081,52 @@ export async function getLessonContent(
         return ao - bo;
       })
     : data;
+}
+
+// ---------------------------
+// Lesson Page Quiz API helpers
+// ---------------------------
+
+/** GET /hikmah/pages/{lessonContentId}/quiz-questions */
+export async function getLessonPageQuizQuestions(
+  lessonContentId: number
+): Promise<LessonPageQuizQuestionsResponse> {
+  const url = `${API_BASE_URL}/hikmah/pages/${lessonContentId}/quiz-questions`;
+  const response = await fetch(url, {
+    method: "GET",
+    headers: await withAuthHeaders({ "Content-Type": "application/json" }),
+  });
+  if (response.status === 404) {
+    return { lesson_content_id: lessonContentId, questions: [] };
+  }
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+  }
+  return response.json();
+}
+
+/** POST /hikmah/pages/{lessonContentId}/quiz-submit (fire-and-forget) */
+export async function submitLessonPageQuizAnswer(
+  lessonContentId: number,
+  payload: SubmitLessonPageQuizAnswerRequest
+): Promise<void> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/hikmah/pages/${lessonContentId}/quiz-submit`,
+      {
+        method: "POST",
+        headers: await withAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      }
+    );
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.warn(`Quiz submit non-2xx ${response.status}: ${text}`);
+    }
+  } catch (err) {
+    console.warn("Quiz submit failed:", err);
+  }
 }
 
 // ---------------------------
