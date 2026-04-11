@@ -23,11 +23,18 @@ export async function signIn(email: string, password: string): Promise<void> {
 
 /**
  * Creates a new account with email and password.
+ * Returns { needsConfirmation: true } when Supabase email confirmation is enabled
+ * (data.session === null after sign-up). Returns { needsConfirmation: false } when
+ * the user is immediately signed in (confirmation disabled in dashboard).
  * Throws AuthError on failure (email already in use, weak password).
  */
-export async function signUp(email: string, password: string): Promise<void> {
-  const { error } = await supabase.auth.signUp({ email, password });
+export async function signUp(
+  email: string,
+  password: string,
+): Promise<{ needsConfirmation: boolean }> {
+  const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
+  return { needsConfirmation: data.session === null };
 }
 
 /**
