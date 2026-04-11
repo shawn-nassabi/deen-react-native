@@ -19,7 +19,7 @@
 
 - [x] **UI-01**: Sign In screen has email + password fields, Sign In button, "Forgot password?" link, and a link to the Sign Up screen — modern and elegant, aligned with app brand and Montserrat typography
 - [ ] **UI-02**: Sign Up screen has email + password fields, Sign Up button, and a link back to Sign In — same visual quality as Sign In screen
-- [ ] **UI-03**: Password Reset screen accepts an email address and shows a confirmation message after submission
+- [x] **UI-03**: Password Reset screen accepts an email address and shows a confirmation message after submission
 - [ ] **UI-04**: New Password screen (reached via deep link) has a new password field and confirmation
 - [x] **UI-05**: All auth screens show loading indicators during async operations
 - [x] **UI-06**: All auth screens show inline error messages for every failure state (invalid credentials, network error, weak password, email already in use)
@@ -90,7 +90,7 @@
 | AUTH-06 | Phase 1.3 | Complete |
 | AUTH-07 | Phase 1.3 | Pending |
 | MIG-11 | Phase 1.3 | Complete |
-| UI-03 | Phase 1.3 | Pending |
+| UI-03 | Phase 1.3 | Complete |
 | UI-04 | Phase 1.3 | Pending |
 | ACC-01 | Phase 1.4 | Pending |
 | MIG-05 | Phase 1.4 | Pending |

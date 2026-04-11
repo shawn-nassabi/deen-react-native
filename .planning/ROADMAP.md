@@ -59,7 +59,7 @@ Plans:
 
 Plans:
 - [x] 01.3-01-PLAN.md — Extend _layout.tsx auth guard (isOnAuthScreen + Stack.Screen entries) and wire login.tsx "Forgot password?" link
-- [ ] 01.3-02-PLAN.md — Create app/forgot-password.tsx (email form + inline confirmation state)
+- [x] 01.3-02-PLAN.md — Create app/forgot-password.tsx (email form + inline confirmation state)
 - [ ] 01.3-03-PLAN.md — Create app/reset-password.tsx (loading / error / form states; code exchange on mount; updateUser on submit)
 
 ### Phase 1.4: Cleanup + Account
@@ -81,5 +81,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1.1 Client Infrastructure | 1/1 | Complete | 2026-04-11 |
 | 1.2 Auth Core + Login UI | 1/3 | In Progress | - |
-| 1.3 Password Reset Flow | 1/3 | In Progress|  |
+| 1.3 Password Reset Flow | 2/3 | In Progress|  |
 | 1.4 Cleanup + Account | 0/TBD | Not started | - |
