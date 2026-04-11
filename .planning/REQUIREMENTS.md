@@ -7,7 +7,7 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can sign in with email and password on a dedicated Sign In screen
+- [x] **AUTH-01**: User can sign in with email and password on a dedicated Sign In screen
 - [ ] **AUTH-02**: User can create an account with email and password on a dedicated Sign Up screen
 - [x] **AUTH-03**: User session persists across app restarts and foreground/background cycles
 - [x] **AUTH-04**: Access token is refreshed automatically without user action (Supabase SDK handles this)
@@ -17,12 +17,12 @@
 
 ### Login UI
 
-- [ ] **UI-01**: Sign In screen has email + password fields, Sign In button, "Forgot password?" link, and a link to the Sign Up screen — modern and elegant, aligned with app brand and Montserrat typography
+- [x] **UI-01**: Sign In screen has email + password fields, Sign In button, "Forgot password?" link, and a link to the Sign Up screen — modern and elegant, aligned with app brand and Montserrat typography
 - [ ] **UI-02**: Sign Up screen has email + password fields, Sign Up button, and a link back to Sign In — same visual quality as Sign In screen
 - [ ] **UI-03**: Password Reset screen accepts an email address and shows a confirmation message after submission
 - [ ] **UI-04**: New Password screen (reached via deep link) has a new password field and confirmation
-- [ ] **UI-05**: All auth screens show loading indicators during async operations
-- [ ] **UI-06**: All auth screens show inline error messages for every failure state (invalid credentials, network error, weak password, email already in use)
+- [x] **UI-05**: All auth screens show loading indicators during async operations
+- [x] **UI-06**: All auth screens show inline error messages for every failure state (invalid credentials, network error, weak password, email already in use)
 
 ### Migration & Cleanup
 
@@ -74,7 +74,7 @@
 | MIG-01 | Phase 1.1 | Complete |
 | MIG-02 | Phase 1.1 | Complete |
 | MIG-10 | Phase 1.1 | Complete |
-| AUTH-01 | Phase 1.2 | Pending |
+| AUTH-01 | Phase 1.2 | Complete |
 | AUTH-02 | Phase 1.2 | Pending |
 | AUTH-03 | Phase 1.2 Plan 01 | Complete |
 | AUTH-04 | Phase 1.2 Plan 01 | Complete |
@@ -83,10 +83,10 @@
 | MIG-04 | Phase 1.2 Plan 01 | Complete |
 | MIG-06 | Phase 1.2 Plan 01 | Complete |
 | MIG-07 | Phase 1.2 Plan 01 | Complete |
-| UI-01 | Phase 1.2 | Pending |
+| UI-01 | Phase 1.2 | Complete |
 | UI-02 | Phase 1.2 | Pending |
-| UI-05 | Phase 1.2 | Pending |
-| UI-06 | Phase 1.2 | Pending |
+| UI-05 | Phase 1.2 | Complete |
+| UI-06 | Phase 1.2 | Complete |
 | AUTH-06 | Phase 1.3 | Pending |
 | AUTH-07 | Phase 1.3 | Pending |
 | MIG-11 | Phase 1.3 | Pending |
