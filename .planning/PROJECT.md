@@ -28,12 +28,18 @@ Users can sign in and access all features without authentication getting in thei
 - ✓ URL polyfill (`react-native-url-polyfill/auto`) as first import in `utils/polyfills.ts` — Validated in Phase 1.1: client-infrastructure
 - ✓ `utils/config.ts` updated to `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; all Cognito fields removed — Validated in Phase 1.1: client-infrastructure
 
+### Validated in Phase 1.2
+
+- ✓ `utils/auth.ts` rewritten as Supabase thin wrapper — `signIn`, `signOut`, `signUp`, `getValidAccessToken`; no Cognito code — Validated in Phase 1.2: auth-core-login-ui
+- ✓ `hooks/useAuth.tsx` rewired to `onAuthStateChange` with INITIAL_SESSION capture; same public API surface (`status`, `user`, `accessToken`, `signIn`, `signUp`, `signOut`, `refresh`) — Validated in Phase 1.2: auth-core-login-ui
+- ✓ `app/login.tsx` replaced with elevated email+password card form (Montserrat, brand gradient button, show/hide toggle, inline errors, loading states) — Validated in Phase 1.2: auth-core-login-ui
+- ✓ `app/signup.tsx` created — Sign Up screen mirroring login card; error-maps Supabase messages — Validated in Phase 1.2: auth-core-login-ui
+- ✓ `app/_layout.tsx` updated — signup route registered; `isOnAuthScreen` guard prevents redirect loops — Validated in Phase 1.2: auth-core-login-ui
+
 ### Active
 
 <!-- Supabase auth migration scope. -->
 
-- [ ] Replace Cognito PKCE/OAuth flow with Supabase email + password authentication
-- [ ] Modern, elegant login screen with email and password fields, matching app brand and Montserrat typography
 - [ ] Password reset ("Forgot password") flow via Supabase email
 - [ ] Auto token refresh using Supabase session management (replacing manual Cognito refresh)
 - [ ] Replace all `user?.email || user?.sub` user ID usage with `session.user.id` (Supabase UUID)
@@ -58,11 +64,12 @@ Users can sign in and access all features without authentication getting in thei
 - User ID format: Supabase UUID replaces Cognito email/sub string
 - Local dev bypass: `ENV=development` on the backend accepts any Bearer value; use `Authorization: Bearer dev`
 
-**Current auth implementation:**
-- `utils/auth.ts` — PKCE flow via `expo-auth-session`; tokens in `expo-secure-store` (key: `deen.auth.tokens`)
-- `hooks/useAuth.tsx` — `AuthProvider` + `useAuth` context (exposes `status`, `user`, `accessToken`, `signIn`, `signOut`)
-- `app/login.tsx` — single "Sign In" button triggering OAuth redirect
-- `app/auth.tsx` — deep link callback handler for OAuth return
+**Current auth implementation (Phase 1.2 complete):**
+- `utils/auth.ts` — Supabase thin wrappers (`signIn`, `signOut`, `signUp`, `getValidAccessToken`); no Cognito code
+- `hooks/useAuth.tsx` — `AuthProvider` + `useAuth` context via `onAuthStateChange`; exposes `status`, `user`, `accessToken`, `signIn`, `signUp`, `signOut`, `refresh`
+- `app/login.tsx` — elevated card form with email+password, error states, loading spinner
+- `app/signup.tsx` — new Sign Up screen mirroring login card design
+- `app/auth.tsx` — deep link callback handler (still present; removal tracked in Active)
 
 **Supabase SDK for React Native:** Use `@supabase/supabase-js` with `AsyncStorage` adapter for session persistence. Expo Secure Store can be used as the storage adapter for better security.
 
@@ -105,4 +112,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-11 after Phase 1.1 (client-infrastructure) complete*
+*Last updated: 2026-04-11 after Phase 1.2 (auth-core-login-ui) complete*
