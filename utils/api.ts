@@ -10,6 +10,7 @@ import uuid from "react-native-uuid";
 import { CONFIG } from "./config";
 import { STORAGE_KEYS } from "./constants";
 import { getValidAccessToken } from "./auth";
+import type { Reference } from "./chatStorage";
 
 const API_BASE_URL = CONFIG.API_BASE_URL;
 const SESSION_KEY = STORAGE_KEYS.SESSION_ID;
@@ -56,6 +57,34 @@ export interface UserProgress {
   last_position: number;
   percent_complete: number;
   updated_at: string;
+}
+
+export interface QuizChoiceResponse {
+  id: number;
+  choice_key: string;
+  choice_text: string;
+  order_position: number;
+}
+
+export interface QuizQuestionResponse {
+  id: number;
+  prompt: string;
+  order_position: number;
+  choices: QuizChoiceResponse[];
+  correct_choice_id: number;
+  explanation: string | null;
+}
+
+export interface LessonPageQuizQuestionsResponse {
+  lesson_content_id: number;
+  questions: QuizQuestionResponse[];
+}
+
+export interface SubmitLessonPageQuizAnswerRequest {
+  user_id: string;
+  question_id: number;
+  selected_choice_id: number;
+  answered_at?: string;
 }
 
 export interface ElaborationPayload {
@@ -253,14 +282,17 @@ export async function sendChatMessageStream(
 }
 
 /**
- * Send a chat message with automatic parsing and TRUE streaming
- * Text appears progressively as it arrives from backend!
+ * Send a chat message with automatic parsing and TRUE streaming via the
+ * agentic SSE endpoint (/chat/stream/agentic).
+ * Text appears progressively as response_chunk events arrive.
+ * Hadith and Quran references are merged into a single array on completion.
  * @param userQuery - The user's message
- * @param sessionId - Session ID for Redis storage
+ * @param sessionId - Session ID for conversation persistence
  * @param targetLanguage - Target language for response
- * @param onChunk - Callback for each chunk as it streams in
- * @param onComplete - Callback when complete with parsed text and references
+ * @param onChunk - Callback for each accumulated text chunk as it streams in
+ * @param onComplete - Callback when complete with final text and merged references
  * @param onError - Callback for errors
+ * @param onStatus - Optional callback for agentic status step updates
  */
 export async function sendChatMessage(
   userQuery: string,
@@ -268,27 +300,48 @@ export async function sendChatMessage(
   targetLanguage: string,
   onChunk: (fullMessage: string) => void,
   onComplete: (responseText: string, references: any[]) => void,
-  onError: (error: Error) => void
+  onError: (error: Error) => void,
+  onStatus?: (status: { step: string; message: string }) => void
 ): Promise<void> {
+  let finalText = "";
+  const mergedRefs: Reference[] = [];
+
   try {
-    const fullResponse = await sendChatMessageStream(
-      userQuery,
-      sessionId,
-      targetLanguage,
-      (chunk) => {
-        // Forward chunks to caller as they arrive
-        onChunk(chunk);
-      }
-    );
-
-    // Parse the final response to separate text from references
-    const { responseText, references } = parseStreamResponse(fullResponse);
-
-    if (references.length > 0) {
-      console.log(`📚 Response includes ${references.length} reference(s)`);
-    }
-
-    onComplete(responseText, references);
+    await sendAgenticChatStream(userQuery, sessionId, targetLanguage, {
+      onStatus: (status) => {
+        onStatus?.(status);
+      },
+      onChunk: (accumulatedText) => {
+        finalText = accumulatedText;
+        onChunk(accumulatedText);
+      },
+      onResponseEnd: () => {
+        // Text is complete; references may still follow — do not call onComplete yet
+      },
+      onHadithReferences: (refs) => {
+        mergedRefs.push(...refs);
+        if (refs.length > 0) {
+          console.log(`📚 Received ${refs.length} hadith reference(s)`);
+        }
+      },
+      onQuranReferences: (refs) => {
+        mergedRefs.push(...refs);
+        if (refs.length > 0) {
+          console.log(`📖 Received ${refs.length} Quran reference(s)`);
+        }
+      },
+      onError: (message) => {
+        // Surface error but wait for done before rejecting so the stream
+        // lifecycle stays clean (backend sends done after error)
+        onError(new Error(message));
+      },
+      onDone: () => {
+        if (mergedRefs.length > 0) {
+          console.log(`📚 Total references: ${mergedRefs.length}`);
+        }
+        onComplete(finalText, mergedRefs);
+      },
+    });
   } catch (error) {
     console.error("❌ Chat message error:", error);
     onError(error as Error);
@@ -335,6 +388,224 @@ export function parseStreamResponse(fullMessage: string): {
     console.error("Error parsing references JSON:", err);
     return { responseText, references: [] };
   }
+}
+
+type AgenticChatHandlers = {
+  onStatus?: (status: { step: string; message: string }) => void;
+  onChunk?: (accumulatedText: string) => void;
+  onResponseEnd?: () => void;
+  onHadithReferences?: (refs: Reference[]) => void;
+  onQuranReferences?: (refs: Reference[]) => void;
+  onError?: (message: string) => void;
+  onDone?: () => void;
+};
+
+/**
+ * Stream the agentic chat endpoint using proper SSE frame parsing.
+ * Uses XMLHttpRequest + onprogress for Expo Go compatibility (same pattern
+ * as streamPersonalizedPrimer).
+ */
+export async function sendAgenticChatStream(
+  userQuery: string,
+  sessionId: string,
+  targetLanguage: string = "english",
+  handlers: AgenticChatHandlers = {},
+  options?: { signal?: AbortSignal }
+): Promise<void> {
+  const bearer = await getValidAccessToken().catch(() => null);
+  const { signal } = options || {};
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    let lastProcessedIndex = 0;
+    let buffer = "";
+    let accumulatedText = "";
+    let settled = false;
+
+    const clearAbortListener = () => {
+      if (signal) signal.removeEventListener("abort", handleAbort);
+    };
+
+    const settleResolve = () => {
+      if (settled) return;
+      settled = true;
+      clearAbortListener();
+      resolve();
+    };
+
+    const settleReject = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      clearAbortListener();
+      reject(error);
+    };
+
+    const handleAbort = () => {
+      xhr.abort();
+      settleReject(new Error("aborted"));
+    };
+
+    if (signal) {
+      if (signal.aborted) {
+        handleAbort();
+        return;
+      }
+      signal.addEventListener("abort", handleAbort, { once: true });
+    }
+
+    const parseData = (rawData: string): Record<string, unknown> => {
+      const trimmed = rawData.trim();
+      if (!trimmed) return {};
+      try {
+        return JSON.parse(trimmed) as Record<string, unknown>;
+      } catch {
+        return { raw: trimmed };
+      }
+    };
+
+    const dispatchFrame = (frame: string) => {
+      const trimmedFrame = frame.trim();
+      if (!trimmedFrame) return;
+
+      const lines = trimmedFrame.split(/\r?\n/);
+      let eventName = "message";
+      const dataLines: string[] = [];
+
+      for (const line of lines) {
+        if (line.startsWith("event:")) {
+          eventName = line.slice(6).trim();
+        } else if (line.startsWith("data:")) {
+          dataLines.push(line.slice(5).trimStart());
+        }
+      }
+
+      const payload = parseData(dataLines.join("\n"));
+
+      switch (eventName) {
+        case "status": {
+          handlers.onStatus?.({
+            step: String(payload.step ?? ""),
+            message: String(payload.message ?? ""),
+          });
+          break;
+        }
+
+        case "response_chunk": {
+          const token = typeof payload.token === "string" ? payload.token : "";
+          accumulatedText += token;
+          handlers.onChunk?.(accumulatedText);
+          break;
+        }
+
+        case "response_end": {
+          handlers.onResponseEnd?.();
+          break;
+        }
+
+        case "hadith_references": {
+          const refs = Array.isArray(payload.references)
+            ? (payload.references as Reference[]).map((r) => ({
+                ...r,
+                type: "hadith" as const,
+              }))
+            : [];
+          handlers.onHadithReferences?.(refs);
+          break;
+        }
+
+        case "quran_references": {
+          const refs = Array.isArray(payload.references)
+            ? (payload.references as Reference[]).map((r) => ({
+                ...r,
+                type: "quran" as const,
+              }))
+            : [];
+          handlers.onQuranReferences?.(refs);
+          break;
+        }
+
+        case "error": {
+          const msg = String(payload.message ?? "Streaming failed");
+          console.error("❌ Agentic chat error event:", msg);
+          handlers.onError?.(msg);
+          break;
+        }
+
+        case "done": {
+          handlers.onDone?.();
+          settleResolve();
+          break;
+        }
+
+        default:
+          break;
+      }
+    };
+
+    const processChunk = (chunk: string) => {
+      if (!chunk) return;
+      buffer += chunk;
+
+      while (true) {
+        const match = buffer.match(/\r?\n\r?\n/);
+        if (!match || typeof match.index !== "number") break;
+        const frame = buffer.slice(0, match.index);
+        buffer = buffer.slice(match.index + match[0].length);
+        dispatchFrame(frame);
+      }
+    };
+
+    const url = `${API_BASE_URL}/chat/stream/agentic`;
+    console.log("➡️ POST (agentic)", url);
+    xhr.open("POST", url);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Accept", "text/event-stream");
+    if (bearer) {
+      xhr.setRequestHeader("Authorization", `Bearer ${bearer}`);
+    }
+    xhr.timeout = 60000;
+
+    xhr.onprogress = () => {
+      const currentText = xhr.responseText;
+      if (currentText.length <= lastProcessedIndex) return;
+      const nextChunk = currentText.slice(lastProcessedIndex);
+      lastProcessedIndex = currentText.length;
+      processChunk(nextChunk);
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        // Flush any remaining buffered frames
+        if (buffer.trim()) {
+          dispatchFrame(buffer);
+          buffer = "";
+        }
+        settleResolve();
+      } else {
+        const errorText = xhr.responseText || xhr.statusText;
+        console.error(`❌ Agentic chat API error - HTTP ${xhr.status}: ${errorText}`);
+        settleReject(new Error(`HTTP ${xhr.status}: ${errorText}`));
+      }
+    };
+
+    xhr.onerror = () => {
+      console.error("❌ Network error during agentic chat streaming");
+      settleReject(new Error("Network error during agentic streaming"));
+    };
+
+    xhr.ontimeout = () => {
+      console.error("❌ Agentic chat request timeout");
+      settleReject(new Error("Agentic chat request timeout"));
+    };
+
+    xhr.send(
+      JSON.stringify({
+        user_query: userQuery,
+        session_id: sessionId,
+        language: targetLanguage,
+      })
+    );
+  });
 }
 
 /**
@@ -585,6 +856,119 @@ export async function streamPersonalizedPrimer(
 }
 
 // ---------------------------
+// Saved Chat API helpers
+// ---------------------------
+
+export interface SavedChatListItem {
+  session_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string;
+  message_count: number;
+}
+
+export interface SavedChatMessage {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  created_at: string;
+}
+
+export interface SavedChatListResponse {
+  items: SavedChatListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface SavedChatDetailResponse {
+  session_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string;
+  messages: SavedChatMessage[];
+  total_messages: number;
+  limit: number;
+  offset: number;
+}
+
+/**
+ * Fetch the current user's saved chat sessions, sorted by most recently active.
+ * Requires authentication. Returns null if no token is available.
+ */
+export async function fetchSavedChats(
+  limit = 20,
+  offset = 0
+): Promise<SavedChatListResponse | null> {
+  try {
+    const token = await getValidAccessToken().catch(() => null);
+    if (!token) return null;
+
+    const url = `${API_BASE_URL}/chat/saved?limit=${limit}&offset=${offset}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error(`❌ fetchSavedChats failed - HTTP ${response.status}: ${text}`);
+      throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+    }
+
+    return response.json();
+  } catch (e) {
+    console.error("❌ fetchSavedChats error:", e);
+    throw e;
+  }
+}
+
+/**
+ * Fetch a single saved chat with its full message history.
+ * Requires authentication. Returns null if no token is available.
+ */
+export async function fetchSavedChatDetail(
+  sessionId: string,
+  limit = 200,
+  offset = 0
+): Promise<SavedChatDetailResponse | null> {
+  try {
+    const token = await getValidAccessToken().catch(() => null);
+    if (!token) return null;
+
+    const url = `${API_BASE_URL}/chat/saved/${encodeURIComponent(sessionId)}?limit=${limit}&offset=${offset}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.status === 404) {
+      console.warn(`⚠️ Saved chat not found: ${sessionId.substring(0, 8)}...`);
+      return null;
+    }
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error(`❌ fetchSavedChatDetail failed - HTTP ${response.status}: ${text}`);
+      throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+    }
+
+    return response.json();
+  } catch (e) {
+    console.error("❌ fetchSavedChatDetail error:", e);
+    throw e;
+  }
+}
+
+// ---------------------------
 // Hikmah CRUD API helpers
 // ---------------------------
 
@@ -697,6 +1081,52 @@ export async function getLessonContent(
         return ao - bo;
       })
     : data;
+}
+
+// ---------------------------
+// Lesson Page Quiz API helpers
+// ---------------------------
+
+/** GET /hikmah/pages/{lessonContentId}/quiz-questions */
+export async function getLessonPageQuizQuestions(
+  lessonContentId: number
+): Promise<LessonPageQuizQuestionsResponse> {
+  const url = `${API_BASE_URL}/hikmah/pages/${lessonContentId}/quiz-questions`;
+  const response = await fetch(url, {
+    method: "GET",
+    headers: await withAuthHeaders({ "Content-Type": "application/json" }),
+  });
+  if (response.status === 404) {
+    return { lesson_content_id: lessonContentId, questions: [] };
+  }
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+  }
+  return response.json();
+}
+
+/** POST /hikmah/pages/{lessonContentId}/quiz-submit (fire-and-forget) */
+export async function submitLessonPageQuizAnswer(
+  lessonContentId: number,
+  payload: SubmitLessonPageQuizAnswerRequest
+): Promise<void> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/hikmah/pages/${lessonContentId}/quiz-submit`,
+      {
+        method: "POST",
+        headers: await withAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      }
+    );
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.warn(`Quiz submit non-2xx ${response.status}: ${text}`);
+    }
+  } catch (err) {
+    console.warn("Quiz submit failed:", err);
+  }
 }
 
 // ---------------------------

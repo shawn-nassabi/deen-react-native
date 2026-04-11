@@ -18,18 +18,21 @@ import {
   getLessonContent,
   getLessonsByTreeId,
   getBaselinePrimer,
+  getLessonPageQuizQuestions,
   upsertUserProgress,
   listUserProgress,
   streamPersonalizedPrimer,
   HikmahTree,
   Lesson,
   LessonContent,
+  QuizQuestionResponse,
 } from "@/utils/api";
 import { setLastRead } from "@/utils/hikmahStorage";
 import ElaborationModal from "@/components/hikmah/ElaborationModal";
 import { useHikmahProgress } from "@/hooks/useHikmahProgress";
 import LessonContentWebView from "@/components/hikmah/LessonContentWebView";
 import LessonPrimerPage from "@/components/hikmah/LessonPrimerPage";
+import LessonQuizPage from "@/components/hikmah/LessonQuizPage";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function LessonReaderScreen() {
@@ -63,6 +66,10 @@ export default function LessonReaderScreen() {
   const [error, setError] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
 
+  const [quizzesByContentId, setQuizzesByContentId] = useState<
+    Record<number, QuizQuestionResponse[]>
+  >({});
+
   // Selection State
   const [selection, setSelection] = useState<{ text: string; context: string }>(
     { text: "", context: "" }
@@ -87,7 +94,7 @@ export default function LessonReaderScreen() {
       getLessonsByTreeId(Number(treeId), { limit: 200 }),
       getLessonContent(Number(lessonId), { limit: 500 }),
     ])
-      .then(([lsn, tr, ls, content]) => {
+      .then(async ([lsn, tr, ls, content]) => {
         if (!mounted) return;
         setLesson(lsn);
         setTree(tr);
@@ -97,8 +104,25 @@ export default function LessonReaderScreen() {
           : [];
         setPages(sortedPages);
         setCurrentPageIndex(0);
-
         setLastRead(treeId, lessonId);
+
+        // Fetch quizzes for all pages in parallel; failures are non-fatal
+        const quizResults = await Promise.all(
+          sortedPages.map((page) =>
+            getLessonPageQuizQuestions(page.id).catch((err) => {
+              console.warn(`Quiz fetch failed for page ${page.id}:`, err);
+              return { lesson_content_id: page.id, questions: [] as QuizQuestionResponse[] };
+            })
+          )
+        );
+        if (!mounted) return;
+        const quizMap: Record<number, QuizQuestionResponse[]> = {};
+        for (const result of quizResults) {
+          if (result.questions.length > 0) {
+            quizMap[result.lesson_content_id] = result.questions;
+          }
+        }
+        setQuizzesByContentId(quizMap);
       })
       .catch((err) => {
         if (!mounted) return;
@@ -239,20 +263,27 @@ export default function LessonReaderScreen() {
   } = useHikmahProgress(treeWithLessons);
   const done = isCompleted(lessonId!);
   const hasPrimerPage = baselinePrimerLoading || baselinePrimerBullets.length > 0;
-  const totalPages = pages.length + (hasPrimerPage ? 1 : 0);
-  const isPrimerPage = hasPrimerPage && currentPageIndex === 0;
 
-  const getContentPageIndex = (displayIndex: number) =>
-    hasPrimerPage ? displayIndex - 1 : displayIndex;
+  type DisplayPage =
+    | { kind: "primer" }
+    | { kind: "content"; content: LessonContent }
+    | { kind: "quiz"; lessonContentId: number; questions: QuizQuestionResponse[] };
 
-  const getPercentFromDisplayIndex = (displayIndex: number) => {
-    const contentIndex = getContentPageIndex(displayIndex);
-    if (contentIndex < 0 || pages.length === 0) return 0;
-    return Math.max(
-      0,
-      Math.min(100, Math.round(((contentIndex + 1) / pages.length) * 100))
-    );
-  };
+  const displayPages: DisplayPage[] = useMemo(() => {
+    const out: DisplayPage[] = [];
+    if (hasPrimerPage) out.push({ kind: "primer" });
+    for (const page of pages) {
+      out.push({ kind: "content", content: page });
+      const qs = quizzesByContentId[page.id];
+      if (qs && qs.length > 0) {
+        out.push({ kind: "quiz", lessonContentId: page.id, questions: qs });
+      }
+    }
+    return out;
+  }, [hasPrimerPage, pages, quizzesByContentId]);
+
+  const totalPages = displayPages.length;
+  const currentEntry: DisplayPage | undefined = displayPages[currentPageIndex];
 
   useEffect(() => {
     if (totalPages <= 0) return;
@@ -280,11 +311,17 @@ export default function LessonReaderScreen() {
           if (
             Number.isInteger(lp) &&
             lp >= 0 &&
-            lp < pages.length &&
             !hasPrimerPage
           ) {
-            setCurrentPageIndex(lp);
-            pageUpsertSkipRef.current = true;
+            // Map content-only index (lp) to the corresponding displayPages index
+            const contentEntries = displayPages
+              .map((e, i) => ({ e, i }))
+              .filter(({ e }) => e.kind === "content");
+            const target = contentEntries[lp];
+            if (target !== undefined) {
+              setCurrentPageIndex(target.i);
+              pageUpsertSkipRef.current = true;
+            }
           }
 
           // Sync completion status if needed
@@ -313,7 +350,8 @@ export default function LessonReaderScreen() {
     // Clear selection on page change
     setSelection({ text: "", context: "" });
 
-    if (isPrimerPage) {
+    // Only upsert progress when on a content page
+    if (currentEntry?.kind !== "content") {
       return;
     }
 
@@ -322,19 +360,16 @@ export default function LessonReaderScreen() {
       return;
     }
 
-    const contentPosition = hasPrimerPage
-      ? currentPageIndex - 1
-      : currentPageIndex;
+    // Compute content-only position and percentage from displayPages
+    const contentSeen = displayPages
+      .slice(0, currentPageIndex + 1)
+      .filter((e) => e.kind === "content").length;
+    const contentEntries = displayPages.filter((e) => e.kind === "content");
+    const contentPosition = contentSeen - 1;
     const percent =
-      contentPosition < 0 || pages.length === 0
+      contentEntries.length === 0
         ? 0
-        : Math.max(
-            0,
-            Math.min(
-              100,
-              Math.round(((contentPosition + 1) / pages.length) * 100)
-            )
-          );
+        : Math.round((contentSeen / contentEntries.length) * 100);
 
     if (contentPosition < 0) {
       return;
@@ -353,8 +388,8 @@ export default function LessonReaderScreen() {
     lessonId,
     treeId,
     userId,
-    isPrimerPage,
-    hasPrimerPage,
+    currentEntry,
+    displayPages,
   ]);
 
   const handleNextPage = () => {
@@ -414,11 +449,6 @@ export default function LessonReaderScreen() {
     );
   }
 
-  const contentPageIndex = getContentPageIndex(currentPageIndex);
-  const currentPage =
-    contentPageIndex >= 0 && contentPageIndex < pages.length
-      ? pages[contentPageIndex]
-      : null;
   const hasSelection = !!selection.text;
   const isLastPage = totalPages > 0 && currentPageIndex >= totalPages - 1;
 
@@ -448,9 +478,9 @@ export default function LessonReaderScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      {/* Content Area - Using WebView for content */}
+      {/* Content Area */}
       <View style={styles.contentContainer}>
-        {isPrimerPage ? (
+        {currentEntry?.kind === "primer" ? (
           <LessonPrimerPage
             lessonTitle={lesson.title}
             baselineBullets={baselinePrimerBullets}
@@ -461,9 +491,16 @@ export default function LessonReaderScreen() {
               setCurrentPageIndex(totalPages > 1 ? 1 : 0)
             }
           />
-        ) : currentPage ? (
+        ) : currentEntry?.kind === "quiz" ? (
+          <LessonQuizPage
+            lessonContentId={currentEntry.lessonContentId}
+            questions={currentEntry.questions}
+            userId={userId}
+            onContinue={isLastPage ? handleCompleteAndNext : handleNextPage}
+          />
+        ) : currentEntry?.kind === "content" ? (
           <LessonContentWebView
-            markdown={currentPage.content_body}
+            markdown={currentEntry.content.content_body}
             onSelectionChange={setSelection}
           />
         ) : (
@@ -475,8 +512,8 @@ export default function LessonReaderScreen() {
         )}
       </View>
 
-      {/* Bottom Controls (Navigation + Completion) */}
-      <View
+      {/* Bottom Controls (Navigation + Completion) — hidden on quiz pages (quiz has own nav) */}
+      {currentEntry?.kind !== "quiz" && <View
         style={[
           styles.bottomControls,
           { backgroundColor: colors.panel, borderTopColor: colors.border },
@@ -508,7 +545,17 @@ export default function LessonReaderScreen() {
                     is_completed: !done,
                     percent_complete: !done
                       ? 100
-                      : getPercentFromDisplayIndex(currentPageIndex),
+                      : (() => {
+                          const seen = displayPages
+                            .slice(0, currentPageIndex + 1)
+                            .filter((e) => e.kind === "content").length;
+                          const total = displayPages.filter(
+                            (e) => e.kind === "content"
+                          ).length;
+                          return total === 0
+                            ? 0
+                            : Math.round((seen / total) * 100);
+                        })(),
                   }).catch(console.warn);
                 }}
                 style={[
@@ -557,10 +604,10 @@ export default function LessonReaderScreen() {
             <View style={[styles.navBtn, { opacity: 0 }]} />
           )}
         </View>
-      </View>
+      </View>}
 
       {/* Ask Deen FAB */}
-      {!isPrimerPage ? (
+      {currentEntry?.kind === "content" ? (
         <TouchableOpacity
           style={[
             styles.fab,
@@ -605,7 +652,13 @@ export default function LessonReaderScreen() {
       <ElaborationModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        contextText={selection.context || currentPage?.content_body || ""}
+        contextText={
+          selection.context ||
+          (currentEntry?.kind === "content"
+            ? currentEntry.content.content_body
+            : "") ||
+          ""
+        }
         lessonTitle={lesson.title}
         treeTitle={tree.title}
         lessonSummary={lesson.summary || ""}
