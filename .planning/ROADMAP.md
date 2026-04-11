@@ -55,8 +55,12 @@ Plans:
   2. After submitting, the user sees a confirmation message (no redirect, no crash)
   3. Tapping the reset link in the email opens the app at the New Password screen (not a browser) on a dev-client build
   4. The user can enter and confirm a new password; after saving, they are signed in and redirected to the main tab screen
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+
+Plans:
+- [ ] 01.3-01-PLAN.md — Extend _layout.tsx auth guard (isOnAuthScreen + Stack.Screen entries) and wire login.tsx "Forgot password?" link
+- [ ] 01.3-02-PLAN.md — Create app/forgot-password.tsx (email form + inline confirmation state)
+- [ ] 01.3-03-PLAN.md — Create app/reset-password.tsx (loading / error / form states; code exchange on mount; updateUser on submit)
 
 ### Phase 1.4: Cleanup + Account
 **Goal**: All Cognito code, packages, and environment variables are removed; user IDs passed to the backend are Supabase UUIDs; account deletion works with the new Supabase Bearer token
@@ -77,5 +81,5 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1.1 Client Infrastructure | 1/1 | Complete | 2026-04-11 |
 | 1.2 Auth Core + Login UI | 1/3 | In Progress | - |
-| 1.3 Password Reset Flow | 0/TBD | Not started | - |
+| 1.3 Password Reset Flow | 0/3 | Not started | - |
 | 1.4 Cleanup + Account | 0/TBD | Not started | - |
