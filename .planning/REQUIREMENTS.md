@@ -69,41 +69,39 @@
 
 ## Traceability
 
-*Populated during roadmap creation.*
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MIG-01 | — | Pending |
-| MIG-02 | — | Pending |
-| MIG-03 | — | Pending |
-| MIG-04 | — | Pending |
-| MIG-05 | — | Pending |
-| MIG-06 | — | Pending |
-| MIG-07 | — | Pending |
-| MIG-08 | — | Pending |
-| MIG-09 | — | Pending |
-| MIG-10 | — | Pending |
-| MIG-11 | — | Pending |
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| AUTH-04 | — | Pending |
-| AUTH-05 | — | Pending |
-| AUTH-06 | — | Pending |
-| AUTH-07 | — | Pending |
-| UI-01 | — | Pending |
-| UI-02 | — | Pending |
-| UI-03 | — | Pending |
-| UI-04 | — | Pending |
-| UI-05 | — | Pending |
-| UI-06 | — | Pending |
-| ACC-01 | — | Pending |
+| MIG-01 | Phase 1.1 | Pending |
+| MIG-02 | Phase 1.1 | Pending |
+| MIG-10 | Phase 1.1 | Pending |
+| AUTH-01 | Phase 1.2 | Pending |
+| AUTH-02 | Phase 1.2 | Pending |
+| AUTH-03 | Phase 1.2 | Pending |
+| AUTH-04 | Phase 1.2 | Pending |
+| AUTH-05 | Phase 1.2 | Pending |
+| MIG-03 | Phase 1.2 | Pending |
+| MIG-04 | Phase 1.2 | Pending |
+| MIG-06 | Phase 1.2 | Pending |
+| MIG-07 | Phase 1.2 | Pending |
+| UI-01 | Phase 1.2 | Pending |
+| UI-02 | Phase 1.2 | Pending |
+| UI-05 | Phase 1.2 | Pending |
+| UI-06 | Phase 1.2 | Pending |
+| AUTH-06 | Phase 1.3 | Pending |
+| AUTH-07 | Phase 1.3 | Pending |
+| MIG-11 | Phase 1.3 | Pending |
+| UI-03 | Phase 1.3 | Pending |
+| UI-04 | Phase 1.3 | Pending |
+| ACC-01 | Phase 1.4 | Pending |
+| MIG-05 | Phase 1.4 | Pending |
+| MIG-08 | Phase 1.4 | Pending |
+| MIG-09 | Phase 1.4 | Pending |
 
 **Coverage:**
 - v1 requirements: 25 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 25 ⚠️
+- Mapped to phases: 25
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-10*
-*Last updated: 2026-04-10 after initial definition*
+*Last updated: 2026-04-10 after roadmap creation — traceability complete*
