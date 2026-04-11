@@ -36,7 +36,7 @@ type AuthContextType = {
   user: AuthUser | null;
   accessToken: string | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>;
   signOut: (opts?: { global?: boolean }) => Promise<void>;
   refresh: () => Promise<void>;
 };
@@ -100,11 +100,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // State updated automatically by onAuthStateChange (SIGNED_IN event)
   };
 
-  const signUp = async (email: string, password: string): Promise<void> => {
-    await authSignUp(email, password);
+  const signUp = async (email: string, password: string): Promise<{ needsConfirmation: boolean }> => {
+    const result = await authSignUp(email, password);
     // State updated automatically by onAuthStateChange (SIGNED_IN event)
     // NOTE: if email confirmation is enabled in Supabase dashboard, session stays
     // null and status stays signedOut — user must confirm email first.
+    return result;
   };
 
   const signOut = async (opts?: { global?: boolean }): Promise<void> => {
