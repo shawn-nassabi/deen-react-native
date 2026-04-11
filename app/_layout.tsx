@@ -41,11 +41,11 @@ function RootNavigator() {
   useEffect(() => {
     if (status === "loading") return;
 
-    const isOnLogin = segments?.[0] === "login";
+    const isOnAuthScreen = segments?.[0] === "login" || segments?.[0] === "signup";
 
-    if (status !== "signedIn" && !isOnLogin) {
+    if (status !== "signedIn" && !isOnAuthScreen) {
       router.replace("/login");
-    } else if (status === "signedIn" && isOnLogin) {
+    } else if (status === "signedIn" && isOnAuthScreen) {
       router.replace("/(tabs)");
     }
   }, [status, segments, router]);
@@ -56,6 +56,7 @@ function RootNavigator() {
     >
       <Stack>
         <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="signup" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="settings"
