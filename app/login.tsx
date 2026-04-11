@@ -41,6 +41,8 @@ export default function LoginScreen() {
       const msg: string = e?.message ?? "";
       if (msg === "Invalid login credentials") {
         setError("Incorrect email or password. Please try again.");
+      } else if (msg.toLowerCase().includes("not confirmed") || msg.toLowerCase().includes("email not confirmed")) {
+        setError("Please verify your email before signing in. Check your inbox and junk folder.");
       } else if (/network/i.test(msg)) {
         setError("Something went wrong. Check your connection and try again.");
       } else {
