@@ -26,8 +26,8 @@
 
 ### Migration & Cleanup
 
-- [ ] **MIG-01**: `react-native-url-polyfill/auto` is the first import in `utils/polyfills.ts` so Hermes has a spec-compliant URL global before Supabase loads
-- [ ] **MIG-02**: Singleton Supabase client exported from `utils/supabase.ts` with `detectSessionInUrl: false` and a `LargeSecureStore` chunked storage adapter
+- [x] **MIG-01**: `react-native-url-polyfill/auto` is the first import in `utils/polyfills.ts` so Hermes has a spec-compliant URL global before Supabase loads
+- [x] **MIG-02**: Singleton Supabase client exported from `utils/supabase.ts` with `detectSessionInUrl: false` and a `LargeSecureStore` chunked storage adapter
 - [ ] **MIG-03**: `hooks/useAuth.tsx` AuthProvider rewired to use `supabase.auth.onAuthStateChange`; public API (`status`, `user`, `accessToken`, `signIn`, `signOut`) preserved for zero-change in consuming screens
 - [ ] **MIG-04**: `utils/auth.ts` Cognito PKCE logic removed and replaced with thin wrappers around Supabase auth calls
 - [ ] **MIG-05**: All occurrences of `user?.email || user?.sub` replaced with `session.user.id` (Supabase UUID) in `app/(tabs)/hikmah.tsx`, `app/hikmah/lesson/[lessonId].tsx`, and `components/hikmah/ElaborationModal.tsx`
@@ -35,7 +35,7 @@
 - [ ] **MIG-07**: Old `deen.auth.tokens` SecureStore key cleared on first launch after migration to prevent stale Cognito token conflicts
 - [ ] **MIG-08**: `app/auth.tsx` OAuth callback screen removed (no longer needed for email+password flow)
 - [ ] **MIG-09**: `expo-auth-session` and `expo-web-browser` removed from `package.json` and `app.json` plugins
-- [ ] **MIG-10**: `utils/config.ts` Cognito env vars (`EXPO_PUBLIC_COGNITO_DOMAIN`, `EXPO_PUBLIC_COGNITO_CLIENT_ID`, `EXPO_PUBLIC_COGNITO_ISSUER`, `EXPO_PUBLIC_AUTH_REDIRECT_URI`) replaced with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- [x] **MIG-10**: `utils/config.ts` Cognito env vars (`EXPO_PUBLIC_COGNITO_DOMAIN`, `EXPO_PUBLIC_COGNITO_CLIENT_ID`, `EXPO_PUBLIC_COGNITO_ISSUER`, `EXPO_PUBLIC_AUTH_REDIRECT_URI`) replaced with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 - [ ] **MIG-11**: `deenreactnative://reset-password` deep link configured in `app.json` for password reset callback
 
 ### Account
@@ -71,9 +71,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MIG-01 | Phase 1.1 | Pending |
-| MIG-02 | Phase 1.1 | Pending |
-| MIG-10 | Phase 1.1 | Pending |
+| MIG-01 | Phase 1.1 | Complete |
+| MIG-02 | Phase 1.1 | Complete |
+| MIG-10 | Phase 1.1 | Complete |
 | AUTH-01 | Phase 1.2 | Pending |
 | AUTH-02 | Phase 1.2 | Pending |
 | AUTH-03 | Phase 1.2 | Pending |

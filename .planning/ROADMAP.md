@@ -27,7 +27,7 @@ The Deen app currently authenticates via AWS Cognito PKCE/OAuth. This milestone 
 **Plans**: 1 plan
 
 Plans:
-- [ ] 01.1-01-PLAN.md — Install packages, add URL polyfill, create Supabase singleton with LargeSecureStore + AppState wiring, add Supabase fields to config
+- [x] 01.1-01-PLAN.md — Install packages, add URL polyfill, create Supabase singleton with LargeSecureStore + AppState wiring, add Supabase fields to config
 
 ### Phase 1.2: Auth Core + Login UI
 **Goal**: Users can sign up, sign in, and sign out using email and password, with sessions that survive app restarts — and every screen that consumed the old `useAuth` hook continues to work unchanged
