@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 Phase: 1.3
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-04-11
+Last activity: 2026-04-11 - Completed quick task 260411-hov: email verification message after sign up and unverified email error on login
 
 Progress: [██░░░░░░░░] 25%
 
@@ -78,6 +78,12 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 None yet.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260411-hov | email verification message after sign up and unverified email error on login | 2026-04-11 | 7e5c4db | [260411-hov-email-verification-message-after-sign-up](./quick/260411-hov-email-verification-message-after-sign-up/) |
 
 ### Blockers/Concerns
 
