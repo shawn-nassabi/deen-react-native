@@ -22,9 +22,12 @@ The Deen app currently authenticates via AWS Cognito PKCE/OAuth. This milestone 
 **Success Criteria** (what must be TRUE):
   1. App launches without a white screen or `ReferenceError: URL is not defined` crash after the polyfill is added
   2. Importing `supabase` from `utils/supabase.ts` in any screen does not throw at module-init time
-  3. `utils/config.ts` exposes `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` and the app reads them at startup
+  3. `utils/config.ts` exposes `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and the app reads them at startup
   4. Existing Cognito auth flow still works end-to-end (no regression — infrastructure is additive at this stage)
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 01.1-01-PLAN.md — Install packages, add URL polyfill, create Supabase singleton with LargeSecureStore + AppState wiring, add Supabase fields to config
 
 ### Phase 1.2: Auth Core + Login UI
 **Goal**: Users can sign up, sign in, and sign out using email and password, with sessions that survive app restarts — and every screen that consumed the old `useAuth` hook continues to work unchanged
@@ -68,7 +71,7 @@ The Deen app currently authenticates via AWS Cognito PKCE/OAuth. This milestone 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1.1 Client Infrastructure | 0/TBD | Not started | - |
+| 1.1 Client Infrastructure | 0/1 | Not started | - |
 | 1.2 Auth Core + Login UI | 0/TBD | Not started | - |
 | 1.3 Password Reset Flow | 0/TBD | Not started | - |
 | 1.4 Cleanup + Account | 0/TBD | Not started | - |
