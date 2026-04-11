@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01.2-01-PLAN.md
-last_updated: "2026-04-11T16:12:24Z"
-last_activity: 2026-04-11 -- Completed Phase 01.2 Plan 01 (auth core)
+stopped_at: Completed 01.2-02-PLAN.md
+last_updated: "2026-04-11T16:19:42.237Z"
+last_activity: 2026-04-11
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 7
+  total_plans: 4
   completed_plans: 2
   percent: 25
 ---
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 ## Current Position
 
 Phase: 01.2 (auth-core-login-ui) — EXECUTING
-Plan: 2 of 3
-Status: Executing Phase 01.2
-Last activity: 2026-04-11 -- Completed Phase 01.2 Plan 01 (auth core — utils/auth.ts + hooks/useAuth.tsx)
+Plan: 3 of 3
+Status: Ready to execute
+Last activity: 2026-04-11
 
 Progress: [██░░░░░░░░] 25%
 
@@ -53,6 +53,7 @@ Progress: [██░░░░░░░░] 25%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 01.2 P02 | 8min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,8 @@ Recent decisions affecting current work:
 - [Phase 01.1-client-infrastructure]: D-02 LargeSecureStore chunking chosen over AES-256 — zero new dependencies, only expo-secure-store
 - [Phase 01.1-client-infrastructure]: D-08: All Cognito fields removed from CONFIG in Phase 1.1; utils/auth.ts reads Cognito env vars directly from process.env
 - [Phase 01.1-client-infrastructure]: requireEnv() fail-fast pattern for Supabase env vars — throws at startup if missing rather than using empty defaults
+- [Phase 01.2-02]: No Redirect component in login.tsx — _layout.tsx owns the auth-gated redirect to prevent flicker
+- [Phase 01.2-02]: Error message fallback always shows generic network error — avoids leaking internal Supabase error messages
 
 ### Pending Todos
 
@@ -83,6 +86,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-11T16:12:24Z
-Stopped at: Completed 01.2-01-PLAN.md
-Resume file: .planning/phases/01.2-auth-core-login-ui/01.2-02-PLAN.md
+Last session: 2026-04-11T16:19:42.225Z
+Stopped at: Completed 01.2-02-PLAN.md
+Resume file: None
