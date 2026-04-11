@@ -91,7 +91,7 @@ export default function FeedbackScreen() {
           <ThemedText
             style={[styles.description, { color: colors.textSecondary }]}
           >
-            Your feedback is invaluable to us! We're constantly working to
+            Your feedback is invaluable to us! We&apos;re constantly working to
             improve Deen and provide the best possible experience for Islamic
             education.
           </ThemedText>
@@ -99,8 +99,8 @@ export default function FeedbackScreen() {
           <ThemedText
             style={[styles.description, { color: colors.textSecondary }]}
           >
-            Please share your thoughts, suggestions, or report any issues you've
-            encountered. Whether it's a bug, a feature request, or general
+            Please share your thoughts, suggestions, or report any issues you&apos;ve
+            encountered. Whether it&apos;s a bug, a feature request, or general
             feedback, we want to hear from you.
           </ThemedText>
 
@@ -148,7 +148,7 @@ export default function FeedbackScreen() {
           </TouchableOpacity>
 
           <ThemedText style={[styles.footerNote, { color: colors.muted }]}>
-            You'll be redirected to Google Forms to submit your feedback.
+            You&apos;ll be redirected to Google Forms to submit your feedback.
           </ThemedText>
         </ThemedView>
       </ScrollView>
