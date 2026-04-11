@@ -39,8 +39,12 @@ Plans:
   3. User can sign out from any tab and is immediately redirected to the Sign In screen
   4. Killing and reopening the app restores the session — the user does not have to sign in again
   5. All auth screens display a loading spinner during async operations and show a readable inline error for every failure state (wrong password, email already in use, network error)
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+
+Plans:
+- [ ] 01.2-01-PLAN.md — Rewrite utils/auth.ts (Supabase thin wrappers) and hooks/useAuth.tsx (onAuthStateChange subscription, MIG-07 cleanup)
+- [ ] 01.2-02-PLAN.md — Replace app/login.tsx with email+password card form (elevated card, TextInputs, show/hide toggle, inline errors)
+- [ ] 01.2-03-PLAN.md — Create app/signup.tsx and update app/_layout.tsx (signup route + auth redirect fix)
 
 ### Phase 1.3: Password Reset Flow
 **Goal**: A user who has forgotten their password can request a reset email, click the link, and set a new password without leaving the app
@@ -72,6 +76,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1.1 Client Infrastructure | 0/1 | Not started | - |
-| 1.2 Auth Core + Login UI | 0/TBD | Not started | - |
+| 1.2 Auth Core + Login UI | 0/3 | Not started | - |
 | 1.3 Password Reset Flow | 0/TBD | Not started | - |
 | 1.4 Cleanup + Account | 0/TBD | Not started | - |
