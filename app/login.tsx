@@ -163,7 +163,7 @@ export default function LoginScreen() {
             {/* Links row */}
             <View style={styles.linksRow}>
               <TouchableOpacity
-                onPress={() => {}}
+                onPress={() => router.push("/forgot-password")}
                 style={styles.linkTouchable}
                 activeOpacity={0.7}
               >
