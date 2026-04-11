@@ -22,6 +22,12 @@ Users can sign in and access all features without authentication getting in thei
 - ✓ Chat history drawer and session management — existing
 - ✓ Reference copy/share functionality — existing
 
+### Validated in Phase 1.1
+
+- ✓ `utils/supabase.ts` singleton with `LargeSecureStore` adapter and AppState token-refresh wiring — Validated in Phase 1.1: client-infrastructure
+- ✓ URL polyfill (`react-native-url-polyfill/auto`) as first import in `utils/polyfills.ts` — Validated in Phase 1.1: client-infrastructure
+- ✓ `utils/config.ts` updated to `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; all Cognito fields removed — Validated in Phase 1.1: client-infrastructure
+
 ### Active
 
 <!-- Supabase auth migration scope. -->
@@ -35,7 +41,6 @@ Users can sign in and access all features without authentication getting in thei
 - [ ] Account deletion (`DELETE /account/me`) continues to work with Supabase token
 - [ ] Remove `expo-auth-session`, `expo-web-browser`, and all Cognito-specific configuration
 - [ ] Remove `app/auth.tsx` OAuth callback handler (no longer needed)
-- [ ] Update `utils/config.ts` to replace Cognito env vars with Supabase URL + anon key
 
 ### Out of Scope
 
@@ -100,4 +105,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-10 after initialization*
+*Last updated: 2026-04-11 after Phase 1.1 (client-infrastructure) complete*
