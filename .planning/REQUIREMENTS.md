@@ -35,7 +35,7 @@
 - [ ] **MIG-07**: Old `deen.auth.tokens` SecureStore key cleared on first launch after migration to prevent stale Cognito token conflicts
 - [ ] **MIG-08**: `app/auth.tsx` OAuth callback screen removed (no longer needed for email+password flow)
 - [ ] **MIG-09**: `expo-auth-session` and `expo-web-browser` removed from `package.json` and `app.json` plugins
-- [x] **MIG-10**: `utils/config.ts` Cognito env vars (`EXPO_PUBLIC_COGNITO_DOMAIN`, `EXPO_PUBLIC_COGNITO_CLIENT_ID`, `EXPO_PUBLIC_COGNITO_ISSUER`, `EXPO_PUBLIC_AUTH_REDIRECT_URI`) replaced with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- [x] **MIG-10**: `utils/config.ts` Cognito env vars (`EXPO_PUBLIC_COGNITO_DOMAIN`, `EXPO_PUBLIC_COGNITO_CLIENT_ID`, `EXPO_PUBLIC_COGNITO_ISSUER`, `EXPO_PUBLIC_AUTH_REDIRECT_URI`) replaced with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (per D-07)
 - [ ] **MIG-11**: `deenreactnative://reset-password` deep link configured in `app.json` for password reset callback
 
 ### Account
