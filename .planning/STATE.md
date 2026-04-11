@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1.3 UI-SPEC approved
-last_updated: "2026-04-11T17:23:30.085Z"
-last_activity: "2026-04-11 - Completed quick task 260411-hov: email verification message after sign up and unverified email error on login"
+stopped_at: Completed 01.3-01-PLAN.md
+last_updated: "2026-04-11T17:43:41.094Z"
+last_activity: 2026-04-11
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 7
+  completed_plans: 5
   percent: 25
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-10)
 
 **Core value:** Users can sign in and access all features without authentication getting in their way — the migration is seamless and the app feels polished.
-**Current focus:** Phase 01.2 — auth-core-login-ui
+**Current focus:** Phase 01.3 — password-reset-flow
 
 ## Current Position
 
-Phase: 1.3
-Plan: Not started
+Phase: 01.3 (password-reset-flow) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-04-11 - Completed quick task 260411-hov: email verification message after sign up and unverified email error on login
+Last activity: 2026-04-11
 
 Progress: [██░░░░░░░░] 25%
 
@@ -54,6 +54,7 @@ Progress: [██░░░░░░░░] 25%
 
 *Updated after each plan completion*
 | Phase 01.2 P02 | 8min | 1 tasks | 2 files |
+| Phase 01.3-password-reset-flow P01 | 5min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,7 @@ Recent decisions affecting current work:
 - [Phase 01.1-client-infrastructure]: requireEnv() fail-fast pattern for Supabase env vars — throws at startup if missing rather than using empty defaults
 - [Phase 01.2-02]: No Redirect component in login.tsx — _layout.tsx owns the auth-gated redirect to prevent flicker
 - [Phase 01.2-02]: Error message fallback always shows generic network error — avoids leaking internal Supabase error messages
+- [Phase 01.3-01]: No Redirect component in password-reset screens — _layout.tsx isOnAuthScreen guard owns all unauthenticated-accessible route exceptions (consistent with signup pattern)
 
 ### Pending Todos
 
@@ -92,6 +94,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-11T17:23:30.073Z
-Stopped at: Phase 1.3 UI-SPEC approved
-Resume file: .planning/phases/01.3-password-reset-flow/01.3-UI-SPEC.md
+Last session: 2026-04-11T17:43:41.082Z
+Stopped at: Completed 01.3-01-PLAN.md
+Resume file: None

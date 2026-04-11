@@ -12,7 +12,7 @@
 - [x] **AUTH-03**: User session persists across app restarts and foreground/background cycles
 - [x] **AUTH-04**: Access token is refreshed automatically without user action (Supabase SDK handles this)
 - [x] **AUTH-05**: User can sign out and is redirected to the Sign In screen
-- [ ] **AUTH-06**: User can request a password reset email from the Sign In screen
+- [x] **AUTH-06**: User can request a password reset email from the Sign In screen
 - [ ] **AUTH-07**: User can set a new password after clicking the reset link (deep link into app)
 
 ### Login UI
@@ -36,7 +36,7 @@
 - [ ] **MIG-08**: `app/auth.tsx` OAuth callback screen removed (no longer needed for email+password flow)
 - [ ] **MIG-09**: `expo-auth-session` and `expo-web-browser` removed from `package.json` and `app.json` plugins
 - [x] **MIG-10**: `utils/config.ts` Cognito env vars (`EXPO_PUBLIC_COGNITO_DOMAIN`, `EXPO_PUBLIC_COGNITO_CLIENT_ID`, `EXPO_PUBLIC_COGNITO_ISSUER`, `EXPO_PUBLIC_AUTH_REDIRECT_URI`) replaced with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (per D-07)
-- [ ] **MIG-11**: `deenreactnative://reset-password` deep link configured in `app.json` for password reset callback
+- [x] **MIG-11**: `deenreactnative://reset-password` deep link configured in `app.json` for password reset callback
 
 ### Account
 
@@ -87,9 +87,9 @@
 | UI-02 | Phase 1.2 | Pending |
 | UI-05 | Phase 1.2 | Complete |
 | UI-06 | Phase 1.2 | Complete |
-| AUTH-06 | Phase 1.3 | Pending |
+| AUTH-06 | Phase 1.3 | Complete |
 | AUTH-07 | Phase 1.3 | Pending |
-| MIG-11 | Phase 1.3 | Pending |
+| MIG-11 | Phase 1.3 | Complete |
 | UI-03 | Phase 1.3 | Pending |
 | UI-04 | Phase 1.3 | Pending |
 | ACC-01 | Phase 1.4 | Pending |
