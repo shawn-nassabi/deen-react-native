@@ -4,7 +4,6 @@ import * as WebBrowser from "expo-web-browser";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
-import { CONFIG } from "./config";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -38,7 +37,7 @@ export function getLastReturnUrl() {
 }
 
 function getScopes(): string[] {
-  return CONFIG.COGNITO_SCOPES.split(/\s+/).filter(Boolean);
+  return (process.env.EXPO_PUBLIC_COGNITO_SCOPES ?? "openid profile email").split(/\s+/).filter(Boolean);
 }
 
 function isExpoGo(): boolean {
@@ -47,7 +46,7 @@ function isExpoGo(): boolean {
 
 function getProjectNameForProxy(): string | undefined {
   try {
-    const url = new URL(CONFIG.AUTH_REDIRECT_URI);
+    const url = new URL(process.env.EXPO_PUBLIC_AUTH_REDIRECT_URI ?? "");
     // Cognito callback we registered: https://auth.expo.io/@snassabi7/deen-react-native
     // projectNameForProxy expects: "@snassabi7/deen-react-native"
     const path = url.pathname.replace(/^\/+/, "");
@@ -60,7 +59,7 @@ function getProjectNameForProxy(): string | undefined {
 export function getRedirectUri(): string {
   // In Expo Go, use the proxy callback (must match what you registered in Cognito).
   if (isExpoGo()) {
-    return CONFIG.AUTH_REDIRECT_URI;
+    return process.env.EXPO_PUBLIC_AUTH_REDIRECT_URI ?? "";
   }
 
   // In dev-client / production builds, use the app scheme deep link.
@@ -72,7 +71,7 @@ export function getRedirectUri(): string {
 }
 
 function getDiscovery() {
-  const base = CONFIG.COGNITO_DOMAIN.replace(/\/$/, "");
+  const base = (process.env.EXPO_PUBLIC_COGNITO_DOMAIN ?? "").replace(/\/$/, "");
   return {
     authorizationEndpoint: `${base}/oauth2/authorize`,
     tokenEndpoint: `${base}/oauth2/token`,
@@ -214,7 +213,7 @@ function getProxyReturnUrl(): string {
 function getProxyStartUrl(params: { authUrl: string; returnUrl: string }): string {
   // Matches expo-auth-session SessionUrlProvider behavior:
   // https://auth.expo.io/@owner/slug/start?authUrl=...&returnUrl=...
-  const base = CONFIG.AUTH_REDIRECT_URI.replace(/\/$/, "");
+  const base = (process.env.EXPO_PUBLIC_AUTH_REDIRECT_URI ?? "").replace(/\/$/, "");
   return `${base}/start?${encodeQuery({
     authUrl: params.authUrl,
     returnUrl: params.returnUrl,
@@ -229,7 +228,7 @@ async function exchangeCodeForTokens(params: {
   const discovery = getDiscovery();
   const body = encodeFormBody({
     grant_type: "authorization_code",
-    client_id: CONFIG.COGNITO_CLIENT_ID,
+    client_id: process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID ?? "",
     code: params.code,
     redirect_uri: params.redirectUri,
     code_verifier: params.codeVerifier,
@@ -265,7 +264,7 @@ async function refreshAccessToken(refreshToken: string): Promise<StoredTokens> {
   const discovery = getDiscovery();
   const body = encodeFormBody({
     grant_type: "refresh_token",
-    client_id: CONFIG.COGNITO_CLIENT_ID,
+    client_id: process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID ?? "",
     refresh_token: refreshToken,
   });
 
@@ -313,7 +312,7 @@ export async function signInWithCognitoHostedUI(): Promise<{
   const redirectUri = getRedirectUri();
 
   const request = new AuthSession.AuthRequest({
-    clientId: CONFIG.COGNITO_CLIENT_ID,
+    clientId: process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID ?? "",
     scopes: getScopes(),
     redirectUri,
     responseType: AuthSession.ResponseType.Code,
@@ -382,7 +381,7 @@ export async function signOut(opts?: { global?: boolean }): Promise<void> {
 
   if (opts?.global) {
     const logoutUrl = `${discovery.endSessionEndpoint}?client_id=${
-      CONFIG.COGNITO_CLIENT_ID
+      process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID ?? ""
     }&logout_uri=${encodeURIComponent(redirectUri)}`;
 
     // Best effort: open browser to complete Cognito logout.
@@ -401,9 +400,9 @@ export function getAuthDebugInfo() {
   return {
     redirectUri: getRedirectUri(),
     isExpoGo: isExpoGo(),
-    issuer: CONFIG.COGNITO_ISSUER,
-    domain: CONFIG.COGNITO_DOMAIN,
-    clientId: CONFIG.COGNITO_CLIENT_ID,
+    issuer: process.env.EXPO_PUBLIC_COGNITO_ISSUER ?? "",
+    domain: process.env.EXPO_PUBLIC_COGNITO_DOMAIN ?? "",
+    clientId: process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID ?? "",
     scopes: getScopes(),
     proxyProjectNameForProxy: getProjectNameForProxy(),
     lastAuthorizeUrl,
