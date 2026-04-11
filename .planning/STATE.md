@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 01.3-02-PLAN.md
-last_updated: "2026-04-11T17:48:02.885Z"
+status: verifying
+stopped_at: Completed 01.3-03-PLAN.md
+last_updated: "2026-04-11T17:49:35.739Z"
 last_activity: 2026-04-11
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
   percent: 25
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-10)
 
 Phase: 01.3 (password-reset-flow) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-11
 
 Progress: [██░░░░░░░░] 25%
@@ -56,6 +56,7 @@ Progress: [██░░░░░░░░] 25%
 | Phase 01.2 P02 | 8min | 1 tasks | 2 files |
 | Phase 01.3-password-reset-flow P01 | 5min | 2 tasks | 2 files |
 | Phase 01.3-password-reset-flow P02 | 8 | 1 tasks | 1 files |
+| Phase 01.3-password-reset-flow P03 | 8min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,8 @@ Recent decisions affecting current work:
 - [Phase 01.3-01]: No Redirect component in password-reset screens — _layout.tsx isOnAuthScreen guard owns all unauthenticated-accessible route exceptions (consistent with signup pattern)
 - [Phase 01.3-02]: Inline confirmation on same screen via sent boolean — card contents swap without navigation (mirrors signup.tsx confirmed pattern)
 - [Phase 01.3-02]: redirectTo set to deenreactnative://reset-password — custom scheme deep link for dev-client password reset flow
+- [Phase 01.3-03]: No router.replace after updateUser — USER_UPDATED event fires with valid session; _layout.tsx onAuthStateChange handles redirect automatically; adding manual replace would race
+- [Phase 01.3-03]: Mount guard (exchanged useRef) mandatory for exchangeCodeForSession — prevents AuthPKCECodeVerifierMissingError from React Strict Mode double useEffect invocation
 
 ### Pending Todos
 
@@ -97,6 +100,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-11T17:48:02.873Z
-Stopped at: Completed 01.3-02-PLAN.md
+Last session: 2026-04-11T17:49:35.728Z
+Stopped at: Completed 01.3-03-PLAN.md
 Resume file: None

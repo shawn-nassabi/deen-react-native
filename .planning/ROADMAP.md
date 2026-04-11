@@ -60,7 +60,7 @@ Plans:
 Plans:
 - [x] 01.3-01-PLAN.md — Extend _layout.tsx auth guard (isOnAuthScreen + Stack.Screen entries) and wire login.tsx "Forgot password?" link
 - [x] 01.3-02-PLAN.md — Create app/forgot-password.tsx (email form + inline confirmation state)
-- [ ] 01.3-03-PLAN.md — Create app/reset-password.tsx (loading / error / form states; code exchange on mount; updateUser on submit)
+- [x] 01.3-03-PLAN.md — Create app/reset-password.tsx (loading / error / form states; code exchange on mount; updateUser on submit)
 
 ### Phase 1.4: Cleanup + Account
 **Goal**: All Cognito code, packages, and environment variables are removed; user IDs passed to the backend are Supabase UUIDs; account deletion works with the new Supabase Bearer token
