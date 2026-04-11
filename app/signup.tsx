@@ -55,6 +55,7 @@ export default function SignUpScreen() {
   const [passwordFocused, setPasswordFocused] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [confirmed, setConfirmed] = React.useState(false);
 
   const passwordRef = React.useRef<TextInput>(null);
 
@@ -63,8 +64,12 @@ export default function SignUpScreen() {
     setBusy(true);
     setError(null);
     try {
-      await signUp(email.trim(), password);
-      router.replace("/(tabs)");
+      const { needsConfirmation } = await signUp(email.trim(), password);
+      if (needsConfirmation) {
+        setConfirmed(true);
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Something went wrong. Check your connection and try again.";
       setError(mapSignUpError(msg));
@@ -98,109 +103,142 @@ export default function SignUpScreen() {
 
           {/* Card */}
           <View style={[styles.card, { backgroundColor: colors.panel }]}>
-            {/* Heading */}
-            <ThemedText style={styles.heading}>Create account</ThemedText>
-
-            {/* Email input */}
-            <View style={styles.inputGroup}>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.panel2,
-                    borderColor: emailFocused ? colors.primary : colors.border,
-                    color: colors.text,
-                  },
-                ]}
-                placeholder="Email address"
-                placeholderTextColor={colors.muted}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="next"
-                value={email}
-                onChangeText={setEmail}
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
-                onSubmitEditing={() => passwordRef.current?.focus()}
-              />
-            </View>
-
-            {/* Password input */}
-            <View style={[styles.inputGroup, styles.inputGroupPassword]}>
-              <TextInput
-                ref={passwordRef}
-                style={[
-                  styles.input,
-                  styles.inputPassword,
-                  {
-                    backgroundColor: colors.panel2,
-                    borderColor: passwordFocused ? colors.primary : colors.border,
-                    color: colors.text,
-                  },
-                ]}
-                placeholder="Password"
-                placeholderTextColor={colors.muted}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="go"
-                value={password}
-                onChangeText={setPassword}
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-                onSubmitEditing={handleSignUp}
-              />
-              <TouchableOpacity
-                style={styles.showHideToggle}
-                onPress={() => setShowPassword((v) => !v)}
-                accessibilityLabel={showPassword ? "Hide password" : "Show password"}
-              >
-                <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color={colors.muted}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Inline error message */}
-            {error ? (
-              <ThemedText style={styles.errorText}>{error}</ThemedText>
-            ) : null}
-
-            {/* Primary button */}
-            <TouchableOpacity
-              style={[
-                styles.button,
-                { backgroundColor: colors.primary, opacity: busy ? 0.75 : 1 },
-              ]}
-              activeOpacity={0.85}
-              disabled={busy}
-              onPress={handleSignUp}
-            >
-              {busy ? (
-                <View style={styles.buttonRow}>
-                  <ActivityIndicator color="#fff" />
-                  <ThemedText style={styles.buttonText}>Creating account…</ThemedText>
+            {confirmed ? (
+              /* ---- Email confirmation sent view ---- */
+              <>
+                <View style={styles.confirmIconWrap}>
+                  <Ionicons name="mail-outline" size={40} color={colors.primary} style={{ marginBottom: 12 }} />
                 </View>
-              ) : (
-                <ThemedText style={styles.buttonText}>Sign up</ThemedText>
-              )}
-            </TouchableOpacity>
-
-            {/* Links row */}
-            <View style={styles.linksRow}>
-              <TouchableOpacity
-                onPress={handleBackToLogin}
-                activeOpacity={0.7}
-                style={styles.linkButton}
-              >
-                <ThemedText style={[styles.linkText, { color: colors.primary }]}>
-                  Already have an account? Sign in
+                <ThemedText style={[styles.heading, { textAlign: "center" }]}>
+                  Check your email
                 </ThemedText>
-              </TouchableOpacity>
-            </View>
+                <ThemedText style={[styles.confirmBody, { color: colors.muted }]}>
+                  {"We've sent a verification link to "}
+                  <ThemedText style={{ fontWeight: "600", color: colors.text }}>
+                    {email.trim()}
+                  </ThemedText>
+                  {". Please verify before signing in — don't forget to check your junk folder."}
+                </ThemedText>
+                <View style={styles.linksRow}>
+                  <TouchableOpacity
+                    onPress={handleBackToLogin}
+                    activeOpacity={0.7}
+                    style={styles.linkButton}
+                  >
+                    <ThemedText style={[styles.linkText, { color: colors.primary }]}>
+                      Back to sign in
+                    </ThemedText>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              /* ---- Sign Up form ---- */
+              <>
+                {/* Heading */}
+                <ThemedText style={styles.heading}>Create account</ThemedText>
+
+                {/* Email input */}
+                <View style={styles.inputGroup}>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: colors.panel2,
+                        borderColor: emailFocused ? colors.primary : colors.border,
+                        color: colors.text,
+                      },
+                    ]}
+                    placeholder="Email address"
+                    placeholderTextColor={colors.muted}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="next"
+                    value={email}
+                    onChangeText={setEmail}
+                    onFocus={() => setEmailFocused(true)}
+                    onBlur={() => setEmailFocused(false)}
+                    onSubmitEditing={() => passwordRef.current?.focus()}
+                  />
+                </View>
+
+                {/* Password input */}
+                <View style={[styles.inputGroup, styles.inputGroupPassword]}>
+                  <TextInput
+                    ref={passwordRef}
+                    style={[
+                      styles.input,
+                      styles.inputPassword,
+                      {
+                        backgroundColor: colors.panel2,
+                        borderColor: passwordFocused ? colors.primary : colors.border,
+                        color: colors.text,
+                      },
+                    ]}
+                    placeholder="Password"
+                    placeholderTextColor={colors.muted}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="go"
+                    value={password}
+                    onChangeText={setPassword}
+                    onFocus={() => setPasswordFocused(true)}
+                    onBlur={() => setPasswordFocused(false)}
+                    onSubmitEditing={handleSignUp}
+                  />
+                  <TouchableOpacity
+                    style={styles.showHideToggle}
+                    onPress={() => setShowPassword((v) => !v)}
+                    accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                  >
+                    <Ionicons
+                      name={showPassword ? "eye-off-outline" : "eye-outline"}
+                      size={20}
+                      color={colors.muted}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Inline error message */}
+                {error ? (
+                  <ThemedText style={styles.errorText}>{error}</ThemedText>
+                ) : null}
+
+                {/* Primary button */}
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    { backgroundColor: colors.primary, opacity: busy ? 0.75 : 1 },
+                  ]}
+                  activeOpacity={0.85}
+                  disabled={busy}
+                  onPress={handleSignUp}
+                >
+                  {busy ? (
+                    <View style={styles.buttonRow}>
+                      <ActivityIndicator color="#fff" />
+                      <ThemedText style={styles.buttonText}>Creating account…</ThemedText>
+                    </View>
+                  ) : (
+                    <ThemedText style={styles.buttonText}>Sign up</ThemedText>
+                  )}
+                </TouchableOpacity>
+
+                {/* Links row */}
+                <View style={styles.linksRow}>
+                  <TouchableOpacity
+                    onPress={handleBackToLogin}
+                    activeOpacity={0.7}
+                    style={styles.linkButton}
+                  >
+                    <ThemedText style={[styles.linkText, { color: colors.primary }]}>
+                      Already have an account? Sign in
+                    </ThemedText>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -306,5 +344,16 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  confirmIconWrap: {
+    alignItems: "center",
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  confirmBody: {
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 8,
+    lineHeight: 22,
   },
 });
