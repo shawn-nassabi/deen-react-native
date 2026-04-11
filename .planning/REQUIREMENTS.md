@@ -9,9 +9,9 @@
 
 - [ ] **AUTH-01**: User can sign in with email and password on a dedicated Sign In screen
 - [ ] **AUTH-02**: User can create an account with email and password on a dedicated Sign Up screen
-- [ ] **AUTH-03**: User session persists across app restarts and foreground/background cycles
-- [ ] **AUTH-04**: Access token is refreshed automatically without user action (Supabase SDK handles this)
-- [ ] **AUTH-05**: User can sign out and is redirected to the Sign In screen
+- [x] **AUTH-03**: User session persists across app restarts and foreground/background cycles
+- [x] **AUTH-04**: Access token is refreshed automatically without user action (Supabase SDK handles this)
+- [x] **AUTH-05**: User can sign out and is redirected to the Sign In screen
 - [ ] **AUTH-06**: User can request a password reset email from the Sign In screen
 - [ ] **AUTH-07**: User can set a new password after clicking the reset link (deep link into app)
 
@@ -28,11 +28,11 @@
 
 - [x] **MIG-01**: `react-native-url-polyfill/auto` is the first import in `utils/polyfills.ts` so Hermes has a spec-compliant URL global before Supabase loads
 - [x] **MIG-02**: Singleton Supabase client exported from `utils/supabase.ts` with `detectSessionInUrl: false` and a `LargeSecureStore` chunked storage adapter
-- [ ] **MIG-03**: `hooks/useAuth.tsx` AuthProvider rewired to use `supabase.auth.onAuthStateChange`; public API (`status`, `user`, `accessToken`, `signIn`, `signOut`) preserved for zero-change in consuming screens
-- [ ] **MIG-04**: `utils/auth.ts` Cognito PKCE logic removed and replaced with thin wrappers around Supabase auth calls
+- [x] **MIG-03**: `hooks/useAuth.tsx` AuthProvider rewired to use `supabase.auth.onAuthStateChange`; public API (`status`, `user`, `accessToken`, `signIn`, `signOut`) preserved for zero-change in consuming screens
+- [x] **MIG-04**: `utils/auth.ts` Cognito PKCE logic removed and replaced with thin wrappers around Supabase auth calls
 - [ ] **MIG-05**: All occurrences of `user?.email || user?.sub` replaced with `session.user.id` (Supabase UUID) in `app/(tabs)/hikmah.tsx`, `app/hikmah/lesson/[lessonId].tsx`, and `components/hikmah/ElaborationModal.tsx`
-- [ ] **MIG-06**: `utils/api.ts` `getValidAccessToken()` replaced with `supabase.auth.getSession()` — no manual expiry logic needed
-- [ ] **MIG-07**: Old `deen.auth.tokens` SecureStore key cleared on first launch after migration to prevent stale Cognito token conflicts
+- [x] **MIG-06**: `utils/api.ts` `getValidAccessToken()` replaced with `supabase.auth.getSession()` — no manual expiry logic needed
+- [x] **MIG-07**: Old `deen.auth.tokens` SecureStore key cleared on first launch after migration to prevent stale Cognito token conflicts
 - [ ] **MIG-08**: `app/auth.tsx` OAuth callback screen removed (no longer needed for email+password flow)
 - [ ] **MIG-09**: `expo-auth-session` and `expo-web-browser` removed from `package.json` and `app.json` plugins
 - [x] **MIG-10**: `utils/config.ts` Cognito env vars (`EXPO_PUBLIC_COGNITO_DOMAIN`, `EXPO_PUBLIC_COGNITO_CLIENT_ID`, `EXPO_PUBLIC_COGNITO_ISSUER`, `EXPO_PUBLIC_AUTH_REDIRECT_URI`) replaced with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (per D-07)
@@ -76,13 +76,13 @@
 | MIG-10 | Phase 1.1 | Complete |
 | AUTH-01 | Phase 1.2 | Pending |
 | AUTH-02 | Phase 1.2 | Pending |
-| AUTH-03 | Phase 1.2 | Pending |
-| AUTH-04 | Phase 1.2 | Pending |
-| AUTH-05 | Phase 1.2 | Pending |
-| MIG-03 | Phase 1.2 | Pending |
-| MIG-04 | Phase 1.2 | Pending |
-| MIG-06 | Phase 1.2 | Pending |
-| MIG-07 | Phase 1.2 | Pending |
+| AUTH-03 | Phase 1.2 Plan 01 | Complete |
+| AUTH-04 | Phase 1.2 Plan 01 | Complete |
+| AUTH-05 | Phase 1.2 Plan 01 | Complete |
+| MIG-03 | Phase 1.2 Plan 01 | Complete |
+| MIG-04 | Phase 1.2 Plan 01 | Complete |
+| MIG-06 | Phase 1.2 Plan 01 | Complete |
+| MIG-07 | Phase 1.2 Plan 01 | Complete |
 | UI-01 | Phase 1.2 | Pending |
 | UI-02 | Phase 1.2 | Pending |
 | UI-05 | Phase 1.2 | Pending |
@@ -104,4 +104,4 @@
 
 ---
 *Requirements defined: 2026-04-10*
-*Last updated: 2026-04-10 after roadmap creation — traceability complete*
+*Last updated: 2026-04-11 after Phase 01.2-01 completion — AUTH-03/04/05, MIG-03/04/06/07 marked complete*

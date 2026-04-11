@@ -42,7 +42,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01.2-01-PLAN.md — Rewrite utils/auth.ts (Supabase thin wrappers) and hooks/useAuth.tsx (onAuthStateChange subscription, MIG-07 cleanup)
+- [x] 01.2-01-PLAN.md — Rewrite utils/auth.ts (Supabase thin wrappers) and hooks/useAuth.tsx (onAuthStateChange subscription, MIG-07 cleanup)
 - [ ] 01.2-02-PLAN.md — Replace app/login.tsx with email+password card form (elevated card, TextInputs, show/hide toggle, inline errors)
 - [ ] 01.2-03-PLAN.md — Create app/signup.tsx and update app/_layout.tsx (signup route + auth redirect fix)
 
@@ -75,7 +75,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1.1 Client Infrastructure | 0/1 | Not started | - |
-| 1.2 Auth Core + Login UI | 0/3 | Not started | - |
+| 1.1 Client Infrastructure | 1/1 | Complete | 2026-04-11 |
+| 1.2 Auth Core + Login UI | 1/3 | In Progress | - |
 | 1.3 Password Reset Flow | 0/TBD | Not started | - |
 | 1.4 Cleanup + Account | 0/TBD | Not started | - |
