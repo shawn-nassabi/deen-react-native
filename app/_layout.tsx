@@ -38,6 +38,36 @@ function RootNavigator() {
   const segments = useSegments();
   const router = useRouter();
 
+  // Hide the native splash only after auth + onboarding flags have resolved
+  // AND the router has landed on the correct route. Prevents a flash of the
+  // default anchor route ("(tabs)") before the onboarding/login redirect fires.
+  useEffect(() => {
+    if (status === "loading" || onboardingCompleted === null) return;
+    if (status === "signedIn" && personalizationCompleted === null) return;
+
+    const seg0 = (segments as string[])?.[0];
+    const isOnAuthScreen =
+      seg0 === "login" ||
+      seg0 === "signup" ||
+      seg0 === "forgot-password" ||
+      seg0 === "reset-password";
+
+    let atCorrectRoute = false;
+    if (!onboardingCompleted) {
+      atCorrectRoute = seg0 === "onboarding";
+    } else if (status !== "signedIn") {
+      atCorrectRoute = isOnAuthScreen;
+    } else if (personalizationCompleted === false) {
+      atCorrectRoute = seg0 === "personalize";
+    } else {
+      atCorrectRoute = seg0 === "(tabs)" || seg0 === undefined;
+    }
+
+    if (atCorrectRoute) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [status, onboardingCompleted, personalizationCompleted, segments]);
+
   useEffect(() => {
     // Wait until both auth and onboarding flag are resolved before routing.
     // For signed-in users, also wait for the personalization check to resolve.
@@ -113,12 +143,6 @@ export default function RootLayout() {
     Montserrat_600SemiBold,
     Montserrat_700Bold,
   });
-
-  useEffect(() => {
-    if (loaded || error) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded, error]);
 
   if (!loaded && !error) {
     return null;

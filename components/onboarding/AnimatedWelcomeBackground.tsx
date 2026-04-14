@@ -49,32 +49,32 @@ export default function AnimatedWelcomeBackground({
     if (reduceMotion) return;
 
     b1x.value = withRepeat(
-      withTiming(40, { duration: 9000, easing: Easing.inOut(Easing.quad) }),
+      withTiming(40, { duration: 4000, easing: Easing.inOut(Easing.quad) }),
       -1,
       true
     );
     b1y.value = withRepeat(
-      withTiming(30, { duration: 11000, easing: Easing.inOut(Easing.quad) }),
+      withTiming(30, { duration: 4800, easing: Easing.inOut(Easing.quad) }),
       -1,
       true
     );
     b2x.value = withRepeat(
-      withTiming(-50, { duration: 13000, easing: Easing.inOut(Easing.quad) }),
+      withTiming(-50, { duration: 5600, easing: Easing.inOut(Easing.quad) }),
       -1,
       true
     );
     b2y.value = withRepeat(
-      withTiming(-35, { duration: 8500, easing: Easing.inOut(Easing.quad) }),
+      withTiming(-35, { duration: 3800, easing: Easing.inOut(Easing.quad) }),
       -1,
       true
     );
     b3x.value = withRepeat(
-      withTiming(25, { duration: 10500, easing: Easing.inOut(Easing.quad) }),
+      withTiming(25, { duration: 4500, easing: Easing.inOut(Easing.quad) }),
       -1,
       true
     );
     b3y.value = withRepeat(
-      withTiming(-20, { duration: 14000, easing: Easing.inOut(Easing.quad) }),
+      withTiming(-20, { duration: 6000, easing: Easing.inOut(Easing.quad) }),
       -1,
       true
     );

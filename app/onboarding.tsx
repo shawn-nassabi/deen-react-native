@@ -39,6 +39,7 @@ import { saveOnboardingState, getOnboardingState } from "@/utils/onboardingStora
 import { submitOnboarding } from "@/utils/onboardingApi";
 
 import OnboardingFooter from "@/components/onboarding/OnboardingFooter";
+import OnboardingIntro from "@/components/onboarding/OnboardingIntro";
 import WelcomeStep from "@/components/onboarding/WelcomeStep";
 import AuthStep from "@/components/onboarding/AuthStep";
 import PersonalizationStep from "@/components/onboarding/PersonalizationStep";
@@ -148,6 +149,7 @@ export default function OnboardingScreen() {
   const flatListRef = useRef<FlatList>(null);
 
   const [currentStep, setCurrentStep] = useState(0);
+  const [introDone, setIntroDone] = useState(false);
   const [tosAccepted, setTosAccepted] = useState(false);
   const [aiAccepted, setAiAccepted] = useState(false);
   // true once the user has successfully authenticated (signed up or signed in)
@@ -536,6 +538,8 @@ export default function OnboardingScreen() {
           dimColor={isWelcomeStep ? "rgba(255,255,255,0.25)" : colors.border}
         />
       </View>
+
+      {!introDone && <OnboardingIntro onComplete={() => setIntroDone(true)} />}
     </View>
   );
 }
