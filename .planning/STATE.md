@@ -96,6 +96,7 @@ None yet.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260411-hov | email verification message after sign up and unverified email error on login | 2026-04-11 | 7e5c4db | [260411-hov-email-verification-message-after-sign-up](./quick/260411-hov-email-verification-message-after-sign-up/) |
+| 260414-2da | re-enable Forgot password link on login screen; mark CONCERNS.md entry resolved | 2026-04-14 | 9086448 | [260414-2da-re-enable-forgot-password-button-and-imp](./quick/260414-2da-re-enable-forgot-password-button-and-imp/) |
 
 ### Blockers/Concerns
 
@@ -104,5 +105,5 @@ None — v1.0 milestone complete.
 ## Session Continuity
 
 Last session: 2026-04-14
-Stopped at: v1.0 milestone archived
+Stopped at: Completed quick task 260414-2da — re-enable forgot password button
 Resume file: None
