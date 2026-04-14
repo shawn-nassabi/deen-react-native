@@ -30,17 +30,17 @@
 - [x] **MIG-02**: Singleton Supabase client exported from `utils/supabase.ts` with `detectSessionInUrl: false` and a `LargeSecureStore` chunked storage adapter
 - [x] **MIG-03**: `hooks/useAuth.tsx` AuthProvider rewired to use `supabase.auth.onAuthStateChange`; public API (`status`, `user`, `accessToken`, `signIn`, `signOut`) preserved for zero-change in consuming screens
 - [x] **MIG-04**: `utils/auth.ts` Cognito PKCE logic removed and replaced with thin wrappers around Supabase auth calls
-- [ ] **MIG-05**: All occurrences of `user?.email || user?.sub` replaced with `session.user.id` (Supabase UUID) in `app/(tabs)/hikmah.tsx`, `app/hikmah/lesson/[lessonId].tsx`, and `components/hikmah/ElaborationModal.tsx`
+- [x] **MIG-05**: All occurrences of `user?.email || user?.sub` replaced with `session.user.id` (Supabase UUID) in `app/(tabs)/hikmah.tsx`, `app/hikmah/lesson/[lessonId].tsx`, and `components/hikmah/ElaborationModal.tsx`
 - [x] **MIG-06**: `utils/api.ts` `getValidAccessToken()` replaced with `supabase.auth.getSession()` — no manual expiry logic needed
 - [x] **MIG-07**: Old `deen.auth.tokens` SecureStore key cleared on first launch after migration to prevent stale Cognito token conflicts
-- [ ] **MIG-08**: `app/auth.tsx` OAuth callback screen removed (no longer needed for email+password flow)
-- [ ] **MIG-09**: `expo-auth-session` and `expo-web-browser` removed from `package.json` and `app.json` plugins
+- [x] **MIG-08**: `app/auth.tsx` OAuth callback screen removed (no longer needed for email+password flow)
+- [x] **MIG-09**: `expo-auth-session` and `expo-web-browser` removed from `package.json` and `app.json` plugins
 - [x] **MIG-10**: `utils/config.ts` Cognito env vars (`EXPO_PUBLIC_COGNITO_DOMAIN`, `EXPO_PUBLIC_COGNITO_CLIENT_ID`, `EXPO_PUBLIC_COGNITO_ISSUER`, `EXPO_PUBLIC_AUTH_REDIRECT_URI`) replaced with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (per D-07)
 - [x] **MIG-11**: `deenreactnative://reset-password` deep link configured in `app.json` for password reset callback
 
 ### Account
 
-- [ ] **ACC-01**: Account deletion (`DELETE /account/me`) works correctly with Supabase Bearer token
+- [x] **ACC-01**: Account deletion (`DELETE /account/me`) works correctly with Supabase Bearer token
 
 ## v2 Requirements
 
@@ -92,10 +92,10 @@
 | MIG-11 | Phase 1.3 | Complete |
 | UI-03 | Phase 1.3 | Complete |
 | UI-04 | Phase 1.3 | Complete |
-| ACC-01 | Phase 1.4 | Pending |
-| MIG-05 | Phase 1.4 | Pending |
-| MIG-08 | Phase 1.4 | Pending |
-| MIG-09 | Phase 1.4 | Pending |
+| ACC-01 | Phase 1.4 | Complete |
+| MIG-05 | Phase 1.4 | Complete |
+| MIG-08 | Phase 1.4 | Complete |
+| MIG-09 | Phase 1.4 | Complete |
 
 **Coverage:**
 - v1 requirements: 25 total

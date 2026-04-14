@@ -11,7 +11,7 @@ The Deen app currently authenticates via AWS Cognito PKCE/OAuth. This milestone 
 - [ ] **Phase 1.1: Client Infrastructure** - Install packages, add URL polyfill, create Supabase singleton and LargeSecureStore adapter
 - [ ] **Phase 1.2: Auth Core + Login UI** - Rewrite AuthProvider, rewrite login screen, wire up Sign Up screen, update API layer, clear old tokens
 - [ ] **Phase 1.3: Password Reset Flow** - Forgot-password screen, New Password screen, deep link handler, dashboard redirect URL config
-- [ ] **Phase 1.4: Cleanup + Account** - Remove Cognito packages and env vars, delete dead files, replace user ID references, verify account deletion
+- [x] **Phase 1.4: Cleanup + Account** - Remove Cognito packages and env vars, delete dead files, replace user ID references, verify account deletion (completed 2026-04-14)
 
 ## Phase Details
 
@@ -82,4 +82,4 @@ Plans:
 | 1.1 Client Infrastructure | 1/1 | Complete | 2026-04-11 |
 | 1.2 Auth Core + Login UI | 1/3 | In Progress | - |
 | 1.3 Password Reset Flow | 2/3 | In Progress|  |
-| 1.4 Cleanup + Account | 0/TBD | Not started | - |
+| 1.4 Cleanup + Account | 1/1 | Complete   | 2026-04-14 |

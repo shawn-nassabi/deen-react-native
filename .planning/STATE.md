@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Phase 1.4 context gathered
-last_updated: "2026-04-14T03:18:56.725Z"
-last_activity: 2026-04-11
+stopped_at: "Phase 01.4 Plan 01 — awaiting checkpoint:human-verify"
+last_updated: "2026-04-14T04:36:34.259Z"
+last_activity: 2026-04-14
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  completed_phases: 4
+  total_plans: 8
+  completed_plans: 8
   percent: 25
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-10)
 
 **Core value:** Users can sign in and access all features without authentication getting in their way — the migration is seamless and the app feels polished.
-**Current focus:** Phase 01.3 — password-reset-flow
+**Current focus:** Phase 01.4 — cleanup-account
 
 ## Current Position
 
-Phase: 01.3 (password-reset-flow) — EXECUTING
-Plan: 3 of 3
+Phase: 01.4 (cleanup-account) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
-Last activity: 2026-04-11
+Last activity: 2026-04-14
 
 Progress: [██░░░░░░░░] 25%
 
@@ -57,6 +57,7 @@ Progress: [██░░░░░░░░] 25%
 | Phase 01.3-password-reset-flow P01 | 5min | 2 tasks | 2 files |
 | Phase 01.3-password-reset-flow P02 | 8 | 1 tasks | 1 files |
 | Phase 01.3-password-reset-flow P03 | 8min | 1 tasks | 3 files |
+| Phase 01.4-cleanup-account P01 | 4min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ Recent decisions affecting current work:
 - [Phase 01.3-02]: redirectTo set to deenreactnative://reset-password — custom scheme deep link for dev-client password reset flow
 - [Phase 01.3-03]: No router.replace after updateUser — USER_UPDATED event fires with valid session; _layout.tsx onAuthStateChange handles redirect automatically; adding manual replace would race
 - [Phase 01.3-03]: Mount guard (exchanged useRef) mandatory for exchangeCodeForSession — prevents AuthPKCECodeVerifierMissingError from React Strict Mode double useEffect invocation
+- [Phase 01.4-cleanup-account]: Linking.openURL replaces openBrowserAsync — zero new dependencies, built-in to react-native
+- [Phase 01.4-cleanup-account]: signOut() opts param removed — Supabase has no global signout equivalent; backward compat no longer needed
+- [Phase 01.4-cleanup-account]: Delete Account error keeps user on Settings — allows retry; success auto-signs-out via signOut()
 
 ### Pending Todos
 
@@ -100,6 +104,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T03:18:56.712Z
-Stopped at: Phase 1.4 context gathered
-Resume file: .planning/phases/01.4-cleanup-account/01.4-CONTEXT.md
+Last session: 2026-04-14T04:36:34.245Z
+Stopped at: Phase 01.4 Plan 01 — awaiting checkpoint:human-verify
+Resume file: None
