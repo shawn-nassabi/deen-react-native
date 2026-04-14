@@ -4,11 +4,10 @@
 
 ## Tech Debt
 
-**Password reset flow gated on Supabase config (deferred from phase 01.3):**
-- Issue: Phase 01.3 shipped `forgot-password.tsx` and `reset-password.tsx` using `supabase.auth.exchangeCodeForSession` + `updateUser({ password })`. UAT blocked by GoTrue's `security_update_password_require_current_password=true` (returns `400 current_password_required` for PKCE-exchanged sessions). The `_require_reauthentication` flag was disabled via the Management API, but `_require_current_password` is not exposed in `UpdateAuthConfigBody`, so it cannot be flipped remotely.
-- Files: `app/login.tsx` (entry hidden), `app/forgot-password.tsx`, `app/reset-password.tsx`, `.planning/phases/01.3-password-reset-flow/`
-- Impact: Users cannot reset passwords from the app. Forgot-password entry on login is hidden so the broken path is unreachable; signed-in users with forgotten passwords must use a different channel until this ships.
-- Fix approach: Switch to the PKCE `verifyOtp({ type: 'recovery', token_hash })` flow — a recovery-tagged session bypasses the `current_password_required` check. Requires (1) editing the Supabase reset-password email template to use `{{ .TokenHash }}` with a deep link href, (2) parsing `token_hash` + `type` from the deep link in `reset-password.tsx` and calling `verifyOtp` instead of `exchangeCodeForSession`, (3) re-enabling the entry in `login.tsx`. Also requires a plan for the web app (Universal Links or a web landing bridge) so the email template serves both clients.
+**Password reset flow — RESOLVED (2026-04-14):**
+- The `security_update_password_require_current_password` Supabase dashboard setting was disabled. The existing `exchangeCodeForSession` + `updateUser({ password })` PKCE flow now works end-to-end without requiring the old password.
+- The "Forgot password?" entry in `app/login.tsx` has been re-enabled.
+- Files: `app/login.tsx`, `app/forgot-password.tsx`, `app/reset-password.tsx`
 
 **Dead exported function `sendChatMessageStream`:**
 - Issue: `sendChatMessageStream` is exported from `utils/api.ts` (line 196) but is no longer called anywhere in the app. All chat messages now route through `sendChatMessage` → `sendAgenticChatStream`. The old function accumulates the raw streamed text as a single blob rather than parsing SSE frames.
