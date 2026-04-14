@@ -36,17 +36,22 @@ Users can sign in and access all features without authentication getting in thei
 - ✓ `app/signup.tsx` created — Sign Up screen mirroring login card; error-maps Supabase messages — Validated in Phase 1.2: auth-core-login-ui
 - ✓ `app/_layout.tsx` updated — signup route registered; `isOnAuthScreen` guard prevents redirect loops — Validated in Phase 1.2: auth-core-login-ui
 
+### Validated in Phase 1.3
+
+- ✓ Password reset ("Forgot password") flow via Supabase email — three-state screen (request → sent → new password), deep-link token handled in `app/_layout.tsx` — Validated in Phase 1.3: password-reset-flow
+- ✓ Auto token refresh using Supabase session management — Supabase client handles refresh automatically via `onAuthStateChange`; `getValidAccessToken()` returns current session token — Validated in Phase 1.3: password-reset-flow
+
+### Validated in Phase 1.4
+
+- ✓ Replace all `user?.email || user?.sub` usage with `user.id` (Supabase UUID) in hikmah.tsx, [lessonId].tsx, ElaborationModal.tsx — Validated in Phase 1.4: cleanup-account
+- ✓ `/user-progress` and elaboration calls send Supabase UUID as `user_id` — Validated in Phase 1.4: cleanup-account
+- ✓ Account deletion (`DELETE /account/me`) works with Supabase Bearer token — `deleteAccount()` in api.ts; Delete Account UI in Settings — Validated in Phase 1.4: cleanup-account
+- ✓ `expo-auth-session` and `expo-web-browser` removed from `package.json`, `app.json`, and node_modules — Validated in Phase 1.4: cleanup-account
+- ✓ `app/auth.tsx` OAuth callback handler deleted; `AuthUser.sub` alias removed — Validated in Phase 1.4: cleanup-account
+
 ### Active
 
-<!-- Supabase auth migration scope. -->
-
-- [ ] Password reset ("Forgot password") flow via Supabase email
-- [ ] Auto token refresh using Supabase session management (replacing manual Cognito refresh)
-- [ ] Replace all `user?.email || user?.sub` user ID usage with `session.user.id` (Supabase UUID)
-- [ ] Update `/user-progress` calls to send Supabase UUID as `user_id`
-- [ ] Account deletion (`DELETE /account/me`) continues to work with Supabase token
-- [ ] Remove `expo-auth-session`, `expo-web-browser`, and all Cognito-specific configuration
-- [ ] Remove `app/auth.tsx` OAuth callback handler (no longer needed)
+<!-- Migration complete — all requirements satisfied as of Phase 1.4 -->
 
 ### Out of Scope
 
@@ -64,12 +69,16 @@ Users can sign in and access all features without authentication getting in thei
 - User ID format: Supabase UUID replaces Cognito email/sub string
 - Local dev bypass: `ENV=development` on the backend accepts any Bearer value; use `Authorization: Bearer dev`
 
-**Current auth implementation (Phase 1.2 complete):**
+**Current auth implementation (Phase 1.4 complete — migration done):**
 - `utils/auth.ts` — Supabase thin wrappers (`signIn`, `signOut`, `signUp`, `getValidAccessToken`); no Cognito code
-- `hooks/useAuth.tsx` — `AuthProvider` + `useAuth` context via `onAuthStateChange`; exposes `status`, `user`, `accessToken`, `signIn`, `signUp`, `signOut`, `refresh`
+- `utils/supabase.ts` — Supabase JS client with `LargeSecureStore` adapter and AppState token-refresh wiring
+- `hooks/useAuth.tsx` — `AuthProvider` + `useAuth` context via `onAuthStateChange`; exposes `status`, `user`, `accessToken`, `signIn`, `signUp`, `signOut`, `refresh`; `AuthUser` has `id` and `email` only (no `sub`)
 - `app/login.tsx` — elevated card form with email+password, error states, loading spinner
-- `app/signup.tsx` — new Sign Up screen mirroring login card design
-- `app/auth.tsx` — deep link callback handler (still present; removal tracked in Active)
+- `app/signup.tsx` — Sign Up screen mirroring login card design
+- `app/reset-password.tsx` — three-state password reset screen (request OTP → sent confirmation → new password)
+- `app/settings.tsx` — includes Delete Account button with Alert confirmation and auto sign-out on success
+- `utils/api.ts` — exports `deleteAccount()` calling `DELETE /account/me` with Supabase Bearer token
+- All Cognito packages (`expo-auth-session`, `expo-web-browser`) removed; `app/auth.tsx` deleted
 
 **Supabase SDK for React Native:** Use `@supabase/supabase-js` with `AsyncStorage` adapter for session persistence. Expo Secure Store can be used as the storage adapter for better security.
 
@@ -112,4 +121,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-11 after Phase 1.2 (auth-core-login-ui) complete*
+*Last updated: 2026-04-14 after Phase 1.4 (cleanup-account) complete — Supabase auth migration finished*
