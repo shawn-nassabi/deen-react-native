@@ -34,6 +34,10 @@ export const STORAGE_KEYS = {
   ONBOARDING_STEP: "deen:onboarding:v1:step",
   ONBOARDING_TOS_ACCEPTED: "deen:onboarding:v1:tosAccepted",
   ONBOARDING_AI_ACCEPTED: "deen:onboarding:v1:aiAccepted",
+  ONBOARDING_TRADITION: "deen:onboarding:v1:tradition",
+  ONBOARDING_GOALS: "deen:onboarding:v1:goals",
+  ONBOARDING_KNOWLEDGE: "deen:onboarding:v1:knowledge",
+  ONBOARDING_TOPICS: "deen:onboarding:v1:topics",
 } as const;
 
 export const EXTERNAL_URLS = {

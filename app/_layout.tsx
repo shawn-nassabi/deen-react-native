@@ -34,13 +34,15 @@ export const unstable_settings = {
 
 function RootNavigator() {
   const { colorScheme } = useThemePreference();
-  const { status, onboardingCompleted } = useAuth();
+  const { status, onboardingCompleted, personalizationCompleted } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    // Wait until both auth and onboarding flag are resolved before routing
+    // Wait until both auth and onboarding flag are resolved before routing.
+    // For signed-in users, also wait for the personalization check to resolve.
     if (status === "loading" || onboardingCompleted === null) return;
+    if (status === "signedIn" && personalizationCompleted === null) return;
 
     // Cast to string[] — Expo Router's typed segments don't include newly added
     // routes until the dev server regenerates .expo/types/router.d.ts.
@@ -52,17 +54,31 @@ function RootNavigator() {
       seg0 === "forgot-password" ||
       seg0 === "reset-password";
     const isOnOnboarding = seg0 === "onboarding";
+    const isOnPersonalize = seg0 === "personalize";
 
     if (!onboardingCompleted && !isOnOnboarding) {
       // First install — gate everyone through onboarding regardless of auth state
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      router.replace("/onboarding" as any);
+      router.replace("/onboarding" as never);
+    } else if (
+      onboardingCompleted &&
+      status === "signedIn" &&
+      personalizationCompleted === false &&
+      !isOnPersonalize
+    ) {
+      // Signed-in returning user who hasn't personalized yet (new device or pre-feature)
+      router.replace("/personalize" as never);
     } else if (onboardingCompleted && status !== "signedIn" && !isOnAuthScreen && !isOnOnboarding) {
       router.replace("/login");
-    } else if (onboardingCompleted && status === "signedIn" && (isOnAuthScreen || isOnOnboarding) && seg0 !== "reset-password") {
+    } else if (
+      onboardingCompleted &&
+      status === "signedIn" &&
+      personalizationCompleted !== false &&
+      (isOnAuthScreen || isOnOnboarding || isOnPersonalize) &&
+      seg0 !== "reset-password"
+    ) {
       router.replace("/(tabs)");
     }
-  }, [status, onboardingCompleted, segments, router]);
+  }, [status, onboardingCompleted, personalizationCompleted, segments, router]);
 
   return (
     <NavigationThemeProvider
@@ -70,6 +86,7 @@ function RootNavigator() {
     >
       <Stack>
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="personalize" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="signup" options={{ headerShown: false }} />
         <Stack.Screen name="forgot-password" options={{ headerShown: false }} />

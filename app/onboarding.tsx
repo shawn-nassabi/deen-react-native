@@ -1,17 +1,21 @@
 /**
  * Onboarding flow for first-time Deen users.
  *
- * 10-step horizontal pager:
+ * 14-step horizontal pager:
  *   0  Welcome + ToS consent (gate)
  *   1  Sign up / Sign in (inline, gate)
- *   2  About Deen
- *   3  Chatbot feature
- *   4  References feature
- *   5  Hikmah trees feature
- *   6  Ask Deen elaboration feature
- *   7  Personalized primers feature
- *   8  AI usage disclosure (gate)
- *   9  You're all set
+ *   2  Tradition (gate: selection required)
+ *   3  Goals (gate: ≥1 selection required)
+ *   4  Knowledge level (gate: selection required)
+ *   5  Topics (gate: 1–3 selections; submits POST /onboarding on advance)
+ *   6  About Deen
+ *   7  Chatbot feature
+ *   8  References feature
+ *   9  Hikmah trees feature
+ *   10 Ask Deen elaboration feature
+ *   11 Personalized primers feature
+ *   12 AI usage disclosure (gate)
+ *   13 You're all set
  *
  * Layout: footer is position:absolute so the FlatList takes full screen height.
  * Each step receives the screen dimensions so flex/centering works correctly.
@@ -32,10 +36,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
 import { saveOnboardingState, getOnboardingState } from "@/utils/onboardingStorage";
+import { submitOnboarding } from "@/utils/onboardingApi";
 
 import OnboardingFooter from "@/components/onboarding/OnboardingFooter";
 import WelcomeStep from "@/components/onboarding/WelcomeStep";
 import AuthStep from "@/components/onboarding/AuthStep";
+import PersonalizationStep from "@/components/onboarding/PersonalizationStep";
 import AboutStep from "@/components/onboarding/AboutStep";
 import FeatureChatbotStep from "@/components/onboarding/FeatureChatbotStep";
 import FeatureReferencesStep from "@/components/onboarding/FeatureReferencesStep";
@@ -45,17 +51,66 @@ import FeaturePrimersStep from "@/components/onboarding/FeaturePrimersStep";
 import AiUsageStep from "@/components/onboarding/AiUsageStep";
 import DoneStep from "@/components/onboarding/DoneStep";
 
-const TOTAL_STEPS = 10;
+// ---- Constants ----
+
+const TOTAL_STEPS = 14;
 
 // Gate steps — Continue is disabled until condition is met
-const GATE_STEPS = new Set([0, 1, 8]);
+const GATE_STEPS = new Set([0, 1, 2, 3, 4, 5, 12]);
 
 // Footer height constants (dots + button + padding)
 const FOOTER_INNER_HEIGHT = 108; // paddingTop(16) + dots(8) + gap(20) + button(52) + gap(12)
 
+// Index of the topics step — POST /onboarding fires when leaving this step
+const TOPICS_STEP_INDEX = 5;
+
+// ---- Option lists ----
+
+const TRADITION_OPTIONS = [
+  "Twelver Shia (Ja'fari)",
+  "Sunni (General)",
+  "Other Muslim",
+  "Non-Muslim",
+  "I'm not sure",
+  "Prefer not to say",
+];
+
+const GOALS_OPTIONS = [
+  "I want a structured learning path and don't know where to start",
+  "I want reliable answers with sources",
+  "I'm interested in something specific right now",
+  "Just general curiosity",
+];
+
+const KNOWLEDGE_OPTIONS = [
+  "Just starting",
+  "Beginner",
+  "Advanced",
+  "I'm not sure",
+  "Prefer not to say",
+];
+
+const TOPICS_OPTIONS = [
+  "Beliefs (Aqa'id)",
+  "History (Seerah, Imams, events)",
+  "Qur'an & Tafsir",
+  "Hadith & Narrations",
+  "Akhlaq / Spiritual growth",
+  "Duas & Ziyarat",
+  "Contemporary questions",
+  "Hawza-style study / deeper dives",
+  "I'm not sure yet",
+];
+
+// ---- Types ----
+
 type StepKey =
   | "welcome"
   | "auth"
+  | "tradition"
+  | "goals"
+  | "knowledge"
+  | "topics"
   | "about"
   | "chatbot"
   | "references"
@@ -68,6 +123,10 @@ type StepKey =
 const STEP_KEYS: StepKey[] = [
   "welcome",
   "auth",
+  "tradition",
+  "goals",
+  "knowledge",
+  "topics",
   "about",
   "chatbot",
   "references",
@@ -84,7 +143,7 @@ export default function OnboardingScreen() {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
-  const { markOnboardingComplete, status } = useAuth();
+  const { markOnboardingComplete, markPersonalizationComplete, status } = useAuth();
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -94,18 +153,30 @@ export default function OnboardingScreen() {
   // true once the user has successfully authenticated (signed up or signed in)
   const [authenticated, setAuthenticated] = useState(false);
 
+  // Personalization state
+  const [tradition, setTradition] = useState<string[]>([]);
+  const [goals, setGoals] = useState<string[]>([]);
+  const [knowledge, setKnowledge] = useState<string[]>([]);
+  const [topics, setTopics] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   // Total footer height including safe area
   const footerHeight = FOOTER_INNER_HEIGHT + insets.bottom;
 
   // ---- Restore partial progress ----
   useEffect(() => {
-    getOnboardingState().then(({ step, tosAccepted: tos, aiAccepted: ai }) => {
-      if (tos) setTosAccepted(true);
-      if (ai) setAiAccepted(true);
-      if (step > 0) {
-        setCurrentStep(step);
+    getOnboardingState().then((state) => {
+      if (state.tosAccepted) setTosAccepted(true);
+      if (state.aiAccepted) setAiAccepted(true);
+      if (state.tradition) setTradition([state.tradition]);
+      if (state.goals.length > 0) setGoals(state.goals);
+      if (state.knowledge) setKnowledge([state.knowledge]);
+      if (state.topics.length > 0) setTopics(state.topics);
+      if (state.step > 0) {
+        setCurrentStep(state.step);
         setTimeout(() => {
-          flatListRef.current?.scrollToIndex({ index: step, animated: false });
+          flatListRef.current?.scrollToIndex({ index: state.step, animated: false });
         }, 50);
       }
     });
@@ -121,10 +192,14 @@ export default function OnboardingScreen() {
     (step: number): boolean => {
       if (step === 0) return tosAccepted;
       if (step === 1) return authenticated;
-      if (step === 8) return aiAccepted;
+      if (step === 2) return tradition.length > 0;
+      if (step === 3) return goals.length > 0;
+      if (step === 4) return knowledge.length > 0;
+      if (step === 5) return topics.length > 0 && topics.length <= 3;
+      if (step === 12) return aiAccepted;
       return true;
     },
-    [tosAccepted, authenticated, aiAccepted]
+    [tosAccepted, authenticated, tradition, goals, knowledge, topics, aiAccepted]
   );
 
   // ---- Navigation ----
@@ -140,6 +215,29 @@ export default function OnboardingScreen() {
   const handleContinue = useCallback(async () => {
     if (!isContinueEnabled(currentStep)) return;
 
+    // Submit personalization when leaving topics step
+    if (currentStep === TOPICS_STEP_INDEX) {
+      setSubmitting(true);
+      setSubmitError(null);
+      try {
+        await submitOnboarding({
+          tradition: tradition[0],
+          goals,
+          knowledge_level: knowledge[0],
+          topics,
+        });
+        markPersonalizationComplete();
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        setSubmitError(msg || "Something went wrong. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+      setSubmitting(false);
+      goToStep(currentStep + 1);
+      return;
+    }
+
     if (currentStep === TOTAL_STEPS - 1) {
       await markOnboardingComplete();
       if (status === "signedIn") {
@@ -151,7 +249,19 @@ export default function OnboardingScreen() {
     }
 
     goToStep(currentStep + 1);
-  }, [currentStep, isContinueEnabled, markOnboardingComplete, router, status, goToStep]);
+  }, [
+    currentStep,
+    isContinueEnabled,
+    markOnboardingComplete,
+    markPersonalizationComplete,
+    router,
+    status,
+    goToStep,
+    tradition,
+    goals,
+    knowledge,
+    topics,
+  ]);
 
   const handleTosToggle = useCallback(() => {
     const next = !tosAccepted;
@@ -169,6 +279,27 @@ export default function OnboardingScreen() {
     setAuthenticated(true);
     goToStep(2);
   }, [goToStep]);
+
+  const handleTraditionChange = useCallback((next: string[]) => {
+    setTradition(next);
+    saveOnboardingState({ tradition: next[0] ?? null });
+  }, []);
+
+  const handleGoalsChange = useCallback((next: string[]) => {
+    setGoals(next);
+    saveOnboardingState({ goals: next });
+  }, []);
+
+  const handleKnowledgeChange = useCallback((next: string[]) => {
+    setKnowledge(next);
+    saveOnboardingState({ knowledge: next[0] ?? null });
+  }, []);
+
+  const handleTopicsChange = useCallback((next: string[]) => {
+    setTopics(next);
+    setSubmitError(null);
+    saveOnboardingState({ topics: next });
+  }, []);
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -229,6 +360,62 @@ export default function OnboardingScreen() {
         return (
           <View style={[stepStyle, themedStepStyle]}>
             <AuthStep onAuthenticated={handleAuthenticated} {...themeProps} />
+          </View>
+        );
+      case "tradition":
+        return (
+          <View style={[stepStyle, themedStepStyle]}>
+            <PersonalizationStep
+              title="Which tradition do you follow?"
+              helperText="This helps tailor sources and learning paths. You can change this anytime."
+              options={TRADITION_OPTIONS}
+              selected={tradition}
+              onChange={handleTraditionChange}
+              {...themeProps}
+            />
+          </View>
+        );
+      case "goals":
+        return (
+          <View style={[stepStyle, themedStepStyle]}>
+            <PersonalizationStep
+              title="What brings you to Deen?"
+              hint="Select all that apply"
+              options={GOALS_OPTIONS}
+              selected={goals}
+              onChange={handleGoalsChange}
+              multi
+              {...themeProps}
+            />
+          </View>
+        );
+      case "knowledge":
+        return (
+          <View style={[stepStyle, themedStepStyle]}>
+            <PersonalizationStep
+              title="How familiar are you with Shi'a Islam?"
+              helperText="You can change this anytime."
+              options={KNOWLEDGE_OPTIONS}
+              selected={knowledge}
+              onChange={handleKnowledgeChange}
+              {...themeProps}
+            />
+          </View>
+        );
+      case "topics":
+        return (
+          <View style={[stepStyle, themedStepStyle]}>
+            <PersonalizationStep
+              title="What do you want to learn most?"
+              hint="Pick up to 3"
+              options={TOPICS_OPTIONS}
+              selected={topics}
+              onChange={handleTopicsChange}
+              multi
+              max={3}
+              submitError={submitError}
+              {...themeProps}
+            />
           </View>
         );
       case "about":
@@ -343,6 +530,7 @@ export default function OnboardingScreen() {
           currentStep={currentStep}
           onContinue={handleContinue}
           disabled={!isContinueEnabled(currentStep)}
+          busy={submitting}
           label={continueLabel}
           accentColor={colors.primary}
           dimColor={isWelcomeStep ? "rgba(255,255,255,0.25)" : colors.border}

@@ -11,6 +11,7 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
 import * as SecureStore from "expo-secure-store";
@@ -24,6 +25,7 @@ import {
   isOnboardingCompleted,
   setOnboardingCompleted,
 } from "@/utils/onboardingStorage";
+import { fetchMyOnboarding } from "@/utils/onboardingApi";
 
 // ---- Types ----
 
@@ -39,11 +41,14 @@ type AuthContextType = {
   user: AuthUser | null;
   accessToken: string | null;
   onboardingCompleted: boolean | null;
+  /** null = still checking with server; boolean = resolved */
+  personalizationCompleted: boolean | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<{ needsConfirmation: boolean }>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
   markOnboardingComplete: () => Promise<void>;
+  markPersonalizationComplete: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,6 +61,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   // null = still loading from storage; boolean = resolved
   const [onboardingCompleted, setOnboardingCompleted_] = useState<boolean | null>(null);
+  // null = unknown/checking; true = server record exists; false = no record (needs personalization)
+  const [personalizationCompleted, setPersonalizationCompleted] = useState<boolean | null>(null);
+
+  // Tracks the user id for which we already ran the personalization check,
+  // so we only fire GET /onboarding/me once per sign-in session.
+  const checkedPersonalizationForUserId = useRef<string | null>(null);
 
   // Load onboarding completion flag from AsyncStorage on mount
   useEffect(() => {
@@ -100,11 +111,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(null);
         setUser(null);
         setStatus("signedOut");
+        // Reset personalization state on sign-out
+        setPersonalizationCompleted(null);
+        checkedPersonalizationForUserId.current = null;
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // ---- Check server-side personalization when signed in ----
+  // Runs after onAuthStateChange updates status/user. We defer via useEffect
+  // (outside the onAuthStateChange callback) to avoid the SDK deadlock.
+  useEffect(() => {
+    if (status !== "signedIn" || !user) return;
+    // Only check once per user session
+    if (checkedPersonalizationForUserId.current === user.id) return;
+    checkedPersonalizationForUserId.current = user.id;
+
+    fetchMyOnboarding()
+      .then((result) => {
+        setPersonalizationCompleted(result !== null);
+      })
+      .catch((e) => {
+        // On any error other than 404 (e.g. 403, network failure), assume
+        // personalization is complete so the user isn't blocked from the app.
+        // A clean 404 is handled inside fetchMyOnboarding by returning null.
+        console.warn("⚠️ Failed to check personalization status:", e);
+        setPersonalizationCompleted(true);
+      });
+  }, [status, user]);
 
   // ---- Auth actions ----
 
@@ -129,6 +165,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const markOnboardingComplete = async (): Promise<void> => {
     await setOnboardingCompleted();
     setOnboardingCompleted_(true);
+  };
+
+  /** Call after successfully submitting POST /onboarding to skip the personalize screen. */
+  const markPersonalizationComplete = (): void => {
+    setPersonalizationCompleted(true);
+    checkedPersonalizationForUserId.current = user?.id ?? null;
   };
 
   const refresh = async (): Promise<void> => {
@@ -161,11 +203,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         accessToken,
         onboardingCompleted,
+        personalizationCompleted,
         signIn,
         signUp,
         signOut,
         refresh,
         markOnboardingComplete,
+        markPersonalizationComplete,
       }}
     >
       {children}

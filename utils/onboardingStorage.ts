@@ -14,6 +14,10 @@ export interface OnboardingState {
   step: number;
   tosAccepted: boolean;
   aiAccepted: boolean;
+  tradition: string | null;
+  goals: string[];
+  knowledge: string | null;
+  topics: string[];
 }
 
 const DEFAULT_STATE: OnboardingState = {
@@ -21,6 +25,10 @@ const DEFAULT_STATE: OnboardingState = {
   step: 0,
   tosAccepted: false,
   aiAccepted: false,
+  tradition: null,
+  goals: [],
+  knowledge: null,
+  topics: [],
 };
 
 // ---- Helpers ----
@@ -44,20 +52,51 @@ export async function setOnboardingCompleted(): Promise<void> {
   }
 }
 
-/** Reads partial onboarding progress (step index, checkbox states). */
+/** Reads partial onboarding progress (step index, checkbox states, personalization selections). */
 export async function getOnboardingState(): Promise<OnboardingState> {
   try {
-    const [completedRaw, stepRaw, tosRaw, aiRaw] = await Promise.all([
+    const [
+      completedRaw,
+      stepRaw,
+      tosRaw,
+      aiRaw,
+      traditionRaw,
+      goalsRaw,
+      knowledgeRaw,
+      topicsRaw,
+    ] = await Promise.all([
       AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED),
       AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_STEP),
       AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_TOS_ACCEPTED),
       AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_AI_ACCEPTED),
+      AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_TRADITION),
+      AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_GOALS),
+      AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_KNOWLEDGE),
+      AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_TOPICS),
     ]);
+
+    let goals: string[] = [];
+    let topics: string[] = [];
+    try {
+      if (goalsRaw) goals = JSON.parse(goalsRaw);
+    } catch {
+      goals = [];
+    }
+    try {
+      if (topicsRaw) topics = JSON.parse(topicsRaw);
+    } catch {
+      topics = [];
+    }
+
     return {
       completed: completedRaw === "true",
       step: stepRaw ? parseInt(stepRaw, 10) : 0,
       tosAccepted: tosRaw === "true",
       aiAccepted: aiRaw === "true",
+      tradition: traditionRaw ?? null,
+      goals,
+      knowledge: knowledgeRaw ?? null,
+      topics,
     };
   } catch {
     return DEFAULT_STATE;
@@ -70,12 +109,10 @@ export async function saveOnboardingState(
 ): Promise<void> {
   try {
     const writes: Promise<void>[] = [];
+
     if (partial.step !== undefined) {
       writes.push(
-        AsyncStorage.setItem(
-          STORAGE_KEYS.ONBOARDING_STEP,
-          String(partial.step)
-        )
+        AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_STEP, String(partial.step))
       );
     }
     if (partial.tosAccepted !== undefined) {
@@ -94,6 +131,41 @@ export async function saveOnboardingState(
         )
       );
     }
+    if (partial.tradition !== undefined) {
+      if (partial.tradition === null) {
+        writes.push(AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_TRADITION));
+      } else {
+        writes.push(
+          AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_TRADITION, partial.tradition)
+        );
+      }
+    }
+    if (partial.goals !== undefined) {
+      writes.push(
+        AsyncStorage.setItem(
+          STORAGE_KEYS.ONBOARDING_GOALS,
+          JSON.stringify(partial.goals)
+        )
+      );
+    }
+    if (partial.knowledge !== undefined) {
+      if (partial.knowledge === null) {
+        writes.push(AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_KNOWLEDGE));
+      } else {
+        writes.push(
+          AsyncStorage.setItem(STORAGE_KEYS.ONBOARDING_KNOWLEDGE, partial.knowledge)
+        );
+      }
+    }
+    if (partial.topics !== undefined) {
+      writes.push(
+        AsyncStorage.setItem(
+          STORAGE_KEYS.ONBOARDING_TOPICS,
+          JSON.stringify(partial.topics)
+        )
+      );
+    }
+
     await Promise.all(writes);
   } catch (e) {
     console.warn("⚠️ Failed to save onboarding progress:", e);
