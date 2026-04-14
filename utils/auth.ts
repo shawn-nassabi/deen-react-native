@@ -31,8 +31,16 @@ export async function signIn(email: string, password: string): Promise<void> {
 export async function signUp(
   email: string,
   password: string,
+  displayName: string,
 ): Promise<{ needsConfirmation: boolean }> {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: "https://www.thedeenfoundation.com/email-confirmed",
+      data: { display_name: displayName },
+    },
+  });
   if (error) throw error;
   return { needsConfirmation: data.session === null };
 }

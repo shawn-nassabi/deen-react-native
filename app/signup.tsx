@@ -48,23 +48,30 @@ export default function SignUpScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
+  const [displayName, setDisplayName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
+  const [displayNameFocused, setDisplayNameFocused] = React.useState(false);
   const [emailFocused, setEmailFocused] = React.useState(false);
   const [passwordFocused, setPasswordFocused] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [confirmed, setConfirmed] = React.useState(false);
 
+  const emailRef = React.useRef<TextInput>(null);
   const passwordRef = React.useRef<TextInput>(null);
 
   const handleSignUp = async () => {
     if (busy) return;
+    if (!displayName.trim()) {
+      setError("Please enter your display name.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      const { needsConfirmation } = await signUp(email.trim(), password);
+      const { needsConfirmation } = await signUp(email.trim(), password, displayName.trim());
       if (needsConfirmation) {
         setConfirmed(true);
       } else {
@@ -137,9 +144,35 @@ export default function SignUpScreen() {
                 {/* Heading */}
                 <ThemedText style={styles.heading}>Create account</ThemedText>
 
+                {/* Display name input */}
+                <View style={styles.inputGroup}>
+                  <TextInput
+                    autoFocus
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: colors.panel2,
+                        borderColor: displayNameFocused ? colors.primary : colors.border,
+                        color: colors.text,
+                      },
+                    ]}
+                    placeholder="Display name"
+                    placeholderTextColor={colors.muted}
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    returnKeyType="next"
+                    value={displayName}
+                    onChangeText={setDisplayName}
+                    onFocus={() => setDisplayNameFocused(true)}
+                    onBlur={() => setDisplayNameFocused(false)}
+                    onSubmitEditing={() => emailRef.current?.focus()}
+                  />
+                </View>
+
                 {/* Email input */}
                 <View style={styles.inputGroup}>
                   <TextInput
+                    ref={emailRef}
                     style={[
                       styles.input,
                       {

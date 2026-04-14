@@ -5,7 +5,7 @@
  * with a "Continue anyway" button to advance the pager.
  */
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -48,6 +48,7 @@ export default function AuthStep({
 }: AuthStepProps) {
   const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<Mode>("signup");
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -55,13 +56,20 @@ export default function AuthStep({
   const [error, setError] = useState<string | null>(null);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
 
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+
   const handleSubmit = async () => {
+    if (mode === "signup" && !displayName.trim()) {
+      setError("Please enter your display name.");
+      return;
+    }
     if (!email.trim() || !password) return;
     setBusy(true);
     setError(null);
     try {
       if (mode === "signup") {
-        const result = await signUp(email.trim(), password);
+        const result = await signUp(email.trim(), password, displayName.trim());
         if (result.needsConfirmation) {
           setNeedsConfirmation(true);
         } else {
@@ -95,14 +103,18 @@ export default function AuthStep({
             We sent a confirmation link to{"\n"}
             <ThemedText style={[styles.confirmEmail, { color: textColor }]}>{email}</ThemedText>
             {"\n\n"}
-            Confirm your email, then come back and sign in to continue. You can also skip this and explore Deen now.
+            Confirm your email, then sign in to continue.
           </ThemedText>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: accentColor, paddingHorizontal: 32 }]}
-            onPress={onAuthenticated}
+            onPress={() => {
+              setNeedsConfirmation(false);
+              setMode("signin");
+              setPassword("");
+            }}
             activeOpacity={0.8}
           >
-            <ThemedText style={styles.buttonText}>Continue anyway</ThemedText>
+            <ThemedText style={styles.buttonText}>Back to sign in</ThemedText>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -131,10 +143,30 @@ export default function AuthStep({
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(140).duration(400)} style={styles.form}>
+          {/* Display name (signup only) */}
+          {mode === "signup" && (
+            <View style={[styles.inputWrap, { backgroundColor: panelColor, borderColor }]}>
+              <Ionicons name="person-outline" size={18} color={mutedColor} style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, { color: textColor }]}
+                placeholder="Display name"
+                placeholderTextColor={mutedColor}
+                autoCapitalize="words"
+                autoCorrect={false}
+                value={displayName}
+                onChangeText={setDisplayName}
+                editable={!busy}
+                returnKeyType="next"
+                onSubmitEditing={() => emailRef.current?.focus()}
+              />
+            </View>
+          )}
+
           {/* Email */}
           <View style={[styles.inputWrap, { backgroundColor: panelColor, borderColor }]}>
             <Ionicons name="mail-outline" size={18} color={mutedColor} style={styles.inputIcon} />
             <TextInput
+              ref={emailRef}
               style={[styles.input, { color: textColor }]}
               placeholder="Email address"
               placeholderTextColor={mutedColor}
@@ -143,6 +175,8 @@ export default function AuthStep({
               value={email}
               onChangeText={setEmail}
               editable={!busy}
+              returnKeyType="next"
+              onSubmitEditing={() => passwordRef.current?.focus()}
             />
           </View>
 
@@ -150,6 +184,7 @@ export default function AuthStep({
           <View style={[styles.inputWrap, { backgroundColor: panelColor, borderColor }]}>
             <Ionicons name="lock-closed-outline" size={18} color={mutedColor} style={styles.inputIcon} />
             <TextInput
+              ref={passwordRef}
               style={[styles.input, { color: textColor }]}
               placeholder="Password"
               placeholderTextColor={mutedColor}
@@ -208,6 +243,7 @@ export default function AuthStep({
             onPress={() => {
               setMode(mode === "signup" ? "signin" : "signup");
               setError(null);
+              setDisplayName("");
             }}
           >
             <ThemedText style={[styles.toggleLink, { color: accentColor }]}>
