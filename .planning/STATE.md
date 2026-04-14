@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 Phase: —
 Plan: —
 Status: v1.0 milestone complete — archived 2026-04-14
-Last activity: 2026-04-14
+Last activity: 2026-04-14 - Completed quick task 260414-2da: Re-enable forgot password button and implement password reset flow
 
 Progress: [██████████] 100%
 
