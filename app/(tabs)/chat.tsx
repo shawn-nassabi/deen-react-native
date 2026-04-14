@@ -607,7 +607,7 @@ export default function ChatScreen() {
           <View style={styles.headerLeft}>
             <TouchableOpacity
               hitSlop={HEADER_ACTION_HIT_SLOP}
-              onPress={() => setIsDrawerOpen(true)}
+              onPress={() => setIsDrawerOpen((prev) => !prev)}
               activeOpacity={0.7}
             >
               <Ionicons name="menu" size={22} color={colors.text} />

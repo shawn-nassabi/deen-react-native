@@ -17,7 +17,7 @@ import {
   Montserrat_700Bold,
 } from "@expo-google-fonts/montserrat";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import {
   ThemeProvider,
@@ -26,7 +26,7 @@ import {
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 
 // Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -37,11 +37,16 @@ function RootNavigator() {
   const { status, onboardingCompleted, personalizationCompleted } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const splashHidden = useRef(false);
 
   // Hide the native splash only after auth + onboarding flags have resolved
   // AND the router has landed on the correct route. Prevents a flash of the
   // default anchor route ("(tabs)") before the onboarding/login redirect fires.
+  // Guarded by a ref so hideAsync runs exactly once — re-invoking it after a
+  // modal presentation routes the call to a VC that doesn't own the splash
+  // screen and rejects with "No native splash screen registered...".
   useEffect(() => {
+    if (splashHidden.current) return;
     if (status === "loading" || onboardingCompleted === null) return;
     if (status === "signedIn" && personalizationCompleted === null) return;
 
@@ -64,6 +69,7 @@ function RootNavigator() {
     }
 
     if (atCorrectRoute) {
+      splashHidden.current = true;
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [status, onboardingCompleted, personalizationCompleted, segments]);
@@ -124,7 +130,7 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="settings"
-          options={{ presentation: "modal", title: "Settings" }}
+          options={{ presentation: "modal", headerShown: false }}
         />
         <Stack.Screen
           name="feedback"

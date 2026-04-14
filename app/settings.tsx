@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, ScrollView, TouchableOpacity, View, Alert, ActivityIndicator, Linking } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemePreference } from "@/hooks/use-theme-preference";
@@ -17,6 +18,7 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const insets = useSafeAreaInsets();
   const [authError, setAuthError] = React.useState<string | null>(null);
   const [authBusy, setAuthBusy] = React.useState(false);
   const [deleteLoading, setDeleteLoading] = React.useState(false);
@@ -42,7 +44,10 @@ export default function SettingsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 8 }]}>
+        <ThemedText type="title" style={styles.headerTitle}>
+          Settings
+        </ThemedText>
         <TouchableOpacity
           onPress={() => router.back()}
           style={[
@@ -50,12 +55,10 @@ export default function SettingsScreen() {
             { backgroundColor: colors.panel, borderColor: colors.border },
           ]}
           activeOpacity={0.7}
+          hitSlop={8}
         >
           <Ionicons name="close" size={20} color={colors.text} />
         </TouchableOpacity>
-        <ThemedText type="title" style={styles.headerTitle}>
-          Settings
-        </ThemedText>
       </View>
 
       <ScrollView
@@ -131,13 +134,29 @@ export default function SettingsScreen() {
           <View
             style={[
               styles.infoCard,
-              { backgroundColor: colors.panel, borderColor: colors.border },
+              { backgroundColor: colors.panel, borderColor: colors.border, gap: 10 },
             ]}
           >
-            {user?.email ? (
+            {user?.displayName ? (
               <View style={styles.infoRow}>
                 <Ionicons
                   name="person-outline"
+                  size={16}
+                  color={colors.muted}
+                  style={styles.infoIcon}
+                />
+                <ThemedText
+                  style={[styles.infoText, { color: colors.text }]}
+                >
+                  {user.displayName}
+                </ThemedText>
+              </View>
+            ) : null}
+
+            {user?.email ? (
+              <View style={styles.infoRow}>
+                <Ionicons
+                  name="mail-outline"
                   size={16}
                   color={colors.muted}
                   style={styles.infoIcon}
@@ -286,11 +305,10 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 4,
+    paddingBottom: 8,
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    justifyContent: "space-between",
   },
   closeButton: {
     width: 36,
@@ -301,7 +319,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: "700",
   },
   container: {
@@ -362,7 +380,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    marginBottom: 8,
+    lineHeight: 18,
   },
   versionText: {
     fontSize: 12,

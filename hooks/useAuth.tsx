@@ -34,6 +34,7 @@ type AuthStatus = "loading" | "signedOut" | "signedIn";
 export type AuthUser = {
   id: string;
   email?: string;
+  displayName?: string;
 };
 
 type AuthContextType = {
@@ -105,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({
           id: session.user.id,
           email: session.user.email,
+          displayName: session.user.user_metadata?.display_name,
         });
         setStatus("signedIn");
       } else {
@@ -181,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({
           id: session.user.id,
           email: session.user.email,
+          displayName: session.user.user_metadata?.display_name,
         });
         setStatus("signedIn");
       } else {
