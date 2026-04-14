@@ -30,4 +30,14 @@ export const STORAGE_KEYS = {
   MESSAGES_VERSION: "v1",
   CHAT_LANGUAGE_PREFIX: "deen:chatLanguage:",
   CHAT_LAST_LANGUAGE: "deen:lastChatLanguage",
+  ONBOARDING_COMPLETED: "deen:onboarding:v1:completed",
+  ONBOARDING_STEP: "deen:onboarding:v1:step",
+  ONBOARDING_TOS_ACCEPTED: "deen:onboarding:v1:tosAccepted",
+  ONBOARDING_AI_ACCEPTED: "deen:onboarding:v1:aiAccepted",
+} as const;
+
+export const EXTERNAL_URLS = {
+  PRIVACY_POLICY: "https://www.thedeenfoundation.com/privacy",
+  TERMS_OF_USE: "https://www.thedeenfoundation.com/terms",
+  ANTHROPIC_PRIVACY: "https://www.anthropic.com/legal/privacy",
 } as const;

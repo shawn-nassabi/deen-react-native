@@ -9,9 +9,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { deleteAccount } from "@/utils/api";
-
-const PRIVACY_POLICY_URL = "https://www.thedeenfoundation.com/privacy";
-const TERMS_OF_USE_URL = "https://www.thedeenfoundation.com/terms";
+import { EXTERNAL_URLS } from "@/utils/constants";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -261,7 +259,7 @@ export default function SettingsScreen() {
           >
             <TouchableOpacity
               style={styles.legalRow}
-              onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+              onPress={() => Linking.openURL(EXTERNAL_URLS.PRIVACY_POLICY)}
               activeOpacity={0.7}
             >
               <ThemedText style={styles.legalRowLabel}>Privacy Policy</ThemedText>
@@ -272,7 +270,7 @@ export default function SettingsScreen() {
 
             <TouchableOpacity
               style={styles.legalRow}
-              onPress={() => Linking.openURL(TERMS_OF_USE_URL)}
+              onPress={() => Linking.openURL(EXTERNAL_URLS.TERMS_OF_USE)}
               activeOpacity={0.7}
             >
               <ThemedText style={styles.legalRowLabel}>Terms of Use</ThemedText>

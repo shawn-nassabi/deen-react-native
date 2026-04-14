@@ -20,6 +20,10 @@ import {
   signOut as authSignOut,
   signUp as authSignUp,
 } from "@/utils/auth";
+import {
+  isOnboardingCompleted,
+  setOnboardingCompleted,
+} from "@/utils/onboardingStorage";
 
 // ---- Types ----
 
@@ -34,10 +38,12 @@ type AuthContextType = {
   status: AuthStatus;
   user: AuthUser | null;
   accessToken: string | null;
+  onboardingCompleted: boolean | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
+  markOnboardingComplete: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,6 +54,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  // null = still loading from storage; boolean = resolved
+  const [onboardingCompleted, setOnboardingCompleted_] = useState<boolean | null>(null);
+
+  // Load onboarding completion flag from AsyncStorage on mount
+  useEffect(() => {
+    isOnboardingCompleted()
+      .then((done) => setOnboardingCompleted_(done))
+      .catch(() => setOnboardingCompleted_(false));
+  }, []);
 
   useEffect(() => {
     // ---- MIG-07: Clear legacy Cognito token key on first launch ----
@@ -111,6 +126,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // State updated automatically by onAuthStateChange (SIGNED_OUT event)
   };
 
+  const markOnboardingComplete = async (): Promise<void> => {
+    await setOnboardingCompleted();
+    setOnboardingCompleted_(true);
+  };
+
   const refresh = async (): Promise<void> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -140,10 +160,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         status,
         user,
         accessToken,
+        onboardingCompleted,
         signIn,
         signUp,
         signOut,
         refresh,
+        markOnboardingComplete,
       }}
     >
       {children}

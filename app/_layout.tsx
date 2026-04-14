@@ -34,31 +34,42 @@ export const unstable_settings = {
 
 function RootNavigator() {
   const { colorScheme } = useThemePreference();
-  const { status } = useAuth();
+  const { status, onboardingCompleted } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "loading") return;
+    // Wait until both auth and onboarding flag are resolved before routing
+    if (status === "loading" || onboardingCompleted === null) return;
+
+    // Cast to string[] — Expo Router's typed segments don't include newly added
+    // routes until the dev server regenerates .expo/types/router.d.ts.
+    const seg0 = (segments as string[])?.[0];
 
     const isOnAuthScreen =
-      segments?.[0] === "login" ||
-      segments?.[0] === "signup" ||
-      segments?.[0] === "forgot-password" ||
-      segments?.[0] === "reset-password";
+      seg0 === "login" ||
+      seg0 === "signup" ||
+      seg0 === "forgot-password" ||
+      seg0 === "reset-password";
+    const isOnOnboarding = seg0 === "onboarding";
 
-    if (status !== "signedIn" && !isOnAuthScreen) {
+    if (!onboardingCompleted && !isOnOnboarding) {
+      // First install — gate everyone through onboarding regardless of auth state
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.replace("/onboarding" as any);
+    } else if (onboardingCompleted && status !== "signedIn" && !isOnAuthScreen && !isOnOnboarding) {
       router.replace("/login");
-    } else if (status === "signedIn" && isOnAuthScreen && segments?.[0] !== "reset-password") {
+    } else if (onboardingCompleted && status === "signedIn" && (isOnAuthScreen || isOnOnboarding) && seg0 !== "reset-password") {
       router.replace("/(tabs)");
     }
-  }, [status, segments, router]);
+  }, [status, onboardingCompleted, segments, router]);
 
   return (
     <NavigationThemeProvider
       value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
     >
       <Stack>
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="signup" options={{ headerShown: false }} />
         <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
