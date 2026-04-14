@@ -1277,3 +1277,22 @@ export async function elaborateSelectionStream(
     xhr.send(JSON.stringify(payload));
   });
 }
+
+// ---- Account ----
+
+/**
+ * Delete the authenticated user's account.
+ * Calls DELETE /account/me with the Supabase Bearer token.
+ * Returns void on 204 success; throws a descriptive Error on failure.
+ */
+export async function deleteAccount(): Promise<void> {
+  const authHeaders = await withAuthHeaders();
+  const res = await fetch(`${API_BASE_URL}/account/me`, {
+    method: "DELETE",
+    headers: authHeaders,
+  });
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => res.statusText);
+    throw new Error(`Failed to delete account (HTTP ${res.status}): ${errorText}`);
+  }
+}

@@ -27,7 +27,6 @@ type AuthStatus = "loading" | "signedOut" | "signedIn";
 
 export type AuthUser = {
   id: string;
-  sub?: string;   // backward compat alias for user?.sub consumers (replaced in Phase 1.4)
   email?: string;
 };
 
@@ -37,7 +36,7 @@ type AuthContextType = {
   accessToken: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>;
-  signOut: (opts?: { global?: boolean }) => Promise<void>;
+  signOut: () => Promise<void>;
   refresh: () => Promise<void>;
 };
 
@@ -79,7 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(session.access_token);
         setUser({
           id: session.user.id,
-          sub: session.user.id,       // backward compat alias — Phase 1.4 removes this
           email: session.user.email,
         });
         setStatus("signedIn");
@@ -108,11 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result;
   };
 
-  const signOut = async (opts?: { global?: boolean }): Promise<void> => {
-    // opts.global kept for backward compat with settings.tsx call site.
-    // Supabase signOut() has no equivalent global flag — ignored here.
-    // Phase 1.4 will clean up this signature.
-    void opts;
+  const signOut = async (): Promise<void> => {
     await authSignOut();
     // State updated automatically by onAuthStateChange (SIGNED_OUT event)
   };
@@ -124,7 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(session.access_token);
         setUser({
           id: session.user.id,
-          sub: session.user.id,
           email: session.user.email,
         });
         setStatus("signedIn");

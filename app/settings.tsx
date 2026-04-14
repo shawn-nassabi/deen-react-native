@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, ScrollView, TouchableOpacity, View } from "react-native";
+import { StyleSheet, ScrollView, TouchableOpacity, View, Alert, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemePreference } from "@/hooks/use-theme-preference";
@@ -8,6 +8,7 @@ import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { deleteAccount } from "@/utils/api";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function SettingsScreen() {
   const colors = Colors[colorScheme];
   const [authError, setAuthError] = React.useState<string | null>(null);
   const [authBusy, setAuthBusy] = React.useState(false);
+  const [deleteLoading, setDeleteLoading] = React.useState(false);
 
   const themeOptions = [
     {
@@ -177,6 +179,61 @@ export default function SettingsScreen() {
             >
               <ThemedText style={styles.primaryButtonText}>Sign out</ThemedText>
             </TouchableOpacity>
+
+            {/* Danger zone separator */}
+            <View
+              style={[styles.dangerSeparator, { borderTopColor: colors.border }]}
+            />
+
+            {/* Delete Account button (D-10) */}
+            <TouchableOpacity
+              style={[
+                styles.primaryButton,
+                {
+                  backgroundColor: "#e53935",
+                  opacity: deleteLoading ? 0.6 : 1,
+                },
+              ]}
+              onPress={() => {
+                if (deleteLoading) return;
+                // Alert confirmation before irreversible action (D-11)
+                Alert.alert(
+                  "Delete Account",
+                  "This will permanently delete your account and all associated data. This action cannot be undone.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: async () => {
+                        setDeleteLoading(true);
+                        try {
+                          await deleteAccount();
+                          // On success: sign out — auth guard redirects to /login (D-12)
+                          await signOut();
+                        } catch (e: any) {
+                          // Stay on settings screen so user can retry (D-13)
+                          Alert.alert(
+                            "Error",
+                            e?.message || "Failed to delete account. Please try again."
+                          );
+                        } finally {
+                          setDeleteLoading(false);
+                        }
+                      },
+                    },
+                  ]
+                );
+              }}
+              activeOpacity={0.8}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <ThemedText style={styles.primaryButtonText}>Delete Account</ThemedText>
+              )}
+            </TouchableOpacity>
           </View>
         </ThemedView>
       </ScrollView>
@@ -285,5 +342,10 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 15,
     fontWeight: "600",
+  },
+  dangerSeparator: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 4,
+    marginBottom: 4,
   },
 });
