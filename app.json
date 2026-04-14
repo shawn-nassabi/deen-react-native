@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.deen-react-native",
+      "bundleIdentifier": "com.thedeenfoundation.deen",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -55,8 +55,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "bc90507a-a612-4748-8916-54470073f4d4"
+        "projectId": "df4dbbcd-5d84-4463-95a5-57392fb2531f"
       }
-    }
+    },
+    "owner": "thedeenfoundation1"
   }
 }
