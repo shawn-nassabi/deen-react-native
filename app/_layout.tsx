@@ -49,7 +49,7 @@ function RootNavigator() {
 
     if (status !== "signedIn" && !isOnAuthScreen) {
       router.replace("/login");
-    } else if (status === "signedIn" && isOnAuthScreen) {
+    } else if (status === "signedIn" && isOnAuthScreen && segments?.[0] !== "reset-password") {
       router.replace("/(tabs)");
     }
   }, [status, segments, router]);

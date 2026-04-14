@@ -9,10 +9,10 @@
  * and background to avoid unnecessary network activity.
  */
 
+import { CONFIG } from "@/utils/config";
+import { createClient, type SupportedStorage } from "@supabase/supabase-js";
 import * as SecureStore from "expo-secure-store";
 import { AppState } from "react-native";
-import { createClient, type SupportedStorage } from "@supabase/supabase-js";
-import { CONFIG } from "@/utils/config";
 
 // ---- LargeSecureStore ----
 
@@ -68,6 +68,32 @@ class LargeSecureStore implements SupportedStorage {
   }
 }
 
+// ---- Retry-enabled fetch ----
+// React Native's fetch (whatwg-fetch over native XHR) intermittently drops
+// requests with "Network request failed". Safe to retry because xhr.onerror
+// means the request never reached the server.
+
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 500;
+
+async function fetchWithRetry(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await fetch(input, init);
+    } catch (err) {
+      lastError = err;
+      if (attempt < MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+      }
+    }
+  }
+  throw lastError;
+}
+
 // ---- Supabase singleton ----
 
 export const supabase = createClient(
@@ -79,8 +105,12 @@ export const supabase = createClient(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
+      flowType: "pkce",
     },
-  }
+    global: {
+      fetch: fetchWithRetry,
+    },
+  },
 );
 
 // ---- AppState lifecycle wiring ----

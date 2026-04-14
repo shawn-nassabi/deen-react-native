@@ -77,10 +77,15 @@ export default function ResetPasswordScreen() {
       .exchangeCodeForSession(code)
       .then(({ error: exchangeError }) => {
         if (exchangeError) {
+          console.warn("🔑 exchangeCodeForSession error:", JSON.stringify(exchangeError));
           setResetState("error");
         } else {
           setResetState("form");
         }
+      })
+      .catch((err: unknown) => {
+        console.warn("🔑 exchangeCodeForSession threw:", err instanceof Error ? err.message : String(err));
+        setResetState("error");
       });
   }, []);
 
@@ -101,12 +106,15 @@ export default function ResetPasswordScreen() {
         password: newPassword,
       });
       if (updateError) {
+        console.warn("🔑 updateUser error:", JSON.stringify(updateError));
         setError(mapResetError(updateError.message));
         setBusy(false);
+      } else {
+        // Password updated — navigate to main app.
+        // _layout.tsx auth guard skips reset-password to let the form show,
+        // so we handle the redirect explicitly here.
+        router.replace("/(tabs)");
       }
-      // On success: no action — USER_UPDATED event fires with valid session,
-      // useAuth.tsx onAuthStateChange sets status="signedIn",
-      // _layout.tsx useEffect redirects to /(tabs) automatically.
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "";
       setError(mapResetError(msg));

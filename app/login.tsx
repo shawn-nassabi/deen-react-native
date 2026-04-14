@@ -161,16 +161,8 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             {/* Links row */}
+            {/* Forgot password entry hidden — see .planning/codebase/CONCERNS.md "Password reset flow gated on Supabase config" */}
             <View style={styles.linksRow}>
-              <TouchableOpacity
-                onPress={() => router.push("/forgot-password")}
-                style={styles.linkTouchable}
-                activeOpacity={0.7}
-              >
-                <ThemedText style={[styles.linkText, { color: colors.muted }]}>
-                  Forgot password?
-                </ThemedText>
-              </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push("/signup")}
                 style={styles.linkTouchable}
