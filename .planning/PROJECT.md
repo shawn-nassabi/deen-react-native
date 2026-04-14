@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Deen is a React Native / Expo mobile app for Islamic learning, featuring an AI chat assistant, Hikmah lesson trees, and an Islamic references search. The app is currently live with AWS Cognito authentication, and this project migrates the frontend authentication layer to Supabase Auth to match the already-migrated backend.
+Deen is a React Native / Expo mobile app for Islamic learning, featuring an AI chat assistant, Hikmah lesson trees, and an Islamic references search. The app uses Supabase Auth for email+password authentication (migrated from AWS Cognito in v1.0). The Supabase migration is complete — both frontend and backend now use Supabase JWTs.
 
 ## Core Value
 
@@ -62,14 +62,9 @@ Users can sign in and access all features without authentication getting in thei
 
 ## Context
 
-**Backend migration:** The FastAPI backend now validates Supabase JWTs instead of Cognito JWTs. All routes now require a valid Bearer token (previously most were optional). A `GET /account/me` endpoint returns the authenticated user's identity from the JWT.
+**v1.0 shipped 2026-04-14** — Supabase Auth migration complete. 4 phases, 8 plans, 17 tasks, 87 commits over 4 days.
 
-**Migration guide:** `docs/FRONTEND_AUTH_MIGRATION.md` documents all API contract changes. Key points:
-- Token source: Supabase client (`session.access_token`) replaces Cognito session token
-- User ID format: Supabase UUID replaces Cognito email/sub string
-- Local dev bypass: `ENV=development` on the backend accepts any Bearer value; use `Authorization: Bearer dev`
-
-**Current auth implementation (Phase 1.4 complete — migration done):**
+**Current auth stack:**
 - `utils/auth.ts` — Supabase thin wrappers (`signIn`, `signOut`, `signUp`, `getValidAccessToken`); no Cognito code
 - `utils/supabase.ts` — Supabase JS client with `LargeSecureStore` adapter and AppState token-refresh wiring
 - `hooks/useAuth.tsx` — `AuthProvider` + `useAuth` context via `onAuthStateChange`; exposes `status`, `user`, `accessToken`, `signIn`, `signUp`, `signOut`, `refresh`; `AuthUser` has `id` and `email` only (no `sub`)
@@ -98,10 +93,13 @@ Users can sign in and access all features without authentication getting in thei
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Email + password only (no social login) | Simplest migration path; social login can be added later | — Pending |
-| Fresh start (no Cognito user migration) | Avoids complex account linking; app is early-stage | — Pending |
-| Keep `useAuth` hook API surface the same | Minimizes changes to screens and components that consume auth state | — Pending |
-| Functional + elegant login UI (not full redesign) | Delivers polish without scope creep | — Pending |
+| Email + password only (no social login) | Simplest migration path; social login can be added later | ✓ Good — v1.0 |
+| Fresh start (no Cognito user migration) | Avoids complex account linking; app is early-stage | ✓ Good — v1.0 |
+| Keep `useAuth` hook API surface the same | Minimizes changes to screens and components that consume auth state | ✓ Good — zero screen changes needed v1.0 |
+| Functional + elegant login UI (not full redesign) | Delivers polish without scope creep | ✓ Good — v1.0 |
+| LargeSecureStore chunking over AES-256 | Zero new dependencies; only expo-secure-store already installed | ✓ Good — v1.0 |
+| onAuthStateChange source of truth (no manual token cache) | SDK owns session lifecycle; eliminates expiry/refresh logic | ✓ Good — v1.0 |
+| Mount guard (exchanged useRef) for PKCE code exchange | React Strict Mode double-invokes useEffect; guard prevents duplicate code exchange | ✓ Good — v1.0 |
 
 ## Evolution
 
@@ -121,4 +119,5 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-14 after Phase 1.4 (cleanup-account) complete — Supabase auth migration finished*
+---
+*Last updated: 2026-04-14 after v1.0 milestone — Supabase auth migration complete*
