@@ -79,7 +79,7 @@ export default function ElaborationModal({
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    const userId = user?.email || user?.sub;
+    const userId = user?.id;
     if (!userId) {
       setLoading(false);
       setError("Please sign in again to continue.");

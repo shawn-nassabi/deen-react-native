@@ -44,7 +44,7 @@ export default function LessonReaderScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const { user } = useAuth();
-  const userId = user?.email || user?.sub;
+  const userId = user?.id;
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [tree, setTree] = useState<HikmahTree | null>(null);

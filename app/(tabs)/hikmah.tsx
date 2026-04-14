@@ -38,7 +38,7 @@ export default function HikmahScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const { user } = useAuth();
-  const userId = user?.email || user?.sub;
+  const userId = user?.id;
   const blurIntensity = Platform.OS === "android" ? 120 : 60;
   const headerOverlayColor =
     colorScheme === "dark" ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";

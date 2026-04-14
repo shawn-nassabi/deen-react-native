@@ -136,11 +136,11 @@ export default function SettingsScreen() {
               </ThemedText>
             ) : null}
 
-            {user?.sub ? (
+            {user?.id ? (
               <ThemedText
                 style={[styles.infoText, { color: colors.textSecondary }]}
               >
-                User ID (sub): {user.sub}
+                User ID: {user.id}
               </ThemedText>
             ) : null}
 
