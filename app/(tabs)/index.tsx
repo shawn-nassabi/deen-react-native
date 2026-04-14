@@ -31,6 +31,27 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      {/* Vision / Donate Button - Top Left */}
+      <Animated.View
+        entering={FadeIn.delay(200).duration(300)}
+        style={[styles.visionButtonContainer, { top: insets.top + 10 }]}
+      >
+        <TouchableOpacity
+          style={[
+            styles.visionButton,
+            { backgroundColor: colors.panel, borderColor: colors.border },
+          ]}
+          onPress={() => router.push("/vision")}
+          activeOpacity={0.7}
+          accessibilityLabel="Join the Vision"
+        >
+          <Ionicons name="heart" size={16} color={colors.primary} />
+          <ThemedText style={[styles.visionButtonText, { color: colors.primary }]}>
+            Join the Vision
+          </ThemedText>
+        </TouchableOpacity>
+      </Animated.View>
+
       {/* Settings Button - Top Right */}
       <Animated.View
         entering={FadeIn.delay(200).duration(300)}
@@ -170,6 +191,30 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  visionButtonContainer: {
+    position: "absolute",
+    left: 16,
+    zIndex: 10,
+  },
+  visionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    height: 44,
+    paddingHorizontal: 12,
+    borderRadius: 22,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  visionButtonText: {
+    fontSize: 12,
+    fontFamily: "Montserrat_600SemiBold",
   },
   contentContainer: {
     flex: 1,

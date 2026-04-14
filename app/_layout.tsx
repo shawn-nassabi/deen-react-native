@@ -136,6 +136,10 @@ function RootNavigator() {
           name="feedback"
           options={{ presentation: "modal", title: "Feedback" }}
         />
+        <Stack.Screen
+          name="vision"
+          options={{ presentation: "modal", headerShown: false }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </NavigationThemeProvider>
