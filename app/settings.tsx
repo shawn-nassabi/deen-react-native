@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, ScrollView, TouchableOpacity, View, Alert, ActivityIndicator } from "react-native";
+import { StyleSheet, ScrollView, TouchableOpacity, View, Alert, ActivityIndicator, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemePreference } from "@/hooks/use-theme-preference";
@@ -9,6 +9,9 @@ import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { deleteAccount } from "@/utils/api";
+
+const PRIVACY_POLICY_URL = "https://www.thedeenfoundation.com/privacy";
+const TERMS_OF_USE_URL = "https://www.thedeenfoundation.com/terms";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -40,7 +43,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Close Button */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -52,6 +55,9 @@ export default function SettingsScreen() {
         >
           <Ionicons name="close" size={20} color={colors.text} />
         </TouchableOpacity>
+        <ThemedText type="title" style={styles.headerTitle}>
+          Settings
+        </ThemedText>
       </View>
 
       <ScrollView
@@ -131,19 +137,19 @@ export default function SettingsScreen() {
             ]}
           >
             {user?.email ? (
-              <ThemedText
-                style={[styles.infoText, { color: colors.textSecondary }]}
-              >
-                Email: {user.email}
-              </ThemedText>
-            ) : null}
-
-            {user?.id ? (
-              <ThemedText
-                style={[styles.infoText, { color: colors.textSecondary }]}
-              >
-                User ID: {user.id}
-              </ThemedText>
+              <View style={styles.infoRow}>
+                <Ionicons
+                  name="person-outline"
+                  size={16}
+                  color={colors.muted}
+                  style={styles.infoIcon}
+                />
+                <ThemedText
+                  style={[styles.infoText, { color: colors.textSecondary }]}
+                >
+                  {user.email}
+                </ThemedText>
+              </View>
             ) : null}
 
             {authError ? (
@@ -236,6 +242,44 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         </ThemedView>
+
+        <ThemedView style={styles.section}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Legal
+          </ThemedText>
+          <ThemedText
+            style={[styles.sectionDescription, { color: colors.textSecondary }]}
+          >
+            Policies and terms
+          </ThemedText>
+
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: colors.panel, borderColor: colors.border, padding: 0 },
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.legalRow}
+              onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={styles.legalRowLabel}>Privacy Policy</ThemedText>
+              <Ionicons name="open-outline" size={16} color={colors.muted} />
+            </TouchableOpacity>
+
+            <View style={[styles.legalDivider, { borderTopColor: colors.border }]} />
+
+            <TouchableOpacity
+              style={styles.legalRow}
+              onPress={() => Linking.openURL(TERMS_OF_USE_URL)}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={styles.legalRowLabel}>Terms of Use</ThemedText>
+              <Ionicons name="open-outline" size={16} color={colors.muted} />
+            </TouchableOpacity>
+          </View>
+        </ThemedView>
       </ScrollView>
     </View>
   );
@@ -243,9 +287,12 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 8,
+    paddingBottom: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
   },
   closeButton: {
     width: 36,
@@ -254,7 +301,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "flex-start",
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "700",
   },
   container: {
     flex: 1,
@@ -347,5 +397,26 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     marginTop: 4,
     marginBottom: 4,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  infoIcon: {
+    marginRight: 8,
+  },
+  legalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  legalRowLabel: {
+    fontSize: 15,
+  },
+  legalDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginHorizontal: 16,
   },
 });
