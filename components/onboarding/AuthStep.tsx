@@ -269,8 +269,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 26,
+    lineHeight: 34,
     fontFamily: "Montserrat_700Bold",
     marginBottom: 6,
+    paddingTop: 4,
   },
   subtitle: {
     fontSize: 15,
