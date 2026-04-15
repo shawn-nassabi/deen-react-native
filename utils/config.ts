@@ -100,16 +100,18 @@ function getDefaultApiBaseUrl(): string {
 
 const DEFAULT_API_BASE_URL = getDefaultApiBaseUrl();
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required env var: ${name}`);
-  return value;
-}
+// IMPORTANT: babel-preset-expo only inlines `process.env.EXPO_PUBLIC_*` when
+// accessed as a literal member expression. Dynamic access (process.env[name])
+// is NOT inlined — it works in dev but resolves to undefined in release bundles.
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-const SUPABASE_URL = requireEnv("EXPO_PUBLIC_SUPABASE_URL");
-const SUPABASE_PUBLISHABLE_KEY = requireEnv(
-  "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
-);
+if (!SUPABASE_URL) {
+  throw new Error("Missing required env var: EXPO_PUBLIC_SUPABASE_URL");
+}
+if (!SUPABASE_PUBLISHABLE_KEY) {
+  throw new Error("Missing required env var: EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+}
 
 export const CONFIG = {
   API_BASE_URL: DEFAULT_API_BASE_URL,
