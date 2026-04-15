@@ -44,5 +44,5 @@ export const EXTERNAL_URLS = {
   PRIVACY_POLICY: "https://www.thedeenfoundation.com/privacy",
   TERMS_OF_USE: "https://www.thedeenfoundation.com/terms",
   ANTHROPIC_PRIVACY: "https://www.anthropic.com/legal/privacy",
-  DONATE: "https://www.thedeenfoundation.com",
+  DONATE: "https://donate.stripe.com/8x200jeWacE96VpdphaR201",
 } as const;
