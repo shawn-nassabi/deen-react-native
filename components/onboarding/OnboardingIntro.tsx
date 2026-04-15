@@ -21,7 +21,6 @@ import Animated, {
   withTiming,
   withDelay,
   withSequence,
-  withRepeat,
   withSpring,
   runOnJS,
   Easing,
@@ -72,7 +71,6 @@ export default function OnboardingIntro({ onComplete }: OnboardingIntroProps) {
 
   const logoScale = useSharedValue(0.4);
   const logoOpacity = useSharedValue(0);
-  const glowOpacity = useSharedValue(0);
   const overlayOpacity = useSharedValue(1);
 
   useEffect(() => {
@@ -88,7 +86,6 @@ export default function OnboardingIntro({ onComplete }: OnboardingIntroProps) {
       // Static reveal — no waves, logo fades in and out
       logoScale.value = 1;
       logoOpacity.value = withTiming(1, { duration: 200 });
-      glowOpacity.value = withTiming(0.4, { duration: 200 });
       overlayOpacity.value = withDelay(
         REDUCED_HOLD_DURATION,
         withTiming(0, { duration: 300 }, (finished) => {
@@ -128,10 +125,6 @@ export default function OnboardingIntro({ onComplete }: OnboardingIntroProps) {
       LOGO_REVEAL_DELAY,
       withSpring(1, { damping: 12, stiffness: 120, mass: 0.9 })
     );
-    glowOpacity.value = withDelay(
-      LOGO_REVEAL_DELAY,
-      withTiming(0.35, { duration: LOGO_REVEAL_DURATION })
-    );
 
     // Haptic anchor at the moment the logo lands
     const hapticTimeout = setTimeout(
@@ -146,17 +139,6 @@ export default function OnboardingIntro({ onComplete }: OnboardingIntroProps) {
       withSequence(
         withTiming(1.06, { duration: PULSE_HALF_CYCLE, easing: pulseEasing }),
         withTiming(1.0, { duration: PULSE_HALF_CYCLE, easing: pulseEasing })
-      )
-    );
-    glowOpacity.value = withDelay(
-      PULSE_START_DELAY,
-      withRepeat(
-        withSequence(
-          withTiming(0.55, { duration: PULSE_HALF_CYCLE, easing: pulseEasing }),
-          withTiming(0.35, { duration: PULSE_HALF_CYCLE, easing: pulseEasing })
-        ),
-        2,
-        false
       )
     );
 
@@ -189,7 +171,6 @@ export default function OnboardingIntro({ onComplete }: OnboardingIntroProps) {
     w3x,
     logoOpacity,
     logoScale,
-    glowOpacity,
     overlayOpacity,
     onComplete,
   ]);
@@ -220,10 +201,6 @@ export default function OnboardingIntro({ onComplete }: OnboardingIntroProps) {
   }));
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,
-    transform: [{ scale: logoScale.value }],
-  }));
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
     transform: [{ scale: logoScale.value }],
   }));
 
@@ -331,9 +308,8 @@ export default function OnboardingIntro({ onComplete }: OnboardingIntroProps) {
           </>
         )}
 
-        {/* Centered logo + glow */}
+        {/* Centered logo */}
         <View style={styles.center} pointerEvents="none">
-          <Animated.View style={[styles.glow, glowStyle]} />
           <Animated.View style={logoStyle}>
             <Image
               source={require("@/assets/images/deen-logo-icon.png")}
@@ -374,17 +350,6 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 20,
-  },
-  glow: {
-    position: "absolute",
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: "#5bc1a1",
-    shadowColor: "#5bc1a1",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 40,
   },
 });
 
