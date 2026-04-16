@@ -1,28 +1,28 @@
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import {
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  View,
   Linking,
   Platform,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import * as Haptics from "expo-haptics";
 import Animated, {
+  Easing,
   FadeIn,
   FadeInDown,
   FadeInUp,
-  useSharedValue,
   useAnimatedStyle,
+  useSharedValue,
   withRepeat,
-  withTiming,
   withSequence,
-  Easing,
+  withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -78,11 +78,14 @@ export default function VisionScreen() {
   useEffect(() => {
     pulse.value = withRepeat(
       withSequence(
-        withTiming(1.035, { duration: 1100, easing: Easing.inOut(Easing.quad) }),
-        withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.quad) })
+        withTiming(1.035, {
+          duration: 1100,
+          easing: Easing.inOut(Easing.quad),
+        }),
+        withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.quad) }),
       ),
       -1,
-      false
+      false,
     );
   }, [pulse]);
 
@@ -153,7 +156,7 @@ export default function VisionScreen() {
 
             <Animated.View entering={FadeInDown.delay(260).duration(450)}>
               <ThemedText style={styles.heroSubtitle}>
-                Making authentic Islamic knowledge accessible to every Muslim,
+                Making authentic Islamic knowledge accessible to everyone,
                 everywhere.
               </ThemedText>
             </Animated.View>
@@ -193,10 +196,11 @@ export default function VisionScreen() {
             <ThemedText
               style={[styles.bodyText, { color: colors.textSecondary }]}
             >
-              Deen is a registered 501(c)(3) non-profit revolutionizing Islamic
-              education with technology grounded in tradition. The beauty of
-              our deen should never be more than a question away — whether
-              you&apos;re a lifelong student or taking your very first step.
+              The Deen Foundation is a registered 501(c)(3) non-profit
+              revolutionizing Islamic education with technology grounded in
+              tradition. The beauty of the teachings of the Ahlul Bayt should
+              never be more than a question away — whether you&apos;re a
+              lifelong student or taking your very first step.
             </ThemedText>
           </Animated.View>
         </View>
@@ -213,14 +217,14 @@ export default function VisionScreen() {
           <Pillar
             icon="globe-outline"
             title="Accessible to all"
-            description="Free for every Muslim, in every language, on every device."
+            description="Free for everyone, everywhere."
             delay={580}
             colors={colors}
           />
           <Pillar
             icon="heart-circle-outline"
             title="Independent & mission-driven"
-            description="The Deen Foundation is donor-funded so it can serve the ummah free of commercial pressure — no ads, no subscriptions."
+            description="The Deen Foundation is donor-funded so it can serve the community free of commercial pressure."
             delay={660}
             colors={colors}
           />
@@ -235,9 +239,8 @@ export default function VisionScreen() {
             Support authentic Shia Islamic education.
           </ThemedText>
           <ThemedText style={[styles.ctaBody, { color: colors.textSecondary }]}>
-            Your tax-deductible gift to The Deen Foundation supports
-            authentic Shia Islamic education, qualified scholars, and
-            community programs combating misinformation.
+            Your tax-deductible gift to The Deen Foundation supports authentic
+            Shia Islamic education and our vision to combat misinformation.
           </ThemedText>
 
           <AnimatedTouchable
@@ -252,13 +255,15 @@ export default function VisionScreen() {
               style={styles.ctaGradient}
             >
               <Ionicons name="heart" size={20} color="#fff" />
-              <ThemedText style={styles.ctaText}>Support The Deen Foundation</ThemedText>
+              <ThemedText style={styles.ctaText}>
+                Support The Deen Foundation
+              </ThemedText>
               <Ionicons name="arrow-forward" size={18} color="#fff" />
             </LinearGradient>
           </AnimatedTouchable>
-          <ThemedText style={[styles.ctaHint, { color: colors.muted }]}>
+          {/* <ThemedText style={[styles.ctaHint, { color: colors.muted }]}>
             Opens thedeenfoundation.com
-          </ThemedText>
+          </ThemedText> */}
         </Animated.View>
       </ScrollView>
     </View>
