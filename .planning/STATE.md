@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: Supabase Auth Migration
 status: complete
 stopped_at: v1.0 milestone archived — Supabase auth migration complete
-last_updated: "2026-04-16T21:25:47Z"
+last_updated: "2026-04-16T23:37:59Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 4
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 Phase: —
 Plan: —
 Status: v1.0 milestone complete — archived 2026-04-14
-Last activity: 2026-04-16 - Completed quick task 260416-ndr: Rewrite donation page copy in app/vision.tsx for App Store 3.1.1 compliance
+Last activity: 2026-04-16 - Completed quick task 260416-r7z: Remove infrastructure vendor names (Supabase, PostgreSQL, Redis) from AI usage onboarding disclosure
 
 Progress: [██████████] 100%
 
@@ -98,6 +98,7 @@ None yet.
 | 260411-hov | email verification message after sign up and unverified email error on login | 2026-04-11 | 7e5c4db | [260411-hov-email-verification-message-after-sign-up](./quick/260411-hov-email-verification-message-after-sign-up/) |
 | 260414-2da | re-enable Forgot password link on login screen; mark CONCERNS.md entry resolved | 2026-04-14 | 9086448 | [260414-2da-re-enable-forgot-password-button-and-imp](./quick/260414-2da-re-enable-forgot-password-button-and-imp/) |
 | 260416-ndr | rewrite donation page copy in app/vision.tsx for App Store 3.1.1 compliance (reframe CTAs around The Deen Foundation's charitable mission) | 2026-04-16 | 8b094cf | [260416-ndr-rewrite-donation-page-copy-in-app-vision](./quick/260416-ndr-rewrite-donation-page-copy-in-app-vision/) |
+| 260416-r7z | remove infrastructure vendor names (Supabase, PostgreSQL, Redis) from AI usage onboarding disclosure; preserve privacy facts (secure servers, ~3.3h retention, TLS, at-rest encryption) | 2026-04-16 | b745dbb | [260416-r7z-remove-infrastructure-details-from-ai-us](./quick/260416-r7z-remove-infrastructure-details-from-ai-us/) |
 
 ### Blockers/Concerns
 
@@ -106,5 +107,5 @@ None — v1.0 milestone complete.
 ## Session Continuity
 
 Last session: 2026-04-16
-Stopped at: Completed quick task 260416-ndr — rewrite donation page copy for App Store 3.1.1
+Stopped at: Completed quick task 260416-r7z — remove infrastructure vendor names from AI usage onboarding disclosure
 Resume file: None
