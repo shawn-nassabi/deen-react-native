@@ -49,7 +49,7 @@ const SECTIONS = [
   {
     icon: "server-outline" as const,
     title: "Where it's stored",
-    body: "Your conversation history and memory profile are stored on our secure servers (Supabase-hosted PostgreSQL). Short-term context is held in Redis for ~3.3 hours, then deleted automatically. All data is encrypted in transit (TLS) and at rest.",
+    body: "Your conversation history and memory profile are stored on our secure servers. Short-term context used to personalize replies is held temporarily for about 3.3 hours, then deleted automatically. All data is encrypted in transit (TLS) and at rest.",
   },
   {
     icon: "person-outline" as const,
