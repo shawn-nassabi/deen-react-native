@@ -169,7 +169,7 @@ export default function VisionScreen() {
                 <ThemedText
                   style={[styles.heroDonatePillText, { color: colors.primary }]}
                 >
-                  We run on donations · Tap to give
+                  Support The Deen Foundation
                 </ThemedText>
                 <Ionicons
                   name="arrow-forward"
@@ -219,8 +219,8 @@ export default function VisionScreen() {
           />
           <Pillar
             icon="heart-circle-outline"
-            title="Powered by community"
-            description="We run entirely on your donations — no ads, no subscriptions."
+            title="Independent & mission-driven"
+            description="The Deen Foundation is donor-funded so it can serve the ummah free of commercial pressure — no ads, no subscriptions."
             delay={660}
             colors={colors}
           />
@@ -232,11 +232,12 @@ export default function VisionScreen() {
           style={styles.ctaContainer}
         >
           <ThemedText style={styles.ctaHeading}>
-            Help keep Deen free for the ummah.
+            Support authentic Shia Islamic education.
           </ThemedText>
           <ThemedText style={[styles.ctaBody, { color: colors.textSecondary }]}>
-            Your tax-deductible gift funds every server, every teacher, every
-            lesson.
+            Your tax-deductible gift to The Deen Foundation supports
+            authentic Shia Islamic education, qualified scholars, and
+            community programs combating misinformation.
           </ThemedText>
 
           <AnimatedTouchable
@@ -251,7 +252,7 @@ export default function VisionScreen() {
               style={styles.ctaGradient}
             >
               <Ionicons name="heart" size={20} color="#fff" />
-              <ThemedText style={styles.ctaText}>Support Deen</ThemedText>
+              <ThemedText style={styles.ctaText}>Support The Deen Foundation</ThemedText>
               <Ionicons name="arrow-forward" size={18} color="#fff" />
             </LinearGradient>
           </AnimatedTouchable>
