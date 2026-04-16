@@ -105,6 +105,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontFamily: "Montserrat_700Bold",
     lineHeight: 36,
+    paddingTop: 4,
     marginBottom: 14,
   },
   body: {

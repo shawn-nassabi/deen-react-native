@@ -78,6 +78,7 @@ const styles = StyleSheet.create({
     fontSize: 34,
     lineHeight: 42,
     fontFamily: "Montserrat_700Bold",
+    paddingTop: 4,
     textAlign: "center",
     marginBottom: 4,
   },

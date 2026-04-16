@@ -208,6 +208,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontFamily: "Montserrat_700Bold",
     lineHeight: 30,
+    paddingTop: 2,
   },
   intro: {
     fontSize: 14,

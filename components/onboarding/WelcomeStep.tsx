@@ -107,8 +107,11 @@ const styles = StyleSheet.create({
     fontSize: 48,
     // Explicit lineHeight prevents iOS from clipping the top of large custom-font
     // glyphs (Montserrat Bold ascenders extend above the default line box at this size).
+    // paddingTop adds extra room above ascenders that lineHeight alone does not provide
+    // at this font size.
     lineHeight: 60,
     fontFamily: "Montserrat_700Bold",
+    paddingTop: 6,
     color: "#ffffff",
     letterSpacing: -1,
   },

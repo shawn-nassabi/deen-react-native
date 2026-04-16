@@ -120,7 +120,9 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 26,
+    lineHeight: 34,
     fontFamily: "Montserrat_700Bold",
+    paddingTop: 3,
     marginBottom: 6,
   },
   subtitle: {
