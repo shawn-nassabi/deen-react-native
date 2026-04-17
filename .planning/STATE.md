@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 Phase: —
 Plan: —
 Status: v1.0 milestone complete — archived 2026-04-14
-Last activity: 2026-04-16 - Completed quick task 260416-rqn: Restyle ReferenceItem expanded metadata as italic citation paragraph
+Last activity: 2026-04-17 - Completed quick task 260416-s86: Replace Hikmah loading spinners with skeleton shimmer cards
 
 Progress: [██████████] 100%
 
@@ -102,6 +102,7 @@ None yet.
 | 260416-r9d | fix onboarding screen header top-of-title clipping on iOS (WelcomeStep "Deen" + FeatureStepLayout + AboutStep + DoneStep + AiUsageStep) by adding paddingTop and lineHeight to match the PersonalizationStep/AuthStep pattern | 2026-04-16 | 51391b0 | [260416-r9d-fix-onboarding-screen-headers-top-of-tit](./quick/260416-r9d-fix-onboarding-screen-headers-top-of-tit/) |
 | 260416-rnm | Replace References page loading animation (single pulsing circle) with 3 skeleton shimmer cards matching the ReferenceItem condensed layout | 2026-04-16 | de48d1c | [260416-rnm-replace-references-loading-animation-wit](./quick/260416-rnm-replace-references-loading-animation-wit/) |
 | 260416-rqn | Restyle ReferenceItem expanded metadata as italic citation paragraph | 2026-04-16 | c8cbead | [260416-rqn-restyle-referenceitem-expanded-metadata-](./quick/260416-rqn-restyle-referenceitem-expanded-metadata-/) |
+| 260416-s86 | Replace Hikmah loading spinners with skeleton shimmer cards on tree list and tree detail pages | 2026-04-17 | dde66c8 | [260416-s86-replace-hikmah-loading-spinners-with-ske](./quick/260416-s86-replace-hikmah-loading-spinners-with-ske/) |
 
 ### Blockers/Concerns
 
