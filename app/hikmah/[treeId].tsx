@@ -1,13 +1,16 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   StyleSheet,
   View,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
+  Animated,
+  Easing,
+  Dimensions,
   Platform,
   Image,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemedView } from "@/components/themed-view";
@@ -23,6 +26,7 @@ import {
 import { useHikmahProgress } from "@/hooks/useHikmahProgress";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LessonRowSkeleton from "@/components/hikmah/LessonRowSkeleton";
 
 export default function TreeDetailScreen() {
   const { treeId } = useLocalSearchParams<{ treeId: string }>();
@@ -106,9 +110,70 @@ export default function TreeDetailScreen() {
     return (
       <ThemedView style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={[styles.center, { paddingTop: headerPaddingTop }]}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+
+        {/* Custom Header — mirrors loaded state to prevent header pop-in */}
+        <BlurView
+          intensity={60}
+          tint={colorScheme === "dark" ? "dark" : "light"}
+          style={[
+            styles.header,
+            {
+              borderBottomColor: colors.border,
+              paddingTop: headerPaddingTop,
+            },
+          ]}
+        >
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <TouchableOpacity
+                onPress={() => router.back()}
+                style={[
+                  styles.backButton,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.panel,
+                  },
+                ]}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="arrow-back" size={20} color={colors.text} />
+              </TouchableOpacity>
+              <Image
+                source={require("@/assets/images/deen-logo-icon.png")}
+                style={styles.headerLogo}
+              />
+              <View
+                style={{
+                  width: 140,
+                  height: 18,
+                  borderRadius: 4,
+                  backgroundColor: colors.hoverBg,
+                }}
+              />
+            </View>
+          </View>
+        </BlurView>
+
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: headerPaddingTop + 72 + 16 },
+          ]}
+          scrollEnabled={false}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Hero card skeleton with its own shimmer sweep */}
+          <HeroCardSkeletonInner colors={colors} colorScheme={colorScheme} />
+
+          {/* Lesson row skeletons */}
+          <View style={{ gap: 12 }}>
+            <LessonRowSkeleton />
+            <LessonRowSkeleton />
+            <LessonRowSkeleton />
+            <LessonRowSkeleton />
+          </View>
+        </ScrollView>
       </ThemedView>
     );
   }
@@ -471,4 +536,162 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderStyle: "dashed",
   },
+  heroSkeletonTitle: {
+    width: "70%",
+    height: 28,
+    borderRadius: 4,
+    marginBottom: 12,
+  },
+  heroSkeletonLine: {
+    height: 12,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  heroSkeletonMetaRow: {
+    flexDirection: "row",
+    gap: 16,
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  heroSkeletonMetaPill: {
+    width: 72,
+    height: 14,
+    borderRadius: 4,
+  },
+  heroSkeletonProgress: {
+    height: 6,
+    borderRadius: 3,
+    width: "100%",
+  },
+  shimmerContainer: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+  },
+  shimmerGradient: {
+    flex: 1,
+  },
 });
+
+// ---- Hero card skeleton (inline, loading-only) ----
+
+const HERO_SHIMMER_WIDTH = 200;
+const HERO_CARD_MAX_WIDTH = Dimensions.get("window").width;
+
+interface HeroCardSkeletonInnerProps {
+  colors: typeof Colors.light;
+  colorScheme: "light" | "dark";
+}
+
+function HeroCardSkeletonInner({
+  colors,
+  colorScheme,
+}: HeroCardSkeletonInnerProps) {
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 1400,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    loop.start();
+    return () => {
+      loop.stop();
+      shimmerAnim.setValue(0);
+    };
+  }, [shimmerAnim]);
+
+  const translateX = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-HERO_SHIMMER_WIDTH, HERO_CARD_MAX_WIDTH],
+  });
+
+  const highlightColor =
+    colorScheme === "dark"
+      ? "rgba(255,255,255,0.06)"
+      : "rgba(255,255,255,0.65)";
+  const transparentColor = "rgba(255,255,255,0)";
+
+  return (
+    <View
+      style={[
+        styles.heroCard,
+        {
+          backgroundColor: colors.panel,
+          borderColor: colors.border,
+          overflow: "hidden",
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.heroSkeletonTitle,
+          { backgroundColor: colors.hoverBg },
+        ]}
+      />
+      <View
+        style={[
+          styles.heroSkeletonLine,
+          { backgroundColor: colors.hoverBg, width: "95%" },
+        ]}
+      />
+      <View
+        style={[
+          styles.heroSkeletonLine,
+          { backgroundColor: colors.hoverBg, width: "90%" },
+        ]}
+      />
+      <View
+        style={[
+          styles.heroSkeletonLine,
+          { backgroundColor: colors.hoverBg, width: "60%" },
+        ]}
+      />
+
+      <View style={styles.heroSkeletonMetaRow}>
+        <View
+          style={[
+            styles.heroSkeletonMetaPill,
+            { backgroundColor: colors.hoverBg },
+          ]}
+        />
+        <View
+          style={[
+            styles.heroSkeletonMetaPill,
+            { backgroundColor: colors.hoverBg },
+          ]}
+        />
+      </View>
+
+      <View
+        style={[
+          styles.heroSkeletonProgress,
+          { backgroundColor: colors.border },
+        ]}
+      />
+
+      <Animated.View
+        style={[
+          styles.shimmerContainer,
+          {
+            width: HERO_SHIMMER_WIDTH,
+            transform: [{ translateX }],
+          },
+        ]}
+        pointerEvents="none"
+      >
+        <LinearGradient
+          colors={[transparentColor, highlightColor, transparentColor]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.shimmerGradient}
+        />
+      </Animated.View>
+    </View>
+  );
+}

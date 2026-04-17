@@ -5,7 +5,6 @@ import {
   ScrollView,
   TextInput,
   RefreshControl,
-  ActivityIndicator,
   Platform,
   Image,
 } from "react-native";
@@ -22,6 +21,7 @@ import {
 } from "@/utils/api";
 import { setProgress } from "@/utils/hikmahStorage";
 import TreeCard from "@/components/hikmah/TreeCard";
+import TreeCardSkeleton from "@/components/hikmah/TreeCardSkeleton";
 import ComingSoonCard from "@/components/hikmah/ComingSoonCard";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -227,12 +227,27 @@ export default function HikmahScreen() {
       </BlurView>
 
       {loading && !refreshing ? (
-        <View style={[styles.center, { paddingTop: contentTopOffset }]}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={{ marginTop: 16, color: colors.textSecondary }}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: contentTopOffset },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <TreeCardSkeleton />
+          <TreeCardSkeleton />
+          <TreeCardSkeleton />
+          <ThemedText
+            style={{
+              marginTop: 8,
+              textAlign: "center",
+              color: colors.textSecondary,
+            }}
+          >
             Loading topics...
           </ThemedText>
-        </View>
+        </ScrollView>
       ) : error ? (
         <View style={[styles.center, { paddingTop: contentTopOffset }]}>
           <ThemedText style={{ color: "red", textAlign: "center" }}>
