@@ -176,25 +176,53 @@ export default function ModalReferenceItem({
     setIsExpanded(!isExpanded);
   };
 
-  const renderField = (label: string, value: any) => {
-    if (
+  const buildCitation = () => {
+    const isEmpty = (value: any) =>
       !value ||
       String(value).trim() === "" ||
       String(value).trim() === "N/A" ||
-      String(value).trim() === "unspecified"
-    )
-      return null;
+      String(value).trim() === "unspecified";
 
-    return (
-      <View style={styles.field}>
-        <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-          {label}
-        </Text>
-        <Text style={[styles.fieldValue, { color: colors.text }]}>
-          {String(value)}
-        </Text>
-      </View>
-    );
+    const parts: string[] = [];
+
+    if (isQuran) {
+      if (!isEmpty(metadata.surah_name)) parts.push(String(metadata.surah_name).trim());
+      if (!isEmpty(metadata.verses_covered)) parts.push(`Verses ${String(metadata.verses_covered).trim()}`);
+      if (!isEmpty(metadata.title)) parts.push(String(metadata.title).trim());
+      if (!isEmpty(metadata.author)) parts.push(String(metadata.author).trim());
+      if (!isEmpty(metadata.collection)) parts.push(String(metadata.collection).trim());
+      if (!isEmpty(metadata.volume)) parts.push(`Vol. ${String(metadata.volume).trim()}`);
+    } else {
+      if (!isEmpty(metadata.collection)) parts.push(String(metadata.collection).trim());
+      if (!isEmpty(metadata.author)) parts.push(String(metadata.author).trim());
+      if (!isEmpty(metadata.hadith_no)) parts.push(`Hadith #${String(metadata.hadith_no).trim()}`);
+
+      const bookNumber = !isEmpty(metadata.book_number) ? String(metadata.book_number).trim() : "";
+      const bookTitle = !isEmpty(metadata.book_title) ? String(metadata.book_title).trim() : "";
+      if (bookNumber && bookTitle) {
+        parts.push(`Book ${bookNumber}: ${bookTitle}`);
+      } else if (bookNumber) {
+        parts.push(`Book ${bookNumber}`);
+      } else if (bookTitle) {
+        parts.push(bookTitle);
+      }
+
+      const chapterNumber = !isEmpty(metadata.chapter_number) ? String(metadata.chapter_number).trim() : "";
+      const chapterTitle = !isEmpty(metadata.chapter_title) ? String(metadata.chapter_title).trim() : "";
+      if (chapterNumber && chapterTitle) {
+        parts.push(`Ch. ${chapterNumber}: ${chapterTitle}`);
+      } else if (chapterNumber) {
+        parts.push(`Ch. ${chapterNumber}`);
+      } else if (chapterTitle) {
+        parts.push(chapterTitle);
+      }
+
+      if (!isEmpty(metadata.volume)) parts.push(`Vol. ${String(metadata.volume).trim()}`);
+      if (!isEmpty(metadata.reference)) parts.push(String(metadata.reference).trim());
+      if (!isEmpty(metadata.grade_en)) parts.push(`Graded ${String(metadata.grade_en).trim()}`);
+    }
+
+    return parts.join(" · ");
   };
 
   return (
@@ -213,32 +241,14 @@ export default function ModalReferenceItem({
       {isExpanded ? (
         // Expanded View
         <>
-          <View style={styles.metadataGrid}>
-            {isQuran ? (
-              <>
-                {renderField("Surah", metadata.surah_name)}
-                {renderField("Tafsir", metadata.title)}
-                {renderField("Verses", metadata.verses_covered)}
-                {renderField("Author", metadata.author)}
-                {renderField("Source", metadata.collection)}
-                {renderField("Volume", metadata.volume)}
-                {renderField("Sect", metadata.sect)}
-              </>
-            ) : (
-              <>
-                {renderField("Author", metadata.author)}
-                {renderField("Reference", metadata.reference)}
-                {renderField("Source", metadata.collection)}
-                {renderField("Volume", metadata.volume)}
-                {renderField("Book number", metadata.book_number)}
-                {renderField("Book title", metadata.book_title)}
-                {renderField("Chapter number", metadata.chapter_number)}
-                {renderField("Chapter title", metadata.chapter_title)}
-                {renderField("Hadith number", metadata.hadith_no)}
-                {renderField("Authenticity", metadata.grade_en)}
-              </>
-            )}
-          </View>
+          {(() => {
+            const citation = buildCitation();
+            return citation ? (
+              <Text style={[styles.citationText, { color: colors.textSecondary }]}>
+                {citation}
+              </Text>
+            ) : null;
+          })()}
 
           <View style={styles.textSection}>
             {isQuran ? (
@@ -265,29 +275,24 @@ export default function ModalReferenceItem({
                 ) : null}
               </>
             ) : (
-              <>
-                <Text style={[styles.textLabel, { color: colors.textSecondary }]}>
-                  Text
-                </Text>
-                <View>
-                  {hadithText ? (
-                    <Text style={[styles.textContent, { color: colors.text }]}>
-                      {hadithText}
-                    </Text>
-                  ) : null}
-                  {hadithAr ? (
-                    <Text
-                      style={[
-                        styles.textContent,
-                        styles.arabicText,
-                        { color: colors.text },
-                      ]}
-                    >
-                      {hadithAr}
-                    </Text>
-                  ) : null}
-                </View>
-              </>
+              <View>
+                {hadithText ? (
+                  <Text style={[styles.textContent, { color: colors.text }]}>
+                    {hadithText}
+                  </Text>
+                ) : null}
+                {hadithAr ? (
+                  <Text
+                    style={[
+                      styles.textContent,
+                      styles.arabicText,
+                      { color: colors.text },
+                    ]}
+                  >
+                    {hadithAr}
+                  </Text>
+                ) : null}
+              </View>
             )}
           </View>
 
@@ -413,22 +418,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
-  metadataGrid: {
-    gap: 12,
-    marginBottom: 16,
-  },
-  field: {
-    gap: 4,
-  },
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  fieldValue: {
-    fontSize: 14,
+  citationText: {
+    fontSize: 13,
     lineHeight: 20,
+    fontStyle: "italic",
+    marginBottom: 16,
   },
   textSection: {
     borderTopWidth: 1,
