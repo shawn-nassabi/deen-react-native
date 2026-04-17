@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 Phase: —
 Plan: —
 Status: v1.0 milestone complete — archived 2026-04-14
-Last activity: 2026-04-16 - Completed quick task 260416-rnm: Replace References loading animation with skeleton shimmer cards
+Last activity: 2026-04-16 - Completed quick task 260416-rqn: Restyle ReferenceItem expanded metadata as italic citation paragraph
 
 Progress: [██████████] 100%
 
@@ -101,6 +101,7 @@ None yet.
 | 260416-r7z | remove infrastructure vendor names (Supabase, PostgreSQL, Redis) from AI usage onboarding disclosure; preserve privacy facts (secure servers, ~3.3h retention, TLS, at-rest encryption) | 2026-04-16 | b745dbb | [260416-r7z-remove-infrastructure-details-from-ai-us](./quick/260416-r7z-remove-infrastructure-details-from-ai-us/) |
 | 260416-r9d | fix onboarding screen header top-of-title clipping on iOS (WelcomeStep "Deen" + FeatureStepLayout + AboutStep + DoneStep + AiUsageStep) by adding paddingTop and lineHeight to match the PersonalizationStep/AuthStep pattern | 2026-04-16 | 51391b0 | [260416-r9d-fix-onboarding-screen-headers-top-of-tit](./quick/260416-r9d-fix-onboarding-screen-headers-top-of-tit/) |
 | 260416-rnm | Replace References page loading animation (single pulsing circle) with 3 skeleton shimmer cards matching the ReferenceItem condensed layout | 2026-04-16 | de48d1c | [260416-rnm-replace-references-loading-animation-wit](./quick/260416-rnm-replace-references-loading-animation-wit/) |
+| 260416-rqn | Restyle ReferenceItem expanded metadata as italic citation paragraph | 2026-04-16 | c8cbead | [260416-rqn-restyle-referenceitem-expanded-metadata-](./quick/260416-rqn-restyle-referenceitem-expanded-metadata-/) |
 
 ### Blockers/Concerns
 
