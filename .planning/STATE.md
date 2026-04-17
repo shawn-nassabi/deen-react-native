@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 Phase: —
 Plan: —
 Status: v1.0 milestone complete — archived 2026-04-14
-Last activity: 2026-04-16 - Completed quick task 260416-r9d: Fix onboarding screen headers top-of-title clipping (WelcomeStep "Deen" + 4 others)
+Last activity: 2026-04-16 - Completed quick task 260416-rnm: Replace References loading animation with skeleton shimmer cards
 
 Progress: [██████████] 100%
 
@@ -100,6 +100,7 @@ None yet.
 | 260416-ndr | rewrite donation page copy in app/vision.tsx for App Store 3.1.1 compliance (reframe CTAs around The Deen Foundation's charitable mission) | 2026-04-16 | 8b094cf | [260416-ndr-rewrite-donation-page-copy-in-app-vision](./quick/260416-ndr-rewrite-donation-page-copy-in-app-vision/) |
 | 260416-r7z | remove infrastructure vendor names (Supabase, PostgreSQL, Redis) from AI usage onboarding disclosure; preserve privacy facts (secure servers, ~3.3h retention, TLS, at-rest encryption) | 2026-04-16 | b745dbb | [260416-r7z-remove-infrastructure-details-from-ai-us](./quick/260416-r7z-remove-infrastructure-details-from-ai-us/) |
 | 260416-r9d | fix onboarding screen header top-of-title clipping on iOS (WelcomeStep "Deen" + FeatureStepLayout + AboutStep + DoneStep + AiUsageStep) by adding paddingTop and lineHeight to match the PersonalizationStep/AuthStep pattern | 2026-04-16 | 51391b0 | [260416-r9d-fix-onboarding-screen-headers-top-of-tit](./quick/260416-r9d-fix-onboarding-screen-headers-top-of-tit/) |
+| 260416-rnm | Replace References page loading animation (single pulsing circle) with 3 skeleton shimmer cards matching the ReferenceItem condensed layout | 2026-04-16 | de48d1c | [260416-rnm-replace-references-loading-animation-wit](./quick/260416-rnm-replace-references-loading-animation-wit/) |
 
 ### Blockers/Concerns
 
