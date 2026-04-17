@@ -4,22 +4,21 @@
  * Features tab switching between Shia and Sunni references
  */
 
-import React, { useEffect, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Animated,
-  Platform,
-  TouchableOpacity,
-  Image,
-  Keyboard,
-  TouchableWithoutFeedback,
-} from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Image,
+  Keyboard,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 import ReferenceItem from "./ReferenceItem";
 import ReferenceSkeleton from "./ReferenceSkeleton";
 
@@ -301,7 +300,7 @@ export default function ReferencesContainer({
                 },
               ]}
             >
-              {activeRefs.length} found
+              Top {activeRefs.length} results
             </Animated.Text>
           )}
         </View>
