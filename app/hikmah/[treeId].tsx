@@ -183,7 +183,7 @@ export default function TreeDetailScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Custom Header */}
-      <BlurView
+      <PlatformBlurView
         intensity={60}
         tint={colorScheme === "dark" ? "dark" : "light"}
         style={[
@@ -225,7 +225,7 @@ export default function TreeDetailScreen() {
             </ThemedText>
           </View>
         </View>
-      </BlurView>
+      </PlatformBlurView>
 
       <ScrollView
         style={styles.scroll}
