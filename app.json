@@ -16,7 +16,7 @@
       }
     },
     "android": {
-      "package": "com.snassabi7.deenreactnative",
+      "package": "com.thedeenfoundation.deen",
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
