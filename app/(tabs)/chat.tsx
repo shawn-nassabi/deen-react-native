@@ -16,7 +16,7 @@ import {
   Keyboard,
   Dimensions,
 } from "react-native";
-import { BlurView } from "expo-blur";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -591,7 +591,7 @@ export default function ChatScreen() {
       </Modal>
 
       {/* Header */}
-      <BlurView
+      <PlatformBlurView
         intensity={blurIntensity}
         tint={colorScheme === "dark" ? "dark" : "light"}
         style={[
@@ -647,7 +647,7 @@ export default function ChatScreen() {
             )}
           </TouchableOpacity>
         </View>
-      </BlurView>
+      </PlatformBlurView>
 
       {/* Main Content with KeyboardAvoidingView */}
       <KeyboardAvoidingView

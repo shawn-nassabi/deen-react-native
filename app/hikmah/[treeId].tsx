@@ -24,7 +24,7 @@ import {
   Lesson,
 } from "@/utils/api";
 import { useHikmahProgress } from "@/hooks/useHikmahProgress";
-import { BlurView } from "expo-blur";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LessonRowSkeleton from "@/components/hikmah/LessonRowSkeleton";
 
@@ -112,7 +112,7 @@ export default function TreeDetailScreen() {
         <Stack.Screen options={{ headerShown: false }} />
 
         {/* Custom Header — mirrors loaded state to prevent header pop-in */}
-        <BlurView
+        <PlatformBlurView
           intensity={60}
           tint={colorScheme === "dark" ? "dark" : "light"}
           style={[
@@ -152,7 +152,7 @@ export default function TreeDetailScreen() {
               />
             </View>
           </View>
-        </BlurView>
+        </PlatformBlurView>
 
         <ScrollView
           style={styles.scroll}

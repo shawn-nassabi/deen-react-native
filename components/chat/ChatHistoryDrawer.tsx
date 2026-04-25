@@ -14,7 +14,7 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
-import { BlurView } from "expo-blur";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
@@ -295,7 +295,7 @@ export default function ChatHistoryDrawer({
         ]}
         pointerEvents={visible ? "auto" : "none"}
       >
-        <BlurView
+        <PlatformBlurView
           intensity={blurIntensity}
           tint={colorScheme === "dark" ? "dark" : "light"}
           style={[

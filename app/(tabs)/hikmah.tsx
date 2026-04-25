@@ -8,7 +8,7 @@ import {
   Platform,
   Image,
 } from "react-native";
-import { BlurView } from "expo-blur";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -172,7 +172,7 @@ export default function HikmahScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <BlurView
+      <PlatformBlurView
         intensity={blurIntensity}
         tint={colorScheme === "dark" ? "dark" : "light"}
         style={[
@@ -224,7 +224,7 @@ export default function HikmahScreen() {
             />
           )}
         </View>
-      </BlurView>
+      </PlatformBlurView>
 
       {loading && !refreshing ? (
         <ScrollView

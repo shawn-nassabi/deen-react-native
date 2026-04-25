@@ -14,7 +14,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
 
 // ---- Types ----
 
@@ -131,7 +131,7 @@ export default function AnimatedWelcomeBackground({
       </Animated.View>
 
       {/* Blur overlay — softens blobs into liquid-glass effect */}
-      <BlurView
+      <PlatformBlurView
         intensity={80}
         tint={dark ? "dark" : "dark"}
         style={StyleSheet.absoluteFillObject}
