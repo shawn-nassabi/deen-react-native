@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: Supabase Auth Migration
 status: complete
 stopped_at: v1.0 milestone archived — Supabase auth migration complete
-last_updated: "2026-04-16T23:40:20Z"
-last_activity: 2026-04-16
+last_updated: "2026-05-19T16:50:00Z"
+last_activity: 2026-05-19
 progress:
   total_phases: 4
   completed_phases: 4
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 Phase: —
 Plan: —
 Status: v1.0 milestone complete — archived 2026-04-14
-Last activity: 2026-04-17 - Completed quick task 260416-s01: Restyle ModalReferenceItem expanded metadata as italic citation paragraph (hadith + quran)
+Last activity: 2026-05-19 - Completed quick task 260519-hn6: Add copy button to AI chat response messages (copies message text only, not references)
 
 Progress: [██████████] 100%
 
@@ -104,6 +104,7 @@ None yet.
 | 260416-rqn | Restyle ReferenceItem expanded metadata as italic citation paragraph | 2026-04-16 | c8cbead | [260416-rqn-restyle-referenceitem-expanded-metadata-](./quick/260416-rqn-restyle-referenceitem-expanded-metadata-/) |
 | 260416-s86 | Replace Hikmah loading spinners with skeleton shimmer cards on tree list and tree detail pages | 2026-04-17 | dde66c8 | [260416-s86-replace-hikmah-loading-spinners-with-ske](./quick/260416-s86-replace-hikmah-loading-spinners-with-ske/) |
 | 260416-s01 | Restyle ModalReferenceItem expanded metadata as italic citation paragraph (hadith + quran) | 2026-04-17 | 98dffe0 | [260416-s01-restyle-modalreferenceitem-expanded-meta](./quick/260416-s01-restyle-modalreferenceitem-expanded-meta/) |
+| 260519-hn6 | Add copy button to AI (bot) chat response messages — copies message text only via expo-clipboard (no references), Ionicons copy-outline↔checkmark feedback with light haptic | 2026-05-19 | c42c9eb | [260519-hn6-add-copy-button-to-ai-chat-messages](./quick/260519-hn6-add-copy-button-to-ai-chat-messages/) |
 
 ### Blockers/Concerns
 
@@ -111,6 +112,6 @@ None — v1.0 milestone complete.
 
 ## Session Continuity
 
-Last session: 2026-04-16
-Stopped at: Completed quick task 260416-r9d — fix onboarding screen header top-of-title clipping on iOS
+Last session: 2026-05-19
+Stopped at: Completed quick task 260519-hn6 — add copy button to AI chat response messages
 Resume file: None
