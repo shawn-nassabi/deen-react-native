@@ -172,6 +172,7 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Thinking...");
   const [isNewChatLoading, setIsNewChatLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -393,6 +394,7 @@ export default function ChatScreen() {
     setMessages((prev) => [...prev, userMessage, botPlaceholder]);
     setInput("");
     setIsLoading(true);
+    setIsStreaming(true);
     setStatusMessage("Thinking...");
     setSelection({ text: "", context: "" });
     try {
@@ -421,10 +423,12 @@ export default function ChatScreen() {
             };
             return updated;
           });
+          setIsStreaming(false);
         },
         (error) => {
           console.error("❌ Chat error:", error);
           setIsLoading(false);
+          setIsStreaming(false);
           setMessages((prev) => {
             const updated = [...prev];
             const lastIndex = updated.length - 1;
@@ -443,6 +447,7 @@ export default function ChatScreen() {
     } catch (error) {
       console.error("❌ Error in handleSendMessage:", error);
       setIsLoading(false);
+      setIsStreaming(false);
       setMessages((prev) => {
         const updated = [...prev];
         const lastIndex = updated.length - 1;
@@ -466,13 +471,17 @@ export default function ChatScreen() {
       return null;
     }
 
+    const isThisStreaming =
+      isStreaming && item.sender === "bot" && index === messages.length - 1;
+
     return (
       <ChatMessage
         message={item}
         onSelectionChange={handleSelectionChange}
+        isStreaming={isThisStreaming}
       />
     );
-  }, [isLoading, messages.length, handleSelectionChange]);
+  }, [isLoading, isStreaming, messages.length, handleSelectionChange]);
 
   const bottomPadding = INPUT_CONTAINER_HEIGHT + insets.bottom + 16;
 
