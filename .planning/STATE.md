@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 Phase: —
 Plan: —
 Status: v1.0 milestone complete — archived 2026-04-14
-Last activity: 2026-05-19 - Completed quick task 260519-hn6: Add copy button to AI chat response messages (copies message text only, not references)
+Last activity: 2026-05-19 - Completed quick task 260519-i4m: Bump app version to 1.0.1
 
 Progress: [██████████] 100%
 
@@ -105,6 +105,7 @@ None yet.
 | 260416-s86 | Replace Hikmah loading spinners with skeleton shimmer cards on tree list and tree detail pages | 2026-04-17 | dde66c8 | [260416-s86-replace-hikmah-loading-spinners-with-ske](./quick/260416-s86-replace-hikmah-loading-spinners-with-ske/) |
 | 260416-s01 | Restyle ModalReferenceItem expanded metadata as italic citation paragraph (hadith + quran) | 2026-04-17 | 98dffe0 | [260416-s01-restyle-modalreferenceitem-expanded-meta](./quick/260416-s01-restyle-modalreferenceitem-expanded-meta/) |
 | 260519-hn6 | Add copy button to AI (bot) chat response messages — copies message text only via expo-clipboard (no references), Ionicons copy-outline↔checkmark feedback with light haptic | 2026-05-19 | c42c9eb | [260519-hn6-add-copy-button-to-ai-chat-messages](./quick/260519-hn6-add-copy-button-to-ai-chat-messages/) |
+| 260519-i4m | Bump app version to 1.0.1 (app.json only; EAS appVersionSource=remote handles native build numbers) | 2026-05-19 | 9034314 | [260519-i4m-bump-app-version-to-1-0-1](./quick/260519-i4m-bump-app-version-to-1-0-1/) |
 
 ### Blockers/Concerns
 
@@ -113,5 +114,5 @@ None — v1.0 milestone complete.
 ## Session Continuity
 
 Last session: 2026-05-19
-Stopped at: Completed quick task 260519-hn6 — add copy button to AI chat response messages
+Stopped at: Completed quick task 260519-i4m — bump app version to 1.0.1
 Resume file: None
