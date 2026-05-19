@@ -26,7 +26,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import * as Haptics from "expo-haptics";
 
 // ---- Types ----
@@ -291,13 +291,11 @@ export default function OnboardingIntro({ onComplete }: OnboardingIntroProps) {
             </Animated.View>
 
             {/* Liquid-glass blur over the waves */}
-            {Platform.OS !== "android" && (
-              <BlurView
-                intensity={60}
-                tint="dark"
-                style={StyleSheet.absoluteFillObject}
-              />
-            )}
+            <PlatformBlurView
+              intensity={60}
+              tint="dark"
+              style={StyleSheet.absoluteFillObject}
+            />
 
             {/* Vignette for logo legibility */}
             <LinearGradient

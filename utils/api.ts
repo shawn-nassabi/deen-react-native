@@ -563,7 +563,7 @@ export async function sendAgenticChatStream(
     if (bearer) {
       xhr.setRequestHeader("Authorization", `Bearer ${bearer}`);
     }
-    xhr.timeout = 60000;
+    xhr.timeout = 120000;
 
     xhr.onprogress = () => {
       const currentText = xhr.responseText;
@@ -588,8 +588,11 @@ export async function sendAgenticChatStream(
       }
     };
 
-    xhr.onerror = () => {
-      console.error("❌ Network error during agentic chat streaming");
+    xhr.onerror = (event) => {
+      console.error(
+        `❌ Network error during agentic chat streaming (status=${xhr.status}, readyState=${xhr.readyState}, bytesReceived=${lastProcessedIndex})`,
+        event
+      );
       settleReject(new Error("Network error during agentic streaming"));
     };
 

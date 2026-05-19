@@ -131,7 +131,7 @@ export default function ElaborationModal({
       onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={[styles.container, { backgroundColor: colors.background }]}
       >
         <View style={[styles.header, { borderBottomColor: colors.border }]}>

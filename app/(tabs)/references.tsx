@@ -11,7 +11,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
 } from "react-native";
-import { BlurView } from "expo-blur";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { searchReferences } from "@/utils/api";
@@ -79,7 +79,7 @@ export default function ReferencesScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <BlurView
+      <PlatformBlurView
         intensity={blurIntensity}
         tint={colorScheme === "dark" ? "dark" : "light"}
         style={[
@@ -105,12 +105,12 @@ export default function ReferencesScreen() {
             </ThemedText>
           </View>
         </View>
-      </BlurView>
+      </PlatformBlurView>
 
       {/* Main Content with KeyboardAvoidingView */}
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={0}
       >
         {/* Content */}
