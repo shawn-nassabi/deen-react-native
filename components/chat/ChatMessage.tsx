@@ -18,9 +18,10 @@ import type { Message } from "@/utils/chatStorage";
 interface ChatMessageProps {
   message: Message;
   onSelectionChange?: (selection: { text: string; context: string }) => void;
+  isStreaming?: boolean;
 }
 
-export default function ChatMessage({ message, onSelectionChange }: ChatMessageProps) {
+export default function ChatMessage({ message, onSelectionChange, isStreaming = false }: ChatMessageProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const isUser = message.sender === "user";
@@ -93,30 +94,32 @@ export default function ChatMessage({ message, onSelectionChange }: ChatMessageP
             onSelectionChange={onSelectionChange}
           />
         </View>
-        <TouchableOpacity
-          style={[
-            styles.copyButton,
-            { backgroundColor: colors.panel2, borderColor: colors.border },
-          ]}
-          onPress={handleCopy}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={
-            copied ? "Response copied to clipboard" : "Copy response to clipboard"
-          }
-        >
-          <Ionicons
-            name={copied ? "checkmark" : "copy-outline"}
-            size={16}
-            color={colors.primary}
-            style={styles.copyIcon}
-          />
-          <ThemedText
-            style={[styles.copyButtonText, { color: colors.textSecondary }]}
+        {!isStreaming && (
+          <TouchableOpacity
+            style={[
+              styles.copyButton,
+              { backgroundColor: colors.panel2, borderColor: colors.border },
+            ]}
+            onPress={handleCopy}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={
+              copied ? "Response copied to clipboard" : "Copy response to clipboard"
+            }
           >
-            {copied ? "Copied" : "Copy"}
-          </ThemedText>
-        </TouchableOpacity>
+            <Ionicons
+              name={copied ? "checkmark" : "copy-outline"}
+              size={16}
+              color={colors.primary}
+              style={styles.copyIcon}
+            />
+            <ThemedText
+              style={[styles.copyButtonText, { color: colors.textSecondary }]}
+            >
+              {copied ? "Copied" : "Copy"}
+            </ThemedText>
+          </TouchableOpacity>
+        )}
         {message.references && message.references.length > 0 && (
           <>
             <TouchableOpacity
