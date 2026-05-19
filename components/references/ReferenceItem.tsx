@@ -16,6 +16,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
@@ -48,6 +49,7 @@ export default function ReferenceItem({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const [isExpanded, setIsExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Animation values for reveal
   const translateX = useRef(new Animated.Value(-50)).current;
@@ -103,6 +105,57 @@ export default function ReferenceItem({
   const metadataLine2 = buildSecondaryLine();
   const textPreview = en ? en.substring(0, 80) : "No text available";
 
+  const buildCopyText = () => {
+    const lines: string[] = [];
+
+    const add = (label: string, value?: string) => {
+      if (value && value.trim() && value.trim() !== "N/A" && value.trim() !== "unspecified") {
+        lines.push(`${label}: ${value.trim()}`);
+      }
+    };
+
+    // Header line
+    const header = [metadata.collection, metadata.hadith_no ? `Hadith #${metadata.hadith_no}` : ""].filter(Boolean).join(" — ");
+    if (header) lines.push(header);
+
+    add("Author", metadata.author);
+    add("Reference", metadata.reference);
+
+    // Book line
+    const bookParts = [
+      metadata.book_title,
+      metadata.volume ? `Vol. ${metadata.volume}` : "",
+      metadata.book_number ? `Book ${metadata.book_number}` : "",
+    ].filter(Boolean);
+    if (bookParts.length) lines.push(`Book: ${bookParts.join(", ")}`);
+
+    // Chapter line
+    const chapterParts = [
+      metadata.chapter_number ? `Chapter ${metadata.chapter_number}` : "",
+      metadata.chapter_title,
+    ].filter(Boolean);
+    if (chapterParts.length) lines.push(chapterParts.join(": "));
+
+    add("Grade", metadata.grade_en);
+
+    if (en) {
+      lines.push("");
+      lines.push(en);
+    }
+    if (ar) {
+      lines.push("");
+      lines.push(ar);
+    }
+
+    return lines.join("\n");
+  };
+
+  const handleCopy = async () => {
+    await Clipboard.setStringAsync(buildCopyText());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   // Toggle expand/collapse with animation
   const handleToggle = () => {
     if (Platform.OS === "ios" || Platform.OS === "android") {
@@ -111,25 +164,44 @@ export default function ReferenceItem({
     setIsExpanded(!isExpanded);
   };
 
-  const renderField = (label: string, value: any) => {
-    if (
+  const buildCitation = () => {
+    const isEmpty = (value: any) =>
       !value ||
       String(value).trim() === "" ||
       String(value).trim() === "N/A" ||
-      String(value).trim() === "unspecified"
-    )
-      return null;
+      String(value).trim() === "unspecified";
 
-    return (
-      <View style={styles.field}>
-        <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-          {label}
-        </Text>
-        <Text style={[styles.fieldValue, { color: colors.text }]}>
-          {String(value)}
-        </Text>
-      </View>
-    );
+    const parts: string[] = [];
+
+    if (!isEmpty(metadata.collection)) parts.push(String(metadata.collection).trim());
+    if (!isEmpty(metadata.author)) parts.push(String(metadata.author).trim());
+    if (!isEmpty(metadata.hadith_no)) parts.push(`Hadith #${String(metadata.hadith_no).trim()}`);
+
+    const bookNumber = !isEmpty(metadata.book_number) ? String(metadata.book_number).trim() : "";
+    const bookTitle = !isEmpty(metadata.book_title) ? String(metadata.book_title).trim() : "";
+    if (bookNumber && bookTitle) {
+      parts.push(`Book ${bookNumber}: ${bookTitle}`);
+    } else if (bookNumber) {
+      parts.push(`Book ${bookNumber}`);
+    } else if (bookTitle) {
+      parts.push(bookTitle);
+    }
+
+    const chapterNumber = !isEmpty(metadata.chapter_number) ? String(metadata.chapter_number).trim() : "";
+    const chapterTitle = !isEmpty(metadata.chapter_title) ? String(metadata.chapter_title).trim() : "";
+    if (chapterNumber && chapterTitle) {
+      parts.push(`Ch. ${chapterNumber}: ${chapterTitle}`);
+    } else if (chapterNumber) {
+      parts.push(`Ch. ${chapterNumber}`);
+    } else if (chapterTitle) {
+      parts.push(chapterTitle);
+    }
+
+    if (!isEmpty(metadata.volume)) parts.push(`Vol. ${String(metadata.volume).trim()}`);
+    if (!isEmpty(metadata.reference)) parts.push(String(metadata.reference).trim());
+    if (!isEmpty(metadata.grade_en)) parts.push(`Graded ${String(metadata.grade_en).trim()}`);
+
+    return parts.join(" · ");
   };
 
   return (
@@ -156,26 +228,18 @@ export default function ReferenceItem({
         {isExpanded ? (
           // Expanded View - Show all content
           <>
-            {/* Metadata Grid */}
-            <View style={styles.metadataGrid}>
-              {renderField("Author", metadata.author)}
-              {renderField("Reference", metadata.reference)}
-              {renderField("Source", metadata.collection)}
-              {renderField("Volume", metadata.volume)}
-              {renderField("Book number", metadata.book_number)}
-              {renderField("Book title", metadata.book_title)}
-              {renderField("Chapter number", metadata.chapter_number)}
-              {renderField("Chapter title", metadata.chapter_title)}
-              {renderField("Hadith number", metadata.hadith_no)}
-              {renderField("Authenticity", metadata.grade_en)}
-            </View>
+            {/* Citation Paragraph */}
+            {(() => {
+              const citation = buildCitation();
+              return citation ? (
+                <Text style={[styles.citationText, { color: colors.textSecondary }]}>
+                  {citation}
+                </Text>
+              ) : null;
+            })()}
 
             {/* Text Section */}
             <View style={styles.textSection}>
-              <Text style={[styles.textLabel, { color: colors.textSecondary }]}>
-                Text
-              </Text>
-
               <View>
                 {en && (
                   <Text style={[styles.textContent, { color: colors.text }]}>
@@ -196,13 +260,19 @@ export default function ReferenceItem({
               </View>
             </View>
 
-            {/* Chevron Up Icon */}
-            <View style={styles.chevronContainer} key="chevron-up">
-              <Ionicons
-                name="chevron-up"
-                size={20}
-                color={colors.primary}
-              />
+            {/* Expanded Footer: Copy + Chevron Up */}
+            <View style={styles.expandedFooter}>
+              <TouchableOpacity onPress={handleCopy} style={styles.copyButton}>
+                <Ionicons
+                  name={copied ? "checkmark-done" : "copy-outline"}
+                  size={18}
+                  color={colors.primary}
+                />
+                <Text style={[styles.copyButtonText, { color: colors.primary }]}>
+                  {copied ? "Copied!" : "Copy"}
+                </Text>
+              </TouchableOpacity>
+              <Ionicons name="chevron-up" size={20} color={colors.primary} />
             </View>
           </>
         ) : (
@@ -308,34 +378,32 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  metadataGrid: {
-    gap: 12,
-    marginBottom: 16,
+  expandedFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 16,
   },
-  field: {
-    gap: 4,
+  copyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  fieldLabel: {
-    fontSize: 11,
+  copyButtonText: {
+    fontSize: 13,
     fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
-  fieldValue: {
-    fontSize: 14,
+  citationText: {
+    fontSize: 13,
     lineHeight: 20,
+    fontStyle: "italic",
+    marginBottom: 16,
   },
   textSection: {
     borderTopWidth: 1,
     borderTopColor: "rgba(128, 128, 128, 0.2)",
     paddingTop: 16,
     gap: 8,
-  },
-  textLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
   textContent: {
     fontSize: 14,

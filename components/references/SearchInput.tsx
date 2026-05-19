@@ -12,7 +12,7 @@ import {
   StyleSheet,
   Platform,
 } from "react-native";
-import { BlurView } from "expo-blur";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -51,7 +51,7 @@ export default function SearchInput({
 
   return (
     <View style={styles.container}>
-      <BlurView
+      <PlatformBlurView
         intensity={80}
         tint={colorScheme === "dark" ? "dark" : "light"}
         style={[
@@ -103,7 +103,7 @@ export default function SearchInput({
             color={isDisabled ? colors.muted : "#fff"}
           />
         </TouchableOpacity>
-      </BlurView>
+      </PlatformBlurView>
     </View>
   );
 }

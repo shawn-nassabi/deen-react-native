@@ -5,19 +5,20 @@
 
 import React, { useState } from "react";
 import { View, StyleSheet, Image, TouchableOpacity } from "react-native";
-import Markdown from "react-native-markdown-display";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import ReferencesModal from "./ReferencesModal";
+import ChatMessageWebView from "./ChatMessageWebView";
 import type { Message } from "@/utils/chatStorage";
 
 interface ChatMessageProps {
   message: Message;
+  onSelectionChange?: (selection: { text: string; context: string }) => void;
 }
 
-export default function ChatMessage({ message }: ChatMessageProps) {
+export default function ChatMessage({ message, onSelectionChange }: ChatMessageProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const isUser = message.sender === "user";
@@ -65,136 +66,10 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             },
           ]}
         >
-          <Markdown
-            style={{
-              body: {
-                color: colors.text,
-                fontSize: 15,
-                lineHeight: 25,
-              },
-              paragraph: {
-                marginTop: 15,
-                marginBottom: 15,
-                lineHeight: 25,
-              },
-              heading1: {
-                fontSize: 24,
-                fontWeight: "700",
-                marginTop: 24,
-                marginBottom: 12,
-                lineHeight: 31,
-                color: colors.text,
-              },
-              heading2: {
-                fontSize: 20,
-                fontWeight: "700",
-                marginTop: 22,
-                marginBottom: 11,
-                lineHeight: 28,
-                color: colors.text,
-              },
-              heading3: {
-                fontSize: 18,
-                fontWeight: "700",
-                marginTop: 20,
-                marginBottom: 10,
-                lineHeight: 25,
-                color: colors.text,
-              },
-              heading4: {
-                fontSize: 16,
-                fontWeight: "700",
-                marginTop: 18,
-                marginBottom: 9,
-                color: colors.text,
-              },
-              heading5: {
-                fontSize: 15,
-                fontWeight: "700",
-                marginTop: 16,
-                marginBottom: 8,
-                color: colors.text,
-              },
-              heading6: {
-                fontSize: 14,
-                fontWeight: "700",
-                marginTop: 14,
-                marginBottom: 7,
-                color: colors.text,
-              },
-              strong: {
-                fontWeight: "700",
-                color: colors.text,
-              },
-              em: {
-                fontStyle: "italic",
-              },
-              link: {
-                color: colors.primary,
-                textDecorationLine: "underline",
-              },
-              bullet_list: {
-                marginTop: 15,
-                marginBottom: 15,
-              },
-              ordered_list: {
-                marginTop: 15,
-                marginBottom: 15,
-              },
-              list_item: {
-                marginTop: 8,
-                marginBottom: 8,
-                lineHeight: 24,
-              },
-              code_inline: {
-                backgroundColor: colors.panel2,
-                color: colorScheme === "dark" ? "#d1fae5" : "#059669",
-                paddingHorizontal: 6,
-                paddingVertical: 3,
-                borderRadius: 4,
-                fontFamily: "monospace",
-                fontSize: 14,
-              },
-              code_block: {
-                backgroundColor: colors.panel2,
-                borderColor: colors.border,
-                borderWidth: 1,
-                borderRadius: 12,
-                padding: 12,
-                marginTop: 15,
-                marginBottom: 15,
-                fontFamily: "monospace",
-              },
-              fence: {
-                backgroundColor: colors.panel2,
-                borderColor: colors.border,
-                borderWidth: 1,
-                borderRadius: 12,
-                padding: 12,
-                marginTop: 15,
-                marginBottom: 15,
-                fontFamily: "monospace",
-              },
-              blockquote: {
-                backgroundColor: "transparent",
-                borderLeftColor: colors.primary,
-                borderLeftWidth: 4,
-                paddingLeft: 15,
-                marginTop: 15,
-                marginBottom: 15,
-                fontStyle: "italic",
-                color: colors.textSecondary,
-              },
-              hr: {
-                backgroundColor: colors.border,
-                height: 1,
-                marginTop: 30,
-                marginBottom: 30,
-              },
-            }}
-          >
-            {message.text}
-          </Markdown>
+          <ChatMessageWebView
+            markdown={message.text}
+            onSelectionChange={onSelectionChange}
+          />
         </View>
         {message.references && message.references.length > 0 && (
           <>

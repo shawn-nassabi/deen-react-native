@@ -14,6 +14,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import type { Reference } from "@/utils/chatStorage";
@@ -32,13 +33,19 @@ export default function ModalReferenceItem({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const [isExpanded, setIsExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const metadata = reference || {};
-  const en = (reference?.text || "").trim();
-  const ar = (reference?.text_ar || "").trim();
 
-  // Build condensed preview with essential metadata
-  const buildMetadataLine = () => {
+  // Detect quran references either by explicit type or presence of surah_name
+  const isQuran =
+    reference?.type === "quran" || Boolean(reference?.surah_name);
+
+  // ---- Hadith preview helpers ----
+  const hadithText = (reference?.text || "").trim();
+  const hadithAr = (reference?.text_ar || "").trim();
+
+  const buildHadithMetadataLine = () => {
     const parts = [];
     if (metadata.collection) parts.push(metadata.collection);
     if (metadata.author) parts.push(metadata.author);
@@ -46,7 +53,7 @@ export default function ModalReferenceItem({
     return parts.filter(Boolean).join(" • ");
   };
 
-  const buildSecondaryLine = () => {
+  const buildHadithSecondaryLine = () => {
     const parts = [];
     if (metadata.chapter_number) parts.push(`Ch. ${metadata.chapter_number}`);
     if (metadata.chapter_title) parts.push(metadata.chapter_title);
@@ -55,9 +62,112 @@ export default function ModalReferenceItem({
     return parts.filter(Boolean).join(" • ");
   };
 
-  const metadataLine1 = buildMetadataLine() || "Reference";
-  const metadataLine2 = buildSecondaryLine();
-  const textPreview = en ? en.substring(0, 80) : "No text available";
+  // ---- Quran preview helpers ----
+  const buildQuranMetadataLine = () => {
+    const parts = [];
+    if (metadata.surah_name) parts.push(metadata.surah_name);
+    if (metadata.verses_covered) parts.push(`Verses ${metadata.verses_covered}`);
+    if (metadata.title) parts.push(metadata.title);
+    return parts.filter(Boolean).join(" • ");
+  };
+
+  const buildQuranSecondaryLine = () => {
+    const parts = [];
+    if (metadata.author) parts.push(metadata.author);
+    if (metadata.collection) parts.push(metadata.collection);
+    if (metadata.volume) parts.push(`Vol. ${metadata.volume}`);
+    return parts.filter(Boolean).join(" • ");
+  };
+
+  const metadataLine1 = isQuran
+    ? buildQuranMetadataLine() || "Quran Reference"
+    : buildHadithMetadataLine() || "Reference";
+  const metadataLine2 = isQuran
+    ? buildQuranSecondaryLine()
+    : buildHadithSecondaryLine();
+
+  const textPreview = isQuran
+    ? (metadata.quran_translation || "").substring(0, 80) || "No translation available"
+    : hadithText ? hadithText.substring(0, 80) : "No text available";
+
+  const buildCopyText = () => {
+    const lines: string[] = [];
+
+    const add = (label: string, value?: string) => {
+      if (value && value.trim() && value.trim() !== "N/A" && value.trim() !== "unspecified") {
+        lines.push(`${label}: ${value.trim()}`);
+      }
+    };
+
+    if (isQuran) {
+      // Header line
+      const header = [
+        metadata.surah_name,
+        metadata.verses_covered ? `Verses ${metadata.verses_covered}` : "",
+      ].filter(Boolean).join(" — ");
+      if (header) lines.push(header);
+
+      if (metadata.title) lines.push(metadata.title);
+      const sourceParts = [
+        metadata.author ? `Author: ${metadata.author}` : "",
+        metadata.collection ? `Source: ${metadata.collection}` : "",
+      ].filter(Boolean);
+      if (sourceParts.length) lines.push(sourceParts.join(" | "));
+
+      if (metadata.quran_translation) {
+        lines.push("");
+        lines.push("Translation:");
+        lines.push(metadata.quran_translation);
+      }
+      if (metadata.tafsir_text) {
+        lines.push("");
+        lines.push("Tafsir:");
+        lines.push(metadata.tafsir_text);
+      }
+    } else {
+      // Hadith format
+      const header = [
+        metadata.collection,
+        metadata.hadith_no ? `Hadith #${metadata.hadith_no}` : "",
+      ].filter(Boolean).join(" — ");
+      if (header) lines.push(header);
+
+      add("Author", metadata.author);
+      add("Reference", metadata.reference);
+
+      const bookParts = [
+        metadata.book_title,
+        metadata.volume ? `Vol. ${metadata.volume}` : "",
+        metadata.book_number ? `Book ${metadata.book_number}` : "",
+      ].filter(Boolean);
+      if (bookParts.length) lines.push(`Book: ${bookParts.join(", ")}`);
+
+      const chapterParts = [
+        metadata.chapter_number ? `Chapter ${metadata.chapter_number}` : "",
+        metadata.chapter_title,
+      ].filter(Boolean);
+      if (chapterParts.length) lines.push(chapterParts.join(": "));
+
+      add("Grade", metadata.grade_en);
+
+      if (hadithText) {
+        lines.push("");
+        lines.push(hadithText);
+      }
+      if (hadithAr) {
+        lines.push("");
+        lines.push(hadithAr);
+      }
+    }
+
+    return lines.join("\n");
+  };
+
+  const handleCopy = async () => {
+    await Clipboard.setStringAsync(buildCopyText());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleToggle = () => {
     if (Platform.OS === "ios" || Platform.OS === "android") {
@@ -66,25 +176,53 @@ export default function ModalReferenceItem({
     setIsExpanded(!isExpanded);
   };
 
-  const renderField = (label: string, value: any) => {
-    if (
+  const buildCitation = () => {
+    const isEmpty = (value: any) =>
       !value ||
       String(value).trim() === "" ||
       String(value).trim() === "N/A" ||
-      String(value).trim() === "unspecified"
-    )
-      return null;
+      String(value).trim() === "unspecified";
 
-    return (
-      <View style={styles.field}>
-        <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-          {label}
-        </Text>
-        <Text style={[styles.fieldValue, { color: colors.text }]}>
-          {String(value)}
-        </Text>
-      </View>
-    );
+    const parts: string[] = [];
+
+    if (isQuran) {
+      if (!isEmpty(metadata.surah_name)) parts.push(String(metadata.surah_name).trim());
+      if (!isEmpty(metadata.verses_covered)) parts.push(`Verses ${String(metadata.verses_covered).trim()}`);
+      if (!isEmpty(metadata.title)) parts.push(String(metadata.title).trim());
+      if (!isEmpty(metadata.author)) parts.push(String(metadata.author).trim());
+      if (!isEmpty(metadata.collection)) parts.push(String(metadata.collection).trim());
+      if (!isEmpty(metadata.volume)) parts.push(`Vol. ${String(metadata.volume).trim()}`);
+    } else {
+      if (!isEmpty(metadata.collection)) parts.push(String(metadata.collection).trim());
+      if (!isEmpty(metadata.author)) parts.push(String(metadata.author).trim());
+      if (!isEmpty(metadata.hadith_no)) parts.push(`Hadith #${String(metadata.hadith_no).trim()}`);
+
+      const bookNumber = !isEmpty(metadata.book_number) ? String(metadata.book_number).trim() : "";
+      const bookTitle = !isEmpty(metadata.book_title) ? String(metadata.book_title).trim() : "";
+      if (bookNumber && bookTitle) {
+        parts.push(`Book ${bookNumber}: ${bookTitle}`);
+      } else if (bookNumber) {
+        parts.push(`Book ${bookNumber}`);
+      } else if (bookTitle) {
+        parts.push(bookTitle);
+      }
+
+      const chapterNumber = !isEmpty(metadata.chapter_number) ? String(metadata.chapter_number).trim() : "";
+      const chapterTitle = !isEmpty(metadata.chapter_title) ? String(metadata.chapter_title).trim() : "";
+      if (chapterNumber && chapterTitle) {
+        parts.push(`Ch. ${chapterNumber}: ${chapterTitle}`);
+      } else if (chapterNumber) {
+        parts.push(`Ch. ${chapterNumber}`);
+      } else if (chapterTitle) {
+        parts.push(chapterTitle);
+      }
+
+      if (!isEmpty(metadata.volume)) parts.push(`Vol. ${String(metadata.volume).trim()}`);
+      if (!isEmpty(metadata.reference)) parts.push(String(metadata.reference).trim());
+      if (!isEmpty(metadata.grade_en)) parts.push(`Graded ${String(metadata.grade_en).trim()}`);
+    }
+
+    return parts.join(" · ");
   };
 
   return (
@@ -103,44 +241,73 @@ export default function ModalReferenceItem({
       {isExpanded ? (
         // Expanded View
         <>
-          <View style={styles.metadataGrid}>
-            {renderField("Author", metadata.author)}
-            {renderField("Reference", metadata.reference)}
-            {renderField("Source", metadata.collection)}
-            {renderField("Volume", metadata.volume)}
-            {renderField("Book number", metadata.book_number)}
-            {renderField("Book title", metadata.book_title)}
-            {renderField("Chapter number", metadata.chapter_number)}
-            {renderField("Chapter title", metadata.chapter_title)}
-            {renderField("Hadith number", metadata.hadith_no)}
-            {renderField("Authenticity", metadata.grade_en)}
-          </View>
+          {(() => {
+            const citation = buildCitation();
+            return citation ? (
+              <Text style={[styles.citationText, { color: colors.textSecondary }]}>
+                {citation}
+              </Text>
+            ) : null;
+          })()}
 
           <View style={styles.textSection}>
-            <Text style={[styles.textLabel, { color: colors.textSecondary }]}>
-              Text
-            </Text>
-            <View>
-              {en && (
-                <Text style={[styles.textContent, { color: colors.text }]}>
-                  {en}
-                </Text>
-              )}
-              {ar && (
-                <Text
-                  style={[
-                    styles.textContent,
-                    styles.arabicText,
-                    { color: colors.text },
-                  ]}
-                >
-                  {ar}
-                </Text>
-              )}
-            </View>
+            {isQuran ? (
+              <>
+                {metadata.quran_translation ? (
+                  <>
+                    <Text style={[styles.textLabel, { color: colors.textSecondary }]}>
+                      Translation
+                    </Text>
+                    <Text style={[styles.textContent, { color: colors.text }]}>
+                      {metadata.quran_translation}
+                    </Text>
+                  </>
+                ) : null}
+                {metadata.tafsir_text ? (
+                  <>
+                    <Text style={[styles.textLabel, { color: colors.textSecondary, marginTop: 12 }]}>
+                      Tafsir
+                    </Text>
+                    <Text style={[styles.textContent, { color: colors.text }]}>
+                      {metadata.tafsir_text}
+                    </Text>
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <View>
+                {hadithText ? (
+                  <Text style={[styles.textContent, { color: colors.text }]}>
+                    {hadithText}
+                  </Text>
+                ) : null}
+                {hadithAr ? (
+                  <Text
+                    style={[
+                      styles.textContent,
+                      styles.arabicText,
+                      { color: colors.text },
+                    ]}
+                  >
+                    {hadithAr}
+                  </Text>
+                ) : null}
+              </View>
+            )}
           </View>
 
-          <View style={styles.chevronContainer}>
+          {/* Expanded Footer: Copy + Chevron Up */}
+          <View style={styles.expandedFooter}>
+            <TouchableOpacity onPress={handleCopy} style={styles.copyButton}>
+              <Ionicons
+                name={copied ? "checkmark-done" : "copy-outline"}
+                size={18}
+                color={colors.primary}
+              />
+              <Text style={[styles.copyButtonText, { color: colors.primary }]}>
+                {copied ? "Copied!" : "Copy"}
+              </Text>
+            </TouchableOpacity>
             <Ionicons name="chevron-up" size={20} color={colors.primary} />
           </View>
         </>
@@ -155,7 +322,7 @@ export default function ModalReferenceItem({
             >
               {metadataLine1}
             </Text>
-            {metadataLine2 && (
+            {metadataLine2 ? (
               <Text
                 style={[styles.condensedLine2, { color: colors.textSecondary }]}
                 numberOfLines={1}
@@ -163,7 +330,7 @@ export default function ModalReferenceItem({
               >
                 {metadataLine2}
               </Text>
-            )}
+            ) : null}
             <Text
               style={[styles.condensedLine3, { color: colors.textSecondary }]}
               numberOfLines={1}
@@ -236,22 +403,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  metadataGrid: {
-    gap: 12,
-    marginBottom: 16,
+  expandedFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 16,
   },
-  field: {
-    gap: 4,
+  copyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  fieldLabel: {
-    fontSize: 11,
+  copyButtonText: {
+    fontSize: 13,
     fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
-  fieldValue: {
-    fontSize: 14,
+  citationText: {
+    fontSize: 13,
     lineHeight: 20,
+    fontStyle: "italic",
+    marginBottom: 16,
   },
   textSection: {
     borderTopWidth: 1,

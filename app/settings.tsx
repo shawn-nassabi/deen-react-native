@@ -1,5 +1,6 @@
 import React from "react";
-import { StyleSheet, ScrollView, TouchableOpacity, View } from "react-native";
+import { StyleSheet, ScrollView, TouchableOpacity, View, Alert, ActivityIndicator, Linking } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useThemePreference } from "@/hooks/use-theme-preference";
@@ -8,6 +9,8 @@ import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { deleteAccount } from "@/utils/api";
+import { EXTERNAL_URLS } from "@/utils/constants";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -15,8 +18,10 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const insets = useSafeAreaInsets();
   const [authError, setAuthError] = React.useState<string | null>(null);
   const [authBusy, setAuthBusy] = React.useState(false);
+  const [deleteLoading, setDeleteLoading] = React.useState(false);
 
   const themeOptions = [
     {
@@ -38,8 +43,11 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Close Button */}
-      <View style={styles.header}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 8 }]}>
+        <ThemedText type="title" style={styles.headerTitle}>
+          Settings
+        </ThemedText>
         <TouchableOpacity
           onPress={() => router.back()}
           style={[
@@ -47,6 +55,7 @@ export default function SettingsScreen() {
             { backgroundColor: colors.panel, borderColor: colors.border },
           ]}
           activeOpacity={0.7}
+          hitSlop={8}
         >
           <Ionicons name="close" size={20} color={colors.text} />
         </TouchableOpacity>
@@ -125,23 +134,39 @@ export default function SettingsScreen() {
           <View
             style={[
               styles.infoCard,
-              { backgroundColor: colors.panel, borderColor: colors.border },
+              { backgroundColor: colors.panel, borderColor: colors.border, gap: 10 },
             ]}
           >
-            {user?.email ? (
-              <ThemedText
-                style={[styles.infoText, { color: colors.textSecondary }]}
-              >
-                Email: {user.email}
-              </ThemedText>
+            {user?.displayName ? (
+              <View style={styles.infoRow}>
+                <Ionicons
+                  name="person-outline"
+                  size={16}
+                  color={colors.muted}
+                  style={styles.infoIcon}
+                />
+                <ThemedText
+                  style={[styles.infoText, { color: colors.text }]}
+                >
+                  {user.displayName}
+                </ThemedText>
+              </View>
             ) : null}
 
-            {user?.sub ? (
-              <ThemedText
-                style={[styles.infoText, { color: colors.textSecondary }]}
-              >
-                User ID (sub): {user.sub}
-              </ThemedText>
+            {user?.email ? (
+              <View style={styles.infoRow}>
+                <Ionicons
+                  name="mail-outline"
+                  size={16}
+                  color={colors.muted}
+                  style={styles.infoIcon}
+                />
+                <ThemedText
+                  style={[styles.infoText, { color: colors.textSecondary }]}
+                >
+                  {user.email}
+                </ThemedText>
+              </View>
             ) : null}
 
             {authError ? (
@@ -177,6 +202,99 @@ export default function SettingsScreen() {
             >
               <ThemedText style={styles.primaryButtonText}>Sign out</ThemedText>
             </TouchableOpacity>
+
+            {/* Danger zone separator */}
+            <View
+              style={[styles.dangerSeparator, { borderTopColor: colors.border }]}
+            />
+
+            {/* Delete Account button (D-10) */}
+            <TouchableOpacity
+              style={[
+                styles.primaryButton,
+                {
+                  backgroundColor: "#e53935",
+                  opacity: deleteLoading ? 0.6 : 1,
+                },
+              ]}
+              onPress={() => {
+                if (deleteLoading) return;
+                // Alert confirmation before irreversible action (D-11)
+                Alert.alert(
+                  "Delete Account",
+                  "This will permanently delete your account and all associated data. This action cannot be undone.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: async () => {
+                        setDeleteLoading(true);
+                        try {
+                          await deleteAccount();
+                          // On success: sign out — auth guard redirects to /login (D-12)
+                          await signOut();
+                        } catch (e: any) {
+                          // Stay on settings screen so user can retry (D-13)
+                          Alert.alert(
+                            "Error",
+                            e?.message || "Failed to delete account. Please try again."
+                          );
+                        } finally {
+                          setDeleteLoading(false);
+                        }
+                      },
+                    },
+                  ]
+                );
+              }}
+              activeOpacity={0.8}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <ThemedText style={styles.primaryButtonText}>Delete Account</ThemedText>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ThemedView>
+
+        <ThemedView style={styles.section}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Legal
+          </ThemedText>
+          <ThemedText
+            style={[styles.sectionDescription, { color: colors.textSecondary }]}
+          >
+            Policies and terms
+          </ThemedText>
+
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: colors.panel, borderColor: colors.border, padding: 0 },
+            ]}
+          >
+            <TouchableOpacity
+              style={styles.legalRow}
+              onPress={() => Linking.openURL(EXTERNAL_URLS.PRIVACY_POLICY)}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={styles.legalRowLabel}>Privacy Policy</ThemedText>
+              <Ionicons name="open-outline" size={16} color={colors.muted} />
+            </TouchableOpacity>
+
+            <View style={[styles.legalDivider, { borderTopColor: colors.border }]} />
+
+            <TouchableOpacity
+              style={styles.legalRow}
+              onPress={() => Linking.openURL(EXTERNAL_URLS.TERMS_OF_USE)}
+              activeOpacity={0.7}
+            >
+              <ThemedText style={styles.legalRowLabel}>Terms of Use</ThemedText>
+              <Ionicons name="open-outline" size={16} color={colors.muted} />
+            </TouchableOpacity>
           </View>
         </ThemedView>
       </ScrollView>
@@ -186,9 +304,11 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: 20,
     paddingBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   closeButton: {
     width: 36,
@@ -197,7 +317,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "flex-start",
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
   },
   container: {
     flex: 1,
@@ -257,7 +380,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 14,
-    marginBottom: 8,
+    lineHeight: 18,
   },
   versionText: {
     fontSize: 12,
@@ -285,5 +408,31 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 15,
     fontWeight: "600",
+  },
+  dangerSeparator: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  infoIcon: {
+    marginRight: 8,
+  },
+  legalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  legalRowLabel: {
+    fontSize: 15,
+  },
+  legalDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginHorizontal: 16,
   },
 });

@@ -5,11 +5,10 @@ import {
   ScrollView,
   TextInput,
   RefreshControl,
-  ActivityIndicator,
   Platform,
   Image,
 } from "react-native";
-import { BlurView } from "expo-blur";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -22,6 +21,7 @@ import {
 } from "@/utils/api";
 import { setProgress } from "@/utils/hikmahStorage";
 import TreeCard from "@/components/hikmah/TreeCard";
+import TreeCardSkeleton from "@/components/hikmah/TreeCardSkeleton";
 import ComingSoonCard from "@/components/hikmah/ComingSoonCard";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -38,7 +38,7 @@ export default function HikmahScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const { user } = useAuth();
-  const userId = user?.email || user?.sub;
+  const userId = user?.id;
   const blurIntensity = Platform.OS === "android" ? 120 : 60;
   const headerOverlayColor =
     colorScheme === "dark" ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
@@ -172,7 +172,7 @@ export default function HikmahScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <BlurView
+      <PlatformBlurView
         intensity={blurIntensity}
         tint={colorScheme === "dark" ? "dark" : "light"}
         style={[
@@ -224,15 +224,30 @@ export default function HikmahScreen() {
             />
           )}
         </View>
-      </BlurView>
+      </PlatformBlurView>
 
       {loading && !refreshing ? (
-        <View style={[styles.center, { paddingTop: contentTopOffset }]}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <ThemedText style={{ marginTop: 16, color: colors.textSecondary }}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: contentTopOffset },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <TreeCardSkeleton />
+          <TreeCardSkeleton />
+          <TreeCardSkeleton />
+          <ThemedText
+            style={{
+              marginTop: 8,
+              textAlign: "center",
+              color: colors.textSecondary,
+            }}
+          >
             Loading topics...
           </ThemedText>
-        </View>
+        </ScrollView>
       ) : error ? (
         <View style={[styles.center, { paddingTop: contentTopOffset }]}>
           <ThemedText style={{ color: "red", textAlign: "center" }}>
