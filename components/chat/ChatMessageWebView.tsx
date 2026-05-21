@@ -20,7 +20,13 @@ export default function ChatMessageWebView({
   const webViewRef = useRef<WebView>(null);
   const [webViewHeight, setWebViewHeight] = useState(MIN_HEIGHT);
 
-  const converter = new showdown.Converter();
+  const converter = new showdown.Converter({
+    tables: true,            // REQUIRED — enables GFM pipe-tables (the user-facing fix)
+    simpleLineBreaks: true,  // single \n → <br>, matches how the backend formats prose
+    strikethrough: true,     // GFM ~~text~~
+    tasklists: true,         // GFM - [ ] / - [x]
+    openLinksInNewWindow: true, // safer: links open in a new context
+  });
   const htmlContent = converter.makeHtml(markdown);
 
   const codeInlineColor = colorScheme === "dark" ? "#d1fae5" : "#059669";
@@ -94,6 +100,33 @@ export default function ChatMessageWebView({
             height: 1px;
             background-color: ${colors.border};
             margin: 30px 0;
+          }
+          table {
+            display: block;
+            width: 100%;
+            border-collapse: collapse;
+            overflow-x: auto;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            font-size: 14px;
+          }
+          thead {
+            background-color: ${colors.panel2};
+          }
+          th, td {
+            border: 1px solid ${colors.border};
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+            white-space: normal;
+            word-break: break-word;
+          }
+          th {
+            font-weight: 700;
+            color: ${colors.text};
+          }
+          tbody tr:nth-child(even) td {
+            background-color: ${colors.panel2}55;
           }
           ::selection {
             background-color: rgba(91, 193, 161, 0.3);
