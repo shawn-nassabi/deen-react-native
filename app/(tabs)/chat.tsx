@@ -48,6 +48,11 @@ import { useAuth } from "@/hooks/useAuth";
 import ChatHistoryDrawer from "@/components/chat/ChatHistoryDrawer";
 import ElaborationModal from "@/components/hikmah/ElaborationModal";
 
+// Module-level flag: true once the chat screen has mounted at least once in this JS runtime.
+// Reset to false on every cold start (new process / OS-kill / dev reload), which is exactly
+// when we want to start a fresh chat instead of restoring the previously-active session.
+let coldStartHandled = false;
+
 // Estimated input container height for padding calculations
 const INPUT_CONTAINER_HEIGHT = 70;
 const INPUT_ACCESSORY_ID = "chatInputAccessory";
@@ -184,6 +189,10 @@ export default function ChatScreen() {
   const [isElaborationModalVisible, setIsElaborationModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // When true, the next session-id-driven message load is skipped. Set in the
+  // cold-start branch so we don't overwrite the freshly-emptied messages list
+  // with whatever loadMessages() returns for the new (empty) session.
+  const skipNextMessageLoadRef = useRef(false);
 
   const hasSelection = !!selection.text;
 
@@ -198,13 +207,37 @@ export default function ChatScreen() {
     }
   }, [input, showSuggestions]);
 
-  // Initialize session and clean up expired sessions
+  // Initialize session: on cold start, force a fresh session and empty chat.
+  // On warm remounts (tab switches within the same JS runtime), restore the active session.
   useEffect(() => {
+    // Read-then-set synchronously (before any await) so React StrictMode's
+    // double-invocation in dev falls into the warm branch on the second pass.
+    const isColdStart = !coldStartHandled;
+    coldStartHandled = true;
+
     const initialize = async () => {
-      console.log("🚀 Chat screen initialized");
+      console.log(
+        isColdStart
+          ? "🚀 Chat screen cold-start — starting fresh session"
+          : "🚀 Chat screen warm-mount — restoring active session"
+      );
+      // Always safe to run; only deletes sessions older than CHAT_EXPIRY_SECONDS.
       await purgeExpiredSessions();
-      const sid = await getOrCreateSessionId();
-      setSessionId(sid);
+
+      if (isColdStart) {
+        // Fresh session id; also overwrites the persisted "active session" pointer
+        // so any future code that reads it sees the new one. Old per-session message
+        // blobs under deen:msgs:<oldId>:v1 are intentionally left untouched — history
+        // remains available via the ChatHistoryDrawer (server-backed).
+        skipNextMessageLoadRef.current = true;
+        const freshId = await startNewConversation();
+        setSessionId(freshId);
+        setMessages([]);
+        setShowSuggestions(true);
+      } else {
+        const sid = await getOrCreateSessionId();
+        setSessionId(sid);
+      }
     };
     initialize();
   }, []);
@@ -227,6 +260,12 @@ export default function ChatScreen() {
   // Load messages when session ID changes
   useEffect(() => {
     if (!sessionId) return;
+    // On cold-start the initialize effect has already set messages to []
+    // for the freshly-created session — skip the load so we don't re-fetch.
+    if (skipNextMessageLoadRef.current) {
+      skipNextMessageLoadRef.current = false;
+      return;
+    }
 
     const loadInitialMessages = async () => {
       const initial = await loadMessages(sessionId);
