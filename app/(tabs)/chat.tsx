@@ -42,6 +42,7 @@ import {
   setLastChatLanguage,
   type Message,
 } from "@/utils/chatStorage";
+import { consumePendingChatPrompt } from "@/utils/pendingChatPrompt";
 import { ERROR_MESSAGES, UI_CONSTANTS } from "@/utils/constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
@@ -209,13 +210,36 @@ export default function ChatScreen() {
 
   // Initialize session: on cold start, force a fresh session and empty chat.
   // On warm remounts (tab switches within the same JS runtime), restore the active session.
+  // If a pending prompt was set by the References tab ("Ask about this"), take precedence:
+  // always start a fresh session and seed the input (do NOT auto-send).
   useEffect(() => {
+    // Consume pending prompt synchronously BEFORE any await and BEFORE touching
+    // coldStartHandled. Under React StrictMode's double-invocation in dev, only
+    // the FIRST run sees a non-null value; the second sees null and falls through
+    // to the cold-start path (which short-circuits via coldStartHandled === true).
+    const pendingPrompt = consumePendingChatPrompt();
+
     // Read-then-set synchronously (before any await) so React StrictMode's
     // double-invocation in dev falls into the warm branch on the second pass.
     const isColdStart = !coldStartHandled;
     coldStartHandled = true;
 
     const initialize = async () => {
+      if (pendingPrompt) {
+        console.log("🚀 Chat screen — seeding from References 'Ask about this'");
+        // Always safe to run; only deletes sessions older than CHAT_EXPIRY_SECONDS.
+        await purgeExpiredSessions();
+
+        skipNextMessageLoadRef.current = true;
+        const freshId = await startNewConversation();
+        setMessages([]);
+        setSessionId(freshId);
+        setInput(pendingPrompt);
+        setShowSuggestions(false);
+        setSelection({ text: "", context: "" });
+        return;
+      }
+
       console.log(
         isColdStart
           ? "🚀 Chat screen cold-start — starting fresh session"
