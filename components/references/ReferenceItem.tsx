@@ -17,8 +17,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
+import { router } from "expo-router";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { setPendingChatPrompt } from "@/utils/pendingChatPrompt";
 
 interface ReferenceMetadata {
   text?: string;
@@ -156,6 +158,23 @@ export default function ReferenceItem({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleAskAboutThis = () => {
+    const citation = buildCitation();
+    const englishText = (reference?.text || "").trim();
+
+    // Template MUST match the spec exactly. Citation is required-ish; if empty,
+    // fall back to "this reference" so the sentence stays grammatical.
+    const citationSegment = citation || "this reference";
+    const prompt =
+      `Please elaborate on this reference from ${citationSegment}. ` +
+      `Help me understand its meaning, the context in which it was given, ` +
+      `and how it has traditionally been understood in Islamic scholarship.\n\n` +
+      `Reference text: ${englishText || "(no English text available)"}`;
+
+    setPendingChatPrompt(prompt);
+    router.push("/(tabs)/chat");
+  };
+
   // Toggle expand/collapse with animation
   const handleToggle = () => {
     if (Platform.OS === "ios" || Platform.OS === "android") {
@@ -260,7 +279,7 @@ export default function ReferenceItem({
               </View>
             </View>
 
-            {/* Expanded Footer: Copy + Chevron Up */}
+            {/* Expanded Footer: Copy + Ask about this + Chevron Up */}
             <View style={styles.expandedFooter}>
               <TouchableOpacity onPress={handleCopy} style={styles.copyButton}>
                 <Ionicons
@@ -272,6 +291,21 @@ export default function ReferenceItem({
                   {copied ? "Copied!" : "Copy"}
                 </Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleAskAboutThis}
+                style={[
+                  styles.askAboutButton,
+                  { backgroundColor: colors.primary + "15", borderColor: colors.primary + "55" },
+                ]}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.primary} />
+                <Text style={[styles.askAboutButtonText, { color: colors.primary }]}>
+                  Ask about this
+                </Text>
+              </TouchableOpacity>
+
               <Ionicons name="chevron-up" size={20} color={colors.primary} />
             </View>
           </>
@@ -390,6 +424,19 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   copyButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  askAboutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  askAboutButtonText: {
     fontSize: 13,
     fontWeight: "600",
   },
