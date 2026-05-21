@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: Supabase Auth Migration
 status: complete
 stopped_at: v1.0 milestone archived — Supabase auth migration complete
-last_updated: "2026-05-21T00:35:00Z"
+last_updated: "2026-05-21T01:55:00Z"
 last_activity: 2026-05-21
 progress:
   total_phases: 4
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 Phase: —
 Plan: —
 Status: v1.0 milestone complete — archived 2026-04-14
-Last activity: 2026-05-21 - Completed quick task 260520-skd: Add "Ask about this" button to expanded reference cards (References → fresh Chat with seeded prompt)
+Last activity: 2026-05-21 - Completed quick task 260520-u69: Smooth animated streaming reveal for chat responses
 
 Progress: [██████████] 100%
 
@@ -109,6 +109,7 @@ None yet.
 | 260519-jyg | Hide chat copy button while AI response is streaming — new isStreaming state in chat.tsx (true from send → onComplete/onError/catch), passed to last bot message; ChatMessage wraps copy chip in !isStreaming guard | 2026-05-19 | 1e33095 | [260519-jyg-hide-copy-button-while-ai-response-is-st](./quick/260519-jyg-hide-copy-button-while-ai-response-is-st/) |
 | 260520-sg7 | Start fresh chat on app cold start — module-level coldStartHandled flag in chat.tsx branches initialize effect: cold start (new JS runtime) calls startNewConversation() + empty messages; warm tab-switch keeps existing session. History drawer and AsyncStorage data untouched. | 2026-05-21 | 595dcb5 | [260520-sg7-start-fresh-chat-on-app-cold-start-inste](./quick/260520-sg7-start-fresh-chat-on-app-cold-start-inste/) |
 | 260520-skd | Add "Ask about this" pill to expanded reference cards — taps stash a templated elaboration prompt (citation via existing buildCitation() + English reference text) in an in-memory singleton, then router.push to Chat. useFocusEffect on the Chat tab consumes the prompt on every focus (not just first mount, fixing tab-stays-mounted bug), starts a fresh session, seeds the input — no auto-send. | 2026-05-21 | 0bd3384 | [260520-skd-add-ask-about-this-button-under-each-ret](./quick/260520-skd-add-ask-about-this-button-under-each-ret/) |
+| 260520-u69 | Smooth animated streaming reveal for chat responses — new hooks/useStreamingText.ts (JS setInterval typewriter, 2 chars / 16ms with adaptive boost when buffer leads by >120 chars). chat.tsx feeds onChunk into streamingTarget; renderMessage substitutes the smoothed text only for the active streaming bot row. History, references, copy/share, and api/storage paths untouched. | 2026-05-21 | 4a7a9ef | [260520-u69-smooth-animated-streaming-reveal-for-cha](./quick/260520-u69-smooth-animated-streaming-reveal-for-cha/) |
 
 ### Blockers/Concerns
 
