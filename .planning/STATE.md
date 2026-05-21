@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: Supabase Auth Migration
 status: complete
 stopped_at: v1.0 milestone archived — Supabase auth migration complete
-last_updated: "2026-05-19T18:30:00Z"
-last_activity: 2026-05-19
+last_updated: "2026-05-21T00:35:00Z"
+last_activity: 2026-05-21
 progress:
   total_phases: 4
   completed_phases: 4
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 Phase: —
 Plan: —
 Status: v1.0 milestone complete — archived 2026-04-14
-Last activity: 2026-05-19 - Completed quick task 260519-jyg: Hide chat copy button while AI response is streaming
+Last activity: 2026-05-21 - Completed quick task 260520-sg7: Start fresh chat on app cold start instead of restoring last session
 
 Progress: [██████████] 100%
 
@@ -107,6 +107,7 @@ None yet.
 | 260519-hn6 | Add copy button to AI (bot) chat response messages — copies message text only via expo-clipboard (no references), Ionicons copy-outline↔checkmark feedback with light haptic | 2026-05-19 | c42c9eb | [260519-hn6-add-copy-button-to-ai-chat-messages](./quick/260519-hn6-add-copy-button-to-ai-chat-messages/) |
 | 260519-i4m | Bump app version to 1.0.1 (app.json only; EAS appVersionSource=remote handles native build numbers) | 2026-05-19 | 9034314 | [260519-i4m-bump-app-version-to-1-0-1](./quick/260519-i4m-bump-app-version-to-1-0-1/) |
 | 260519-jyg | Hide chat copy button while AI response is streaming — new isStreaming state in chat.tsx (true from send → onComplete/onError/catch), passed to last bot message; ChatMessage wraps copy chip in !isStreaming guard | 2026-05-19 | 1e33095 | [260519-jyg-hide-copy-button-while-ai-response-is-st](./quick/260519-jyg-hide-copy-button-while-ai-response-is-st/) |
+| 260520-sg7 | Start fresh chat on app cold start — module-level coldStartHandled flag in chat.tsx branches initialize effect: cold start (new JS runtime) calls startNewConversation() + empty messages; warm tab-switch keeps existing session. History drawer and AsyncStorage data untouched. | 2026-05-21 | 595dcb5 | [260520-sg7-start-fresh-chat-on-app-cold-start-inste](./quick/260520-sg7-start-fresh-chat-on-app-cold-start-inste/) |
 
 ### Blockers/Concerns
 
