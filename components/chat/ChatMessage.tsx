@@ -3,9 +3,11 @@
  * Displays individual user or bot messages
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
+import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -16,13 +18,34 @@ import type { Message } from "@/utils/chatStorage";
 interface ChatMessageProps {
   message: Message;
   onSelectionChange?: (selection: { text: string; context: string }) => void;
+  isStreaming?: boolean;
 }
 
-export default function ChatMessage({ message, onSelectionChange }: ChatMessageProps) {
+export default function ChatMessage({ message, onSelectionChange, isStreaming = false }: ChatMessageProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const isUser = message.sender === "user";
   const [showReferencesModal, setShowReferencesModal] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
+  }, []);
+
+  const handleCopy = async () => {
+    try {
+      await Clipboard.setStringAsync(message.text);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      setCopied(true);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 1500);
+    } catch (e) {
+      console.warn("⚠️ copy to clipboard failed:", e);
+    }
+  };
 
   if (isUser) {
     return (
@@ -71,6 +94,32 @@ export default function ChatMessage({ message, onSelectionChange }: ChatMessageP
             onSelectionChange={onSelectionChange}
           />
         </View>
+        {!isStreaming && (
+          <TouchableOpacity
+            style={[
+              styles.copyButton,
+              { backgroundColor: colors.panel2, borderColor: colors.border },
+            ]}
+            onPress={handleCopy}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={
+              copied ? "Response copied to clipboard" : "Copy response to clipboard"
+            }
+          >
+            <Ionicons
+              name={copied ? "checkmark" : "copy-outline"}
+              size={16}
+              color={colors.primary}
+              style={styles.copyIcon}
+            />
+            <ThemedText
+              style={[styles.copyButtonText, { color: colors.textSecondary }]}
+            >
+              {copied ? "Copied" : "Copy"}
+            </ThemedText>
+          </TouchableOpacity>
+        )}
         {message.references && message.references.length > 0 && (
           <>
             <TouchableOpacity
@@ -179,5 +228,21 @@ const styles = StyleSheet.create({
   },
   chevronIcon: {
     marginLeft: 8,
+  },
+  copyButton: {
+    marginTop: 8,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  copyIcon: {
+    marginRight: 6,
+  },
+  copyButtonText: {
+    fontSize: 12,
   },
 });

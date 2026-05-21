@@ -3,8 +3,8 @@
  * In production, these should be loaded from secure environment variables
  */
 
-import { Platform } from "react-native";
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 /**
  * Networking notes:
@@ -81,7 +81,7 @@ function getDefaultHost() {
   return DEFAULT_DEV_MACHINE_IP;
 }
 
-const PROD_API_BASE_URL = "https://deen-fastapi.duckdns.org";
+const PROD_API_BASE_URL = "https://api.thedeenfoundation.com";
 
 function getDefaultApiBaseUrl(): string {
   // Explicit env always wins (dev or prod).
@@ -104,13 +104,16 @@ const DEFAULT_API_BASE_URL = getDefaultApiBaseUrl();
 // accessed as a literal member expression. Dynamic access (process.env[name])
 // is NOT inlined — it works in dev but resolves to undefined in release bundles.
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 if (!SUPABASE_URL) {
   throw new Error("Missing required env var: EXPO_PUBLIC_SUPABASE_URL");
 }
 if (!SUPABASE_PUBLISHABLE_KEY) {
-  throw new Error("Missing required env var: EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
+  throw new Error(
+    "Missing required env var: EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  );
 }
 
 export const CONFIG = {

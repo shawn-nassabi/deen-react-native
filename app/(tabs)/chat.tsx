@@ -42,11 +42,19 @@ import {
   setLastChatLanguage,
   type Message,
 } from "@/utils/chatStorage";
+import { consumePendingChatPrompt } from "@/utils/pendingChatPrompt";
 import { ERROR_MESSAGES, UI_CONSTANTS } from "@/utils/constants";
+import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
+import { useStreamingText } from "@/hooks/useStreamingText";
 import ChatHistoryDrawer from "@/components/chat/ChatHistoryDrawer";
 import ElaborationModal from "@/components/hikmah/ElaborationModal";
+
+// Module-level flag: true once the chat screen has mounted at least once in this JS runtime.
+// Reset to false on every cold start (new process / OS-kill / dev reload), which is exactly
+// when we want to start a fresh chat instead of restoring the previously-active session.
+let coldStartHandled = false;
 
 // Estimated input container height for padding calculations
 const INPUT_CONTAINER_HEIGHT = 70;
@@ -172,6 +180,11 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  // Target text fed by sendChatMessage onChunk; the typewriter hook smooths
+  // this into displayedStreamingText for the active streaming bot row.
+  const [streamingTarget, setStreamingTarget] = useState("");
+  const displayedStreamingText = useStreamingText(streamingTarget, isStreaming);
   const [statusMessage, setStatusMessage] = useState("Thinking...");
   const [isNewChatLoading, setIsNewChatLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -183,6 +196,10 @@ export default function ChatScreen() {
   const [isElaborationModalVisible, setIsElaborationModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // When true, the next session-id-driven message load is skipped. Set in the
+  // cold-start branch so we don't overwrite the freshly-emptied messages list
+  // with whatever loadMessages() returns for the new (empty) session.
+  const skipNextMessageLoadRef = useRef(false);
 
   const hasSelection = !!selection.text;
 
@@ -197,16 +214,69 @@ export default function ChatScreen() {
     }
   }, [input, showSuggestions]);
 
-  // Initialize session and clean up expired sessions
+  // Initialize session: on cold start, force a fresh session and empty chat.
+  // On warm remounts (tab switches within the same JS runtime), restore the active session.
   useEffect(() => {
+    // Read-then-set synchronously (before any await) so React StrictMode's
+    // double-invocation in dev falls into the warm branch on the second pass.
+    const isColdStart = !coldStartHandled;
+    coldStartHandled = true;
+
     const initialize = async () => {
-      console.log("🚀 Chat screen initialized");
+      console.log(
+        isColdStart
+          ? "🚀 Chat screen cold-start — starting fresh session"
+          : "🚀 Chat screen warm-mount — restoring active session"
+      );
+      // Always safe to run; only deletes sessions older than CHAT_EXPIRY_SECONDS.
       await purgeExpiredSessions();
-      const sid = await getOrCreateSessionId();
-      setSessionId(sid);
+
+      if (isColdStart) {
+        // Fresh session id; also overwrites the persisted "active session" pointer
+        // so any future code that reads it sees the new one. Old per-session message
+        // blobs under deen:msgs:<oldId>:v1 are intentionally left untouched — history
+        // remains available via the ChatHistoryDrawer (server-backed).
+        skipNextMessageLoadRef.current = true;
+        const freshId = await startNewConversation();
+        setSessionId(freshId);
+        setMessages([]);
+        setShowSuggestions(true);
+      } else {
+        const sid = await getOrCreateSessionId();
+        setSessionId(sid);
+      }
     };
     initialize();
   }, []);
+
+  // Pending-prompt handoff from the References tab ("Ask about this"). Runs on
+  // every focus of the Chat tab — not just first mount — because Expo Router
+  // keeps tab screens mounted across navigations. If a pending prompt is
+  // present, start a fresh session and seed the input (do NOT auto-send).
+  useFocusEffect(
+    useCallback(() => {
+      const pendingPrompt = consumePendingChatPrompt();
+      if (!pendingPrompt) return;
+
+      let cancelled = false;
+      const seedFromReferences = async () => {
+        console.log("🚀 Chat screen focus — seeding from References 'Ask about this'");
+        skipNextMessageLoadRef.current = true;
+        const freshId = await startNewConversation();
+        if (cancelled) return;
+        setMessages([]);
+        setSessionId(freshId);
+        setInput(pendingPrompt);
+        setShowSuggestions(false);
+        setSelection({ text: "", context: "" });
+      };
+      seedFromReferences();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
 
   // Scroll to bottom when keyboard opens
   useEffect(() => {
@@ -226,6 +296,12 @@ export default function ChatScreen() {
   // Load messages when session ID changes
   useEffect(() => {
     if (!sessionId) return;
+    // On cold-start the initialize effect has already set messages to []
+    // for the freshly-created session — skip the load so we don't re-fetch.
+    if (skipNextMessageLoadRef.current) {
+      skipNextMessageLoadRef.current = false;
+      return;
+    }
 
     const loadInitialMessages = async () => {
       const initial = await loadMessages(sessionId);
@@ -393,6 +469,10 @@ export default function ChatScreen() {
     setMessages((prev) => [...prev, userMessage, botPlaceholder]);
     setInput("");
     setIsLoading(true);
+    setIsStreaming(true);
+    // Clear any leftover target from a previous response so the smoother doesn't
+    // bleed prior text into the new reveal.
+    setStreamingTarget("");
     setStatusMessage("Thinking...");
     setSelection({ text: "", context: "" });
     try {
@@ -401,14 +481,11 @@ export default function ChatScreen() {
         sessionId,
         selectedLanguage,
         (fullMessage) => {
-          // First chunk has arrived — hide the loading indicator and show the text
+          // First chunk has arrived — hide the loading indicator
           setIsLoading(false);
-          setMessages((prev) => {
-            const updated = [...prev];
-            const lastIndex = updated.length - 1;
-            updated[lastIndex] = { sender: "bot", text: fullMessage };
-            return updated;
-          });
+          // Feed the smoother. Do NOT write into messages[] on every chunk —
+          // the typewriter renders via displayedStreamingText in renderMessage.
+          setStreamingTarget(fullMessage);
         },
         (responseText, references) => {
           setMessages((prev) => {
@@ -421,10 +498,16 @@ export default function ChatScreen() {
             };
             return updated;
           });
+          setIsStreaming(false);
+          // Do NOT reset streamingTarget here — the hook will keep ticking
+          // until displayed catches up to target, then stop on its own. The
+          // next handleSendMessage call clears it before the new stream starts.
         },
         (error) => {
           console.error("❌ Chat error:", error);
           setIsLoading(false);
+          setIsStreaming(false);
+          setStreamingTarget("");
           setMessages((prev) => {
             const updated = [...prev];
             const lastIndex = updated.length - 1;
@@ -443,6 +526,8 @@ export default function ChatScreen() {
     } catch (error) {
       console.error("❌ Error in handleSendMessage:", error);
       setIsLoading(false);
+      setIsStreaming(false);
+      setStreamingTarget("");
       setMessages((prev) => {
         const updated = [...prev];
         const lastIndex = updated.length - 1;
@@ -466,13 +551,25 @@ export default function ChatScreen() {
       return null;
     }
 
+    const isThisStreaming =
+      isStreaming && item.sender === "bot" && index === messages.length - 1;
+
+    // While this specific message is streaming, render the smoothed displayed
+    // text instead of whatever's in messages[].text. After streaming completes,
+    // messages[].text already holds the final value (set by onComplete) and
+    // isThisStreaming flips to false, so the substitution disappears cleanly.
+    const messageToRender: Message = isThisStreaming
+      ? { ...item, text: displayedStreamingText }
+      : item;
+
     return (
       <ChatMessage
-        message={item}
+        message={messageToRender}
         onSelectionChange={handleSelectionChange}
+        isStreaming={isThisStreaming}
       />
     );
-  }, [isLoading, messages.length, handleSelectionChange]);
+  }, [isLoading, isStreaming, messages.length, handleSelectionChange, displayedStreamingText]);
 
   const bottomPadding = INPUT_CONTAINER_HEIGHT + insets.bottom + 16;
 
