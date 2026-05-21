@@ -47,6 +47,7 @@ import { ERROR_MESSAGES, UI_CONSTANTS } from "@/utils/constants";
 import { useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
+import { useStreamingText } from "@/hooks/useStreamingText";
 import ChatHistoryDrawer from "@/components/chat/ChatHistoryDrawer";
 import ElaborationModal from "@/components/hikmah/ElaborationModal";
 
@@ -180,6 +181,10 @@ export default function ChatScreen() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  // Target text fed by sendChatMessage onChunk; the typewriter hook smooths
+  // this into displayedStreamingText for the active streaming bot row.
+  const [streamingTarget, setStreamingTarget] = useState("");
+  const displayedStreamingText = useStreamingText(streamingTarget, isStreaming);
   const [statusMessage, setStatusMessage] = useState("Thinking...");
   const [isNewChatLoading, setIsNewChatLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -465,6 +470,9 @@ export default function ChatScreen() {
     setInput("");
     setIsLoading(true);
     setIsStreaming(true);
+    // Clear any leftover target from a previous response so the smoother doesn't
+    // bleed prior text into the new reveal.
+    setStreamingTarget("");
     setStatusMessage("Thinking...");
     setSelection({ text: "", context: "" });
     try {
@@ -473,14 +481,11 @@ export default function ChatScreen() {
         sessionId,
         selectedLanguage,
         (fullMessage) => {
-          // First chunk has arrived — hide the loading indicator and show the text
+          // First chunk has arrived — hide the loading indicator
           setIsLoading(false);
-          setMessages((prev) => {
-            const updated = [...prev];
-            const lastIndex = updated.length - 1;
-            updated[lastIndex] = { sender: "bot", text: fullMessage };
-            return updated;
-          });
+          // Feed the smoother. Do NOT write into messages[] on every chunk —
+          // the typewriter renders via displayedStreamingText in renderMessage.
+          setStreamingTarget(fullMessage);
         },
         (responseText, references) => {
           setMessages((prev) => {
@@ -494,11 +499,15 @@ export default function ChatScreen() {
             return updated;
           });
           setIsStreaming(false);
+          // Do NOT reset streamingTarget here — the hook will keep ticking
+          // until displayed catches up to target, then stop on its own. The
+          // next handleSendMessage call clears it before the new stream starts.
         },
         (error) => {
           console.error("❌ Chat error:", error);
           setIsLoading(false);
           setIsStreaming(false);
+          setStreamingTarget("");
           setMessages((prev) => {
             const updated = [...prev];
             const lastIndex = updated.length - 1;
@@ -518,6 +527,7 @@ export default function ChatScreen() {
       console.error("❌ Error in handleSendMessage:", error);
       setIsLoading(false);
       setIsStreaming(false);
+      setStreamingTarget("");
       setMessages((prev) => {
         const updated = [...prev];
         const lastIndex = updated.length - 1;
@@ -544,14 +554,22 @@ export default function ChatScreen() {
     const isThisStreaming =
       isStreaming && item.sender === "bot" && index === messages.length - 1;
 
+    // While this specific message is streaming, render the smoothed displayed
+    // text instead of whatever's in messages[].text. After streaming completes,
+    // messages[].text already holds the final value (set by onComplete) and
+    // isThisStreaming flips to false, so the substitution disappears cleanly.
+    const messageToRender: Message = isThisStreaming
+      ? { ...item, text: displayedStreamingText }
+      : item;
+
     return (
       <ChatMessage
-        message={item}
+        message={messageToRender}
         onSelectionChange={handleSelectionChange}
         isStreaming={isThisStreaming}
       />
     );
-  }, [isLoading, isStreaming, messages.length, handleSelectionChange]);
+  }, [isLoading, isStreaming, messages.length, handleSelectionChange, displayedStreamingText]);
 
   const bottomPadding = INPUT_CONTAINER_HEIGHT + insets.bottom + 16;
 
