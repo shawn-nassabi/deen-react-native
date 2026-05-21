@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: Supabase Auth Migration
 status: complete
 stopped_at: v1.0 milestone archived — Supabase auth migration complete
-last_updated: "2026-05-21T01:55:00Z"
+last_updated: "2026-05-21T03:40:00Z"
 last_activity: 2026-05-21
 progress:
   total_phases: 4
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 Phase: —
 Plan: —
 Status: v1.0 milestone complete — archived 2026-04-14
-Last activity: 2026-05-21 - Completed quick task 260520-u69: Smooth animated streaming reveal for chat responses
+Last activity: 2026-05-21 - Completed quick task 260520-wmn: Render GFM markdown tables in chat WebView
 
 Progress: [██████████] 100%
 
@@ -110,6 +110,7 @@ None yet.
 | 260520-sg7 | Start fresh chat on app cold start — module-level coldStartHandled flag in chat.tsx branches initialize effect: cold start (new JS runtime) calls startNewConversation() + empty messages; warm tab-switch keeps existing session. History drawer and AsyncStorage data untouched. | 2026-05-21 | 595dcb5 | [260520-sg7-start-fresh-chat-on-app-cold-start-inste](./quick/260520-sg7-start-fresh-chat-on-app-cold-start-inste/) |
 | 260520-skd | Add "Ask about this" pill to expanded reference cards — taps stash a templated elaboration prompt (citation via existing buildCitation() + English reference text) in an in-memory singleton, then router.push to Chat. useFocusEffect on the Chat tab consumes the prompt on every focus (not just first mount, fixing tab-stays-mounted bug), starts a fresh session, seeds the input — no auto-send. | 2026-05-21 | 0bd3384 | [260520-skd-add-ask-about-this-button-under-each-ret](./quick/260520-skd-add-ask-about-this-button-under-each-ret/) |
 | 260520-u69 | Smooth animated streaming reveal for chat responses — new hooks/useStreamingText.ts (JS setInterval typewriter, 2 chars / 16ms with adaptive boost when buffer leads by >120 chars). chat.tsx feeds onChunk into streamingTarget; renderMessage substitutes the smoothed text only for the active streaming bot row. History, references, copy/share, and api/storage paths untouched. | 2026-05-21 | 4a7a9ef | [260520-u69-smooth-animated-streaming-reveal-for-cha](./quick/260520-u69-smooth-animated-streaming-reveal-for-cha/) |
+| 260520-wmn | Render GFM markdown tables in chat WebView — ChatMessageWebView's showdown.Converter now constructs with `{ tables, simpleLineBreaks, strikethrough, tasklists, openLinksInNewWindow }: true`. Added inline `<style>` rules for `table`/`th`/`td` using `colors.border` + `colors.panel2` tokens, with `display: block; overflow-x: auto` for narrow bubbles and a subtle zebra-stripe via `${colors.panel2}55`. | 2026-05-21 | b5b17cd | [260520-wmn-render-gfm-markdown-tables-in-chat-webvi](./quick/260520-wmn-render-gfm-markdown-tables-in-chat-webvi/) |
 
 ### Blockers/Concerns
 
