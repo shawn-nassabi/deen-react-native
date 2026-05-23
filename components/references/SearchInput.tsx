@@ -52,7 +52,7 @@ export default function SearchInput({
   return (
     <View style={styles.container}>
       <PlatformBlurView
-        intensity={80}
+        intensity={Platform.OS === "android" ? 120 : 80}
         tint={colorScheme === "dark" ? "dark" : "light"}
         style={[
           styles.blurContainer,
