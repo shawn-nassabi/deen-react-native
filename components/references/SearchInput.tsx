@@ -74,6 +74,7 @@ export default function SearchInput({
             styles.input,
             {
               color: colors.text,
+              backgroundColor: "transparent",
             },
           ]}
           placeholder={placeholder}
@@ -85,6 +86,7 @@ export default function SearchInput({
           returnKeyType="default"
           blurOnSubmit={false}
           textAlignVertical="center"
+          underlineColorAndroid="transparent"
         />
         <TouchableOpacity
           style={[
