@@ -144,6 +144,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "ios" ? 9 : 9,
     paddingBottom: Platform.OS === "ios" ? 9 : 9,
     paddingHorizontal: 0,
+    backgroundColor: "transparent",
   },
   sendButton: {
     width: 32,
