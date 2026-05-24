@@ -28,7 +28,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
 
 const COMING_SOON_COURSES = [
-  { id: "foundations-islam", title: "The Foundations of Islam" },
   { id: "14-masumeen", title: "The 14 Masumeen" },
   { id: "tawheed", title: "Tawheed" },
 ];
