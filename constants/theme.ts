@@ -26,6 +26,8 @@ export const Colors = {
     tabIconSelected: primaryColor,
     hoverBg: "#e5e7eb",
     hoverBorder: "#9ca3af",
+    error: "#dc2626",
+    errorBackground: "#fee2e2",
   },
   dark: {
     text: "#ffffff",
@@ -43,6 +45,8 @@ export const Colors = {
     tabIconSelected: primaryColor,
     hoverBg: "#1f1f1f",
     hoverBorder: "#404040",
+    error: "#f87171",
+    errorBackground: "#3f1d1d",
   },
 };
 

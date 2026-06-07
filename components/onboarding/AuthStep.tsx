@@ -20,6 +20,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/themed-text";
 import { useAuth } from "@/hooks/useAuth";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 // ---- Types ----
 
@@ -47,6 +48,7 @@ export default function AuthStep({
   bgColor,
 }: AuthStepProps) {
   const { signIn, signUp } = useAuth();
+  const { isDesktop, formMaxWidth } = useResponsiveLayout();
   const [mode, setMode] = useState<Mode>("signup");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -127,7 +129,10 @@ export default function AuthStep({
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[
+          styles.scroll,
+          isDesktop && { maxWidth: formMaxWidth, alignSelf: "center", width: "100%" },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >

@@ -21,6 +21,7 @@ import { ThemedText } from "@/components/themed-text";
 import { supabase } from "@/utils/supabase";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 // ---- Error message mapping ----
 
@@ -37,6 +38,7 @@ export default function ForgotPasswordScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { isDesktop, formMaxWidth, pagePadding } = useResponsiveLayout();
 
   const [email, setEmail] = React.useState("");
   const [emailFocused, setEmailFocused] = React.useState(false);
@@ -85,7 +87,15 @@ export default function ForgotPasswordScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.inner}>
+        <View
+          style={[
+            styles.inner,
+            isDesktop && {
+              maxWidth: formMaxWidth,
+              paddingHorizontal: pagePadding,
+            },
+          ]}
+        >
           {/* Logo above card */}
           <Image
             source={require("@/assets/images/deen-logo-with-text.png")}
@@ -209,6 +219,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   inner: {
+    width: "100%",
+    alignSelf: "center",
     alignItems: "center",
     paddingHorizontal: 24,
     paddingVertical: 32,

@@ -12,6 +12,7 @@ import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import {
   getLessonById,
   getHikmahTree,
@@ -43,6 +44,7 @@ export default function LessonReaderScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { width, isDesktop, readingMaxWidth } = useResponsiveLayout();
   const { user } = useAuth();
   const userId = user?.id;
 
@@ -451,6 +453,9 @@ export default function LessonReaderScreen() {
 
   const hasSelection = !!selection.text;
   const isLastPage = totalPages > 0 && currentPageIndex >= totalPages - 1;
+  const desktopRailOffset = isDesktop
+    ? Math.max((width - readingMaxWidth) / 2 + 20, 20)
+    : 20;
 
   return (
     <ThemedView style={styles.container}>
@@ -479,7 +484,12 @@ export default function LessonReaderScreen() {
       </View>
 
       {/* Content Area */}
-      <View style={styles.contentContainer}>
+      <View
+        style={[
+          styles.contentContainer,
+          isDesktop && { maxWidth: readingMaxWidth, alignSelf: "center", width: "100%" },
+        ]}
+      >
         {currentEntry?.kind === "primer" ? (
           <LessonPrimerPage
             lessonTitle={lesson.title}
@@ -517,6 +527,7 @@ export default function LessonReaderScreen() {
         style={[
           styles.bottomControls,
           { backgroundColor: colors.panel, borderTopColor: colors.border },
+          isDesktop && { maxWidth: readingMaxWidth, alignSelf: "center", width: "100%" },
         ]}
       >
         <View style={styles.navRow}>
@@ -617,6 +628,7 @@ export default function LessonReaderScreen() {
               borderWidth: hasSelection ? 2 : 1,
               shadowColor: hasSelection ? colors.primary : "#000",
               shadowOpacity: hasSelection ? 0.3 : 0.2,
+              right: desktopRailOffset,
             },
           ]}
           onPress={() => setModalVisible(true)}
@@ -733,7 +745,6 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     bottom: 100, // Raised above bottom controls
-    right: 20,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,

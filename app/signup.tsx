@@ -21,6 +21,7 @@ import { ThemedText } from "@/components/themed-text";
 import { useAuth } from "@/hooks/useAuth";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 // ---- Error message mapping ----
 
@@ -47,6 +48,7 @@ export default function SignUpScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { isDesktop, formMaxWidth, pagePadding } = useResponsiveLayout();
 
   const [displayName, setDisplayName] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -100,7 +102,15 @@ export default function SignUpScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.content}>
+        <View
+          style={[
+            styles.content,
+            isDesktop && {
+              maxWidth: formMaxWidth,
+              paddingHorizontal: pagePadding,
+            },
+          ]}
+        >
           {/* Logo */}
           <Image
             source={require("@/assets/images/deen-logo-with-text.png")}
@@ -288,6 +298,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   content: {
+    width: "100%",
+    alignSelf: "center",
     alignItems: "center",
     paddingHorizontal: 24,
     paddingVertical: 32,

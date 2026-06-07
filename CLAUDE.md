@@ -19,28 +19,31 @@ No test framework is configured — there are no unit or integration tests.
 
 Runtime config lives in `utils/config.ts`, driven by `EXPO_PUBLIC_*` env vars:
 
+- `EXPO_PUBLIC_SUPABASE_URL` — Supabase project URL (**required**; app throws at startup if missing)
+- `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — Supabase anon/publishable key (**required**)
 - `EXPO_PUBLIC_API_BASE_URL` — overrides auto-detected API host (default: auto-detects LAN IP from Expo dev server, falls back to production `https://deen-fastapi.duckdns.org` in standalone builds)
-- `EXPO_PUBLIC_COGNITO_DOMAIN`, `EXPO_PUBLIC_COGNITO_CLIENT_ID`, `EXPO_PUBLIC_COGNITO_ISSUER`, `EXPO_PUBLIC_AUTH_REDIRECT_URI` — Cognito OIDC settings (defaults point to shared dev pool)
 
-No `.env` file is needed for local development against a locally running backend.
+No `.env` file is needed for local development against a locally running backend, but the Supabase vars must be set.
 
 ## Architecture
 
 ### Routing
 
-Expo Router (file-based). `app/_layout.tsx` is the root — it loads Montserrat fonts, wraps the tree in `ThemeProvider` and `AuthProvider`, and redirects unauthenticated users to `/login` via a `useEffect` on auth `status`.
+Expo Router (file-based). `app/_layout.tsx` is the root — it loads Montserrat fonts, wraps the tree in `ThemeProvider` and `AuthProvider`, and gates navigation based on `status`, `onboardingCompleted`, and `personalizationCompleted`.
 
-Tab screens live in `app/(tabs)/`: `index`, `chat`, `references`, `hikmah`. Sub-routes for lessons live under `app/hikmah/`.
+Route flow: not onboarded → `/onboarding`; onboarded + signed out → `/login`; signed in + not personalized → `/personalize`; otherwise → `/(tabs)`. The `reset-password` route is exempted from redirect loops.
+
+Tab screens live in `app/(tabs)/`: `index`, `chat`, `references`, `hikmah`. Sub-routes for lessons live under `app/hikmah/`. Auth-related screens: `login`, `signup`, `forgot-password`, `reset-password`, `onboarding`, `personalize`.
 
 ### Auth
 
-`utils/auth.ts` handles the full Cognito OIDC PKCE flow via `expo-auth-session`. Tokens are stored in `expo-secure-store` (AsyncStorage fallback on web). `hooks/useAuth.tsx` wraps this in a React context (`AuthProvider` / `useAuth`) that exposes `status`, `user`, `accessToken`, `signIn`, `signOut`.
+Auth was migrated from Cognito to **Supabase** (completed v1.0). `utils/supabase.ts` holds the Supabase JS client singleton with a custom `LargeSecureStore` adapter that chunks tokens into <2048-byte pieces to stay within `expo-secure-store` limits. AppState listeners wire `startAutoRefresh` / `stopAutoRefresh` to foreground/background transitions.
 
-Two different redirect URI strategies:
-- **Expo Go**: uses the `auth.expo.io` proxy; opens a "start" URL to bounce through the proxy.
-- **Standalone/dev-client**: uses the `deenreactnative://auth` deep link directly.
+`utils/auth.ts` is a thin wrapper exposing `signIn()`, `signUp()`, `signOut()`, `getValidAccessToken()`. Token refresh is automatic via the Supabase SDK.
 
-`getValidAccessToken()` in `utils/auth.ts` auto-refreshes the access token using the stored refresh token.
+`hooks/useAuth.tsx` wraps this in a React context (`AuthProvider` / `useAuth`) exposing `status`, `user`, `accessToken`, `signIn`, `signUp`, `signOut`, `refresh`, `onboardingCompleted`, `personalizationCompleted`, `markOnboardingComplete`, `markPersonalizationComplete`. It subscribes to `supabase.auth.onAuthStateChange` (captures `INITIAL_SESSION` on mount). Personalization state is checked via `GET /onboarding/me` in a separate `useEffect` (outside the auth callback to avoid SDK deadlock).
+
+Password reset uses the custom deep link `deenreactnative://reset-password`; Supabase emails this link to users.
 
 ### API
 
@@ -60,7 +63,9 @@ Two different redirect URI strategies:
 
 ### Key utils
 
-- `utils/config.ts` — `CONFIG` object; single source of truth for API URL, Cognito values, and chat TTL
+- `utils/supabase.ts` — Supabase client singleton; `LargeSecureStore` adapter (chunked secure storage); AppState auto-refresh wiring
+- `utils/auth.ts` — thin auth wrappers around Supabase (`signIn`, `signUp`, `signOut`, `getValidAccessToken`)
+- `utils/config.ts` — `CONFIG` object; single source of truth for API URL, Supabase credentials, and chat TTL; fail-fast if required env vars are absent
 - `utils/constants.ts` — `STORAGE_KEYS`, `ERROR_MESSAGES`, `UI_CONSTANTS`
 - `utils/chatStorage.ts` — `Message` and `Reference` types; load/save/clear/purge helpers
 - `utils/polyfills.ts` — imported first in root layout for streaming support
@@ -78,6 +83,8 @@ Feature-grouped under `components/`:
 - This repo is a git submodule inside `deen-mobile-frontend`. Clone the parent with `--recurse-submodules`.
 - The `ios/` directory is tracked in git; run `pod install` whenever native dependencies change.
 - `app/modal.tsx` is a leftover Expo template file — not part of the product.
+- The Supabase auth migration (Cognito → Supabase) is **complete** (v1.0). GSD-managed sections in this file may still reference Cognito; update them via `/gsd:*` commands rather than editing by hand.
+- The GSD sections below (`<!-- GSD:xxx-start/end -->`) are auto-generated. Do not edit them manually — use `/gsd:quick`, `/gsd:debug`, or `/gsd:execute-phase` to keep them in sync.
 
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project

@@ -6,6 +6,7 @@ import React from "react";
 import { StyleSheet, View, TouchableOpacity, ActivityIndicator } from "react-native";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/themed-text";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 // ---- Types ----
 
@@ -32,6 +33,8 @@ export default function OnboardingFooter({
   accentColor,
   dimColor,
 }: OnboardingFooterProps) {
+  const { isDesktop, footerMaxWidth } = useResponsiveLayout();
+
   const handlePress = () => {
     if (disabled || busy) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -39,7 +42,12 @@ export default function OnboardingFooter({
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        isDesktop && { maxWidth: footerMaxWidth, paddingHorizontal: 0 },
+      ]}
+    >
       {/* Step dots */}
       <View
         style={styles.dots}
@@ -85,6 +93,8 @@ export default function OnboardingFooter({
 
 const styles = StyleSheet.create({
   container: {
+    width: "100%",
+    alignSelf: "center",
     paddingHorizontal: 24,
     paddingBottom: 8,
     gap: 20,

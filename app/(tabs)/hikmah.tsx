@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -7,12 +7,16 @@ import {
   RefreshControl,
   Platform,
   Image,
+  Keyboard,
+  type TextStyle,
 } from "react-native";
 import PlatformBlurView from "@/components/ui/PlatformBlurView";
+import { WebBackHomeButton } from "@/components/ui/WebBackHomeButton";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import {
   getHikmahTrees,
   getLessonsByTreeId,
@@ -32,11 +36,19 @@ const COMING_SOON_COURSES = [
   { id: "14-masumeen", title: "The 14 Masumeen" },
   { id: "tawheed", title: "Tawheed" },
 ];
+const webInputFocusReset = Platform.select({
+  web: {
+    outlineStyle: "none",
+    outlineWidth: 0,
+    boxShadow: "none",
+  } as unknown as TextStyle,
+});
 
 export default function HikmahScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { isDesktop, pagePadding, contentMaxWidth } = useResponsiveLayout();
   const { user } = useAuth();
   const userId = user?.id;
   const blurIntensity = Platform.OS === "android" ? 120 : 60;
@@ -48,6 +60,7 @@ export default function HikmahScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const searchInputRef = useRef<TextInput>(null);
 
   const hydrateBackendProgress = async (treesWithLessons: HikmahTree[]) => {
     try {
@@ -163,6 +176,68 @@ export default function HikmahScreen() {
     );
   }, [query]);
 
+  const handleSearchSubmit = useCallback(() => {
+    searchInputRef.current?.blur();
+    Keyboard.dismiss();
+  }, []);
+
+  const handleSearchKeyPress = (event: any) => {
+    if (Platform.OS !== "web") return;
+
+    const key = event?.key ?? event?.nativeEvent?.key;
+    if (key !== "Enter") return;
+
+    event.preventDefault?.();
+    handleSearchSubmit();
+  };
+
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    const handleWindowKeyDown = (event: any) => {
+      if (event.defaultPrevented || event.isComposing) {
+        return;
+      }
+
+      const hasModifier = event.metaKey || event.ctrlKey || event.altKey;
+      const isEnterSearch =
+        event.key === "Enter" && !event.shiftKey && !hasModifier;
+      const isPrintableKey =
+        typeof event.key === "string" && event.key.length === 1 && !hasModifier;
+
+      if (!isEnterSearch && !isPrintableKey) {
+        return;
+      }
+
+      const target = event.target;
+      const activeElement =
+        target instanceof HTMLElement ? target : document.activeElement;
+      const interactiveElement = activeElement?.closest?.(
+        "input, textarea, select, button, [contenteditable='true'], [role='button'], [role='menuitem'], [role='option']"
+      );
+
+      if (interactiveElement) {
+        return;
+      }
+
+      if (isEnterSearch) {
+        event.preventDefault();
+        handleSearchSubmit();
+        return;
+      }
+
+      event.preventDefault();
+      setQuery((prev) => `${prev}${event.key}`);
+      searchInputRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", handleWindowKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleWindowKeyDown);
+    };
+  }, [handleSearchSubmit]);
+
   const headerPaddingTop = Math.max(
     insets.top + 12,
     Platform.OS === "ios" ? 64 : 32
@@ -187,8 +262,14 @@ export default function HikmahScreen() {
           setHeaderHeight(nativeEvent.layout.height)
         }
       >
-        <View style={styles.headerContent}>
+        <View
+          style={[
+            styles.headerContent,
+            isDesktop && { maxWidth: contentMaxWidth, alignSelf: "center", width: "100%" },
+          ]}
+        >
           <View style={styles.headerLeft}>
+            <WebBackHomeButton />
             <Image
               source={require("@/assets/images/deen-logo-icon.png")}
               style={styles.headerLogo}
@@ -204,16 +285,21 @@ export default function HikmahScreen() {
           style={[
             styles.searchContainer,
             { backgroundColor: colors.panel, borderColor: colors.border },
+            isDesktop && { maxWidth: contentMaxWidth, alignSelf: "center", width: "100%" },
           ]}
         >
           <Ionicons name="search" size={20} color={colors.textSecondary} />
           <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
+            ref={searchInputRef}
+            style={[styles.searchInput, webInputFocusReset, { color: colors.text }]}
             placeholder="Search topics..."
             placeholderTextColor={colors.muted}
             value={query}
             onChangeText={setQuery}
             returnKeyType="search"
+            enterKeyHint={Platform.OS === "web" ? "search" : undefined}
+            onSubmitEditing={handleSearchSubmit}
+            onKeyPress={handleSearchKeyPress}
           />
           {query.length > 0 && (
             <Ionicons
@@ -231,7 +317,12 @@ export default function HikmahScreen() {
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: contentTopOffset },
+            { paddingTop: contentTopOffset, paddingHorizontal: pagePadding },
+            isDesktop && {
+              maxWidth: contentMaxWidth,
+              alignSelf: "center",
+              width: "100%",
+            },
           ]}
           showsVerticalScrollIndicator={false}
         >
@@ -269,7 +360,12 @@ export default function HikmahScreen() {
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: contentTopOffset },
+            { paddingTop: contentTopOffset, paddingHorizontal: pagePadding },
+            isDesktop && {
+              maxWidth: contentMaxWidth,
+              alignSelf: "center",
+              width: "100%",
+            },
           ]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -282,14 +378,18 @@ export default function HikmahScreen() {
               </ThemedText>
             </View>
           ) : (
-            <>
+            <View style={isDesktop && styles.desktopGrid}>
               {filtered.map((tree) => (
-                <TreeCard key={tree.id} tree={tree} />
+                <View key={tree.id} style={isDesktop && styles.desktopGridItem}>
+                  <TreeCard tree={tree} />
+                </View>
               ))}
               {filteredComingSoon.map((course) => (
-                <ComingSoonCard key={course.id} title={course.title} />
+                <View key={course.id} style={isDesktop && styles.desktopGridItem}>
+                  <ComingSoonCard title={course.title} />
+                </View>
               ))}
-            </>
+            </View>
           )}
 
           <View
@@ -371,6 +471,14 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
+  },
+  desktopGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
+  },
+  desktopGridItem: {
+    width: "48.9%",
   },
   emptyState: {
     padding: 40,

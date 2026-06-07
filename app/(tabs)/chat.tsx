@@ -10,17 +10,18 @@ import {
   Platform,
   TouchableOpacity,
   Image,
-  ActivityIndicator,
   Modal,
   KeyboardAvoidingView,
   Keyboard,
   Dimensions,
 } from "react-native";
 import PlatformBlurView from "@/components/ui/PlatformBlurView";
+import { WebBackHomeButton } from "@/components/ui/WebBackHomeButton";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatInput from "@/components/chat/ChatInput";
 import LoadingIndicator from "@/components/ui/LoadingIndicator";
@@ -61,7 +62,6 @@ const INPUT_CONTAINER_HEIGHT = 70;
 const INPUT_ACCESSORY_ID = "chatInputAccessory";
 const HEADER_HORIZONTAL_PADDING = 20;
 const HEADER_BOTTOM_PADDING = 12;
-const HEADER_ACTION_SIZE = 28;
 const HEADER_ACTION_HIT_SLOP = { top: 12, right: 12, bottom: 12, left: 12 };
 
 type ChatLanguage = "english" | "arabic" | "french" | "urdu" | "farsi";
@@ -82,10 +82,17 @@ const EmptyState = React.memo(({
   onQuestionClick,
   showLanguageSelector,
   selectedLanguageLabel,
+  selectedLanguage,
   onPressLanguageSelector,
+  isLanguageDropdownVisible,
+  languageOptions,
+  onSelectLanguage,
   pillBackgroundColor,
   pillBorderColor,
   pillTextColor,
+  dropdownBackgroundColor,
+  dropdownSelectedColor,
+  accentColor,
   textSecondaryColor,
   minHeight,
 }: {
@@ -93,13 +100,21 @@ const EmptyState = React.memo(({
   onQuestionClick: (question: string) => void;
   showLanguageSelector: boolean;
   selectedLanguageLabel: string;
+  selectedLanguage: ChatLanguage;
   onPressLanguageSelector: () => void;
+  isLanguageDropdownVisible: boolean;
+  languageOptions: { value: ChatLanguage; label: string }[];
+  onSelectLanguage: (language: ChatLanguage) => void;
   pillBackgroundColor: string;
   pillBorderColor: string;
   pillTextColor: string;
+  dropdownBackgroundColor: string;
+  dropdownSelectedColor: string;
+  accentColor: string;
   textSecondaryColor: string;
   minHeight: number;
 }) => {
+  const { isDesktop, readingMaxWidth } = useResponsiveLayout();
   const verticalOffset = useMemo(() => {
     if (!minHeight || minHeight <= 0) {
       return 64;
@@ -114,6 +129,7 @@ const EmptyState = React.memo(({
       style={[
         styles.emptyContainer,
         { minHeight, paddingTop: verticalOffset },
+        isDesktop && { maxWidth: readingMaxWidth, alignSelf: "center", width: "100%" },
       ]}
     >
       <Image
@@ -129,27 +145,74 @@ const EmptyState = React.memo(({
         {"Ask any question about Islam and I'll do my best to provide a helpful response."}
       </ThemedText>
       {showLanguageSelector && (
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={[
-            styles.languagePill,
-            {
-              backgroundColor: pillBackgroundColor,
-              borderColor: pillBorderColor,
-            },
-          ]}
-          onPress={onPressLanguageSelector}
-        >
-          <ThemedText style={[styles.languagePillTitle, { color: pillTextColor }]}>
-            Language
-          </ThemedText>
-          <View style={styles.languagePillRight}>
-            <ThemedText style={[styles.languagePillValue, { color: pillTextColor }]}>
-              {selectedLanguageLabel}
+        <View style={styles.languagePickerWrap}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[
+              styles.languagePill,
+              {
+                backgroundColor: pillBackgroundColor,
+                borderColor: isLanguageDropdownVisible && isDesktop
+                  ? accentColor
+                  : pillBorderColor,
+              },
+            ]}
+            onPress={onPressLanguageSelector}
+          >
+            <ThemedText style={[styles.languagePillTitle, { color: pillTextColor }]}>
+              Language
             </ThemedText>
-            <Ionicons name="chevron-down" size={16} color={pillTextColor} />
-          </View>
-        </TouchableOpacity>
+            <View style={styles.languagePillRight}>
+              <ThemedText style={[styles.languagePillValue, { color: pillTextColor }]}>
+                {selectedLanguageLabel}
+              </ThemedText>
+              <Ionicons
+                name={isLanguageDropdownVisible && isDesktop ? "chevron-up" : "chevron-down"}
+                size={16}
+                color={pillTextColor}
+              />
+            </View>
+          </TouchableOpacity>
+
+          {isDesktop && isLanguageDropdownVisible && (
+            <View
+              style={[
+                styles.languageDropdown,
+                {
+                  backgroundColor: dropdownBackgroundColor,
+                  borderColor: pillBorderColor,
+                },
+              ]}
+            >
+              {languageOptions.map((lang) => {
+                const isSelected = lang.value === selectedLanguage;
+                return (
+                  <TouchableOpacity
+                    key={lang.value}
+                    activeOpacity={0.75}
+                    onPress={() => onSelectLanguage(lang.value)}
+                    style={[
+                      styles.languageDropdownRow,
+                      isSelected && { backgroundColor: dropdownSelectedColor },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.languageDropdownLabel,
+                        { color: isSelected ? accentColor : pillTextColor },
+                      ]}
+                    >
+                      {lang.label}
+                    </ThemedText>
+                    {isSelected && (
+                      <Ionicons name="checkmark" size={17} color={accentColor} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
       )}
       {showSuggestions && (
         <SuggestedQuestions onQuestionClick={onQuestionClick} />
@@ -164,6 +227,7 @@ export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { isDesktop, readingMaxWidth } = useResponsiveLayout();
   const blurIntensity = Platform.OS === "android" ? 120 : 60;
   const headerOverlayColor =
     colorScheme === "dark" ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
@@ -192,6 +256,7 @@ export default function ChatScreen() {
     useState<ChatLanguage>(DEFAULT_LANGUAGE);
   const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [inputFocusRequest, setInputFocusRequest] = useState(0);
   const [selection, setSelection] = useState<{ text: string; context: string }>({ text: "", context: "" });
   const [isElaborationModalVisible, setIsElaborationModalVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -383,7 +448,7 @@ export default function ChatScreen() {
 
   const handleOpenLanguagePicker = useCallback(() => {
     if (!canSelectLanguage) return;
-    setIsLanguageModalVisible(true);
+    setIsLanguageModalVisible((prev) => !prev);
   }, [canSelectLanguage]);
 
   const handleSelectLanguage = useCallback(
@@ -540,6 +605,72 @@ export default function ChatScreen() {
     }
   }, [input, sessionId, selectedLanguage, isLoading]);
 
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    const handleWindowKeyDown = (event: any) => {
+      if (event.defaultPrevented || event.isComposing) {
+        return;
+      }
+
+      const hasModifier = event.metaKey || event.ctrlKey || event.altKey;
+      const isEnterSend =
+        event.key === "Enter" && !event.shiftKey && !hasModifier;
+      const isPrintableKey =
+        typeof event.key === "string" && event.key.length === 1 && !hasModifier;
+
+      if (!isEnterSend && !isPrintableKey) {
+        return;
+      }
+
+      const target = event.target;
+      const activeElement =
+        target instanceof HTMLElement ? target : document.activeElement;
+      const interactiveElement = activeElement?.closest?.(
+        "input, textarea, select, button, [contenteditable='true'], [role='button'], [role='menuitem'], [role='option']"
+      );
+
+      if (interactiveElement) {
+        return;
+      }
+
+      if (
+        isLoading ||
+        isLanguageModalVisible ||
+        isDrawerOpen ||
+        isElaborationModalVisible
+      ) {
+        return;
+      }
+
+      if (isEnterSend) {
+        if (!input.trim() || !sessionId) return;
+
+        event.preventDefault();
+        handleSendMessage();
+        return;
+      }
+
+      event.preventDefault();
+      setInput((prev) => `${prev}${event.key}`);
+      setInputFocusRequest((prev) => prev + 1);
+    };
+
+    window.addEventListener("keydown", handleWindowKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleWindowKeyDown);
+    };
+  }, [
+    input,
+    sessionId,
+    isLoading,
+    isLanguageModalVisible,
+    isDrawerOpen,
+    isElaborationModalVisible,
+    handleSendMessage,
+  ]);
+
   const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
     if (
       item.sender === "bot" &&
@@ -563,13 +694,28 @@ export default function ChatScreen() {
       : item;
 
     return (
-      <ChatMessage
-        message={messageToRender}
-        onSelectionChange={handleSelectionChange}
-        isStreaming={isThisStreaming}
-      />
+      <View
+        style={[
+          styles.messageRail,
+          isDesktop && { maxWidth: readingMaxWidth },
+        ]}
+      >
+        <ChatMessage
+          message={messageToRender}
+          onSelectionChange={handleSelectionChange}
+          isStreaming={isThisStreaming}
+        />
+      </View>
     );
-  }, [isLoading, isStreaming, messages.length, handleSelectionChange, displayedStreamingText]);
+  }, [
+    isLoading,
+    isStreaming,
+    messages.length,
+    handleSelectionChange,
+    displayedStreamingText,
+    isDesktop,
+    readingMaxWidth,
+  ]);
 
   const bottomPadding = INPUT_CONTAINER_HEIGHT + insets.bottom + 16;
 
@@ -590,10 +736,17 @@ export default function ChatScreen() {
         onQuestionClick={handleSuggestedQuestion}
         showLanguageSelector={canSelectLanguage}
         selectedLanguageLabel={selectedLanguageLabel}
+        selectedLanguage={selectedLanguage}
         onPressLanguageSelector={handleOpenLanguagePicker}
+        isLanguageDropdownVisible={isLanguageModalVisible}
+        languageOptions={CHAT_LANGUAGES}
+        onSelectLanguage={handleSelectLanguage}
         pillBackgroundColor={colors.panel2}
         pillBorderColor={colors.border}
         pillTextColor={colors.text}
+        dropdownBackgroundColor={colors.panel}
+        dropdownSelectedColor={colors.primary + "18"}
+        accentColor={colors.primary}
         textSecondaryColor={colors.textSecondary}
         minHeight={emptyStateHeight}
       />
@@ -605,10 +758,15 @@ export default function ChatScreen() {
     handleSuggestedQuestion,
     canSelectLanguage,
     selectedLanguageLabel,
+    selectedLanguage,
     handleOpenLanguagePicker,
+    isLanguageModalVisible,
+    handleSelectLanguage,
     colors.panel2,
     colors.border,
     colors.text,
+    colors.panel,
+    colors.primary,
     colors.textSecondary,
     emptyStateHeight,
   ]);
@@ -638,7 +796,7 @@ export default function ChatScreen() {
       <Modal
         transparent
         animationType="fade"
-        visible={isLanguageModalVisible}
+        visible={isLanguageModalVisible && !isDesktop}
         onRequestClose={() => setIsLanguageModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
@@ -700,8 +858,14 @@ export default function ChatScreen() {
           },
         ]}
       >
-        <View style={styles.headerContent}>
+        <View
+          style={[
+            styles.headerContent,
+            isDesktop && { maxWidth: readingMaxWidth, alignSelf: "center" },
+          ]}
+        >
           <View style={styles.headerLeft}>
+            <WebBackHomeButton />
             <TouchableOpacity
               hitSlop={HEADER_ACTION_HIT_SLOP}
               onPress={() => setIsDrawerOpen((prev) => !prev)}
@@ -717,32 +881,6 @@ export default function ChatScreen() {
               Deen Chat
             </ThemedText>
           </View>
-          <TouchableOpacity
-            hitSlop={HEADER_ACTION_HIT_SLOP}
-            style={[
-              styles.newChatButton,
-              {
-                backgroundColor: hasStartedChat
-                  ? colors.panel2
-                  : "transparent",
-                borderColor: colors.border,
-              },
-            ]}
-            onPress={handleNewChat}
-            disabled={isLoading || isNewChatLoading}
-            activeOpacity={0.7}
-          >
-            {isNewChatLoading ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <>
-                <ThemedText style={[styles.newChatLabel, { color: colors.text }]}>
-                  New
-                </ThemedText>
-                <Ionicons name="add" size={20} color={colors.text} />
-              </>
-            )}
-          </TouchableOpacity>
         </View>
       </PlatformBlurView>
 
@@ -773,12 +911,18 @@ export default function ChatScreen() {
         />
 
         {/* Input at bottom */}
-        <View style={styles.inputContainer}>
+        <View
+          style={[
+            styles.inputContainer,
+            isDesktop && { maxWidth: readingMaxWidth, alignSelf: "center", width: "100%" },
+          ]}
+        >
           <ChatInput
             value={input}
             onChange={setInput}
             onSubmit={handleSendMessage}
             isLoading={isLoading}
+            focusRequest={inputFocusRequest}
           />
         </View>
       </KeyboardAvoidingView>
@@ -872,22 +1016,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
   },
-  newChatButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    height: HEADER_ACTION_SIZE,
-    borderRadius: HEADER_ACTION_SIZE / 2,
-    borderWidth: 1,
-    justifyContent: "center",
-  },
-  newChatLabel: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
   messagesList: {
     flexGrow: 1,
+  },
+  messageRail: {
+    width: "100%",
+    alignSelf: "center",
   },
   emptyContainer: {
     flex: 1,
@@ -917,12 +1051,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
-    maxWidth: 340,
     borderWidth: 1,
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 10,
     marginTop: -4,
+  },
+  languagePickerWrap: {
+    width: "100%",
+    maxWidth: 340,
+    minHeight: 44,
+    position: "relative",
+    zIndex: 20,
   },
   languagePillTitle: {
     fontSize: 14,
@@ -934,6 +1074,33 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   languagePillValue: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  languageDropdown: {
+    position: "absolute",
+    top: 52,
+    left: 0,
+    right: 0,
+    zIndex: 30,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+  languageDropdownRow: {
+    minHeight: 40,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  languageDropdownLabel: {
     fontSize: 14,
     fontWeight: "500",
   },

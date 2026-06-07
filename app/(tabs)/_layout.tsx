@@ -9,19 +9,23 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? "light"];
+  const isWeb = Platform.OS === "web";
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].primary,
-        tabBarInactiveTintColor: Colors[colorScheme ?? "light"].tabIconDefault,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.tabIconDefault,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarHideOnKeyboard: Platform.OS === "android",
-        tabBarStyle: {
-          backgroundColor: Colors[colorScheme ?? "light"].panel,
-          borderTopColor: Colors[colorScheme ?? "light"].border,
-        },
+        tabBarStyle: isWeb
+          ? { display: "none" }
+          : {
+              backgroundColor: colors.panel,
+              borderTopColor: colors.border,
+            },
       }}
     >
       <Tabs.Screen

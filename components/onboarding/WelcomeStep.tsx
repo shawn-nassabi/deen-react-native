@@ -17,6 +17,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import AnimatedWelcomeBackground from "./AnimatedWelcomeBackground";
 import CheckboxRow from "./CheckboxRow";
 import { ThemedText } from "@/components/themed-text";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { EXTERNAL_URLS } from "@/utils/constants";
 
 // ---- Types ----
@@ -32,35 +33,53 @@ export default function WelcomeStep({
   tosAccepted,
   onTosToggle,
 }: WelcomeStepProps) {
+  const { isDesktop, contentMaxWidth, pagePadding } = useResponsiveLayout();
+
   return (
     <View style={styles.container}>
       <AnimatedWelcomeBackground dark />
 
       {/* SafeAreaView handles the status-bar / Dynamic Island top inset reliably */}
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        <View style={styles.content}>
-          {/* Logo */}
-          <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.logoWrap}>
-            <Image
-              source={require("@/assets/images/deen-logo-icon.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </Animated.View>
+        <View
+          style={[
+            styles.content,
+            isDesktop && [
+              styles.desktopContent,
+              {
+                maxWidth: contentMaxWidth,
+                paddingHorizontal: pagePadding,
+              },
+            ],
+          ]}
+        >
+          <View style={styles.brandColumn}>
+            {/* Logo */}
+            <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.logoWrap}>
+              <Image
+                source={require("@/assets/images/deen-logo-icon.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </Animated.View>
 
-          {/* Brand name + slogan */}
-          <Animated.View entering={FadeInDown.delay(220).duration(500)} style={styles.textBlock}>
-            <ThemedText style={styles.appName}>Deen</ThemedText>
-            <ThemedText style={styles.slogan}>
-              Islamic learning, powered by scholarship.
-            </ThemedText>
-            <ThemedText style={styles.tagline}>
-              Explore jurisprudence, hadith, and Quranic guidance — guided by authentic sources and a personal AI tutor.
-            </ThemedText>
-          </Animated.View>
+            {/* Brand name + slogan */}
+            <Animated.View entering={FadeInDown.delay(220).duration(500)} style={styles.textBlock}>
+              <ThemedText style={styles.appName}>Deen</ThemedText>
+              <ThemedText style={styles.slogan}>
+                Islamic learning, powered by scholarship.
+              </ThemedText>
+              <ThemedText style={styles.tagline}>
+                Explore jurisprudence, hadith, and Quranic guidance — guided by authentic sources and a personal AI tutor.
+              </ThemedText>
+            </Animated.View>
+          </View>
 
           {/* ToS Checkbox */}
-          <Animated.View entering={FadeInDown.delay(380).duration(500)} style={styles.checkboxWrap}>
+          <Animated.View
+            entering={FadeInDown.delay(380).duration(500)}
+            style={[styles.checkboxWrap, isDesktop && styles.desktopCheckboxWrap]}
+          >
             <CheckboxRow
               checked={tosAccepted}
               onToggle={onTosToggle}
@@ -88,8 +107,22 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    width: "100%",
+    alignSelf: "center",
     paddingHorizontal: 32,
     paddingTop: 32,
+    gap: 32,
+  },
+  desktopContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 72,
+    paddingTop: 0,
+  },
+  brandColumn: {
+    flexShrink: 1,
+    maxWidth: 640,
     gap: 32,
   },
   logoWrap: {
@@ -113,7 +146,7 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_700Bold",
     paddingTop: 6,
     color: "#ffffff",
-    letterSpacing: -1,
+    letterSpacing: 0,
   },
   slogan: {
     fontSize: 20,
@@ -129,5 +162,14 @@ const styles = StyleSheet.create({
   },
   checkboxWrap: {
     marginTop: 8,
+  },
+  desktopCheckboxWrap: {
+    width: 420,
+    marginTop: 0,
+    padding: 24,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
   },
 });

@@ -8,6 +8,7 @@ import React from "react";
 import { StyleSheet, View, ScrollView } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { ThemedText } from "@/components/themed-text";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import SelectableOptionList from "./SelectableOptionList";
 
 // ---- Types ----
@@ -51,9 +52,14 @@ export default function PersonalizationStep({
   borderColor,
   bgColor,
 }: PersonalizationStepProps) {
+  const { isDesktop, formMaxWidth } = useResponsiveLayout();
+
   return (
     <ScrollView
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[
+        styles.scroll,
+        isDesktop && { maxWidth: formMaxWidth, alignSelf: "center", width: "100%" },
+      ]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >

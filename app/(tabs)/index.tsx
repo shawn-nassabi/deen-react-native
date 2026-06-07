@@ -13,6 +13,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -23,18 +24,25 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
+  const { width, isDesktop, pagePadding, homeMaxWidth } = useResponsiveLayout();
 
   // Calculate vertical spacing based on screen height
   // Increased base padding to push content lower
   const topPadding = SCREEN_HEIGHT < 700 ? 80 : 160;
   const headerMargin = SCREEN_HEIGHT < 700 ? 40 : 80;
+  const railEdgeOffset = isDesktop
+    ? Math.max((width - homeMaxWidth) / 2, 16)
+    : 16;
 
   return (
     <ThemedView style={styles.container}>
       {/* Vision / Donate Button - Top Left */}
       <Animated.View
         entering={FadeIn.delay(200).duration(300)}
-        style={[styles.visionButtonContainer, { top: insets.top + 10 }]}
+        style={[
+          styles.visionButtonContainer,
+          { left: railEdgeOffset, top: insets.top + 10 },
+        ]}
       >
         <TouchableOpacity
           style={[
@@ -55,7 +63,10 @@ export default function HomeScreen() {
       {/* Settings Button - Top Right */}
       <Animated.View
         entering={FadeIn.delay(200).duration(300)}
-        style={[styles.settingsButtonContainer, { top: insets.top + 10 }]}
+        style={[
+          styles.settingsButtonContainer,
+          { right: railEdgeOffset, top: insets.top + 10 },
+        ]}
       >
         <TouchableOpacity
           style={[
@@ -73,6 +84,8 @@ export default function HomeScreen() {
         style={[
           styles.contentContainer,
           {
+            maxWidth: isDesktop ? homeMaxWidth : undefined,
+            paddingHorizontal: pagePadding,
             paddingTop: topPadding,
             paddingBottom: insets.bottom + 20,
           },
@@ -176,7 +189,6 @@ const styles = StyleSheet.create({
   },
   settingsButtonContainer: {
     position: "absolute",
-    right: 16,
     zIndex: 10,
   },
   settingsButton: {
@@ -194,7 +206,6 @@ const styles = StyleSheet.create({
   },
   visionButtonContainer: {
     position: "absolute",
-    left: 16,
     zIndex: 10,
   },
   visionButton: {
@@ -218,6 +229,8 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
+    width: "100%",
+    alignSelf: "center",
     paddingHorizontal: 20,
   },
   header: {

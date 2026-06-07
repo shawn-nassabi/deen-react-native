@@ -34,6 +34,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { Colors } from "@/constants/theme";
 import { saveOnboardingState, getOnboardingState } from "@/utils/onboardingStorage";
 import { submitOnboarding } from "@/utils/onboardingApi";
@@ -142,6 +143,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
+  const responsive = useResponsiveLayout();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const { markOnboardingComplete, markPersonalizationComplete, status } = useAuth();
@@ -348,6 +350,19 @@ export default function OnboardingScreen() {
       backgroundColor: colors.background,
     };
 
+    const renderThemedStep = (content: React.ReactNode) => (
+      <View style={[stepStyle, themedStepStyle]}>
+        <View
+          style={[
+            styles.stepContent,
+            responsive.isDesktop && { maxWidth: responsive.contentMaxWidth },
+          ]}
+        >
+          {content}
+        </View>
+      </View>
+    );
+
     switch (item) {
       case "welcome":
         return (
@@ -359,14 +374,11 @@ export default function OnboardingScreen() {
           </View>
         );
       case "auth":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <AuthStep onAuthenticated={handleAuthenticated} {...themeProps} />
-          </View>
         );
       case "tradition":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <PersonalizationStep
               title="Which tradition do you follow?"
               helperText="This helps tailor sources and learning paths. You can change this anytime."
@@ -375,11 +387,9 @@ export default function OnboardingScreen() {
               onChange={handleTraditionChange}
               {...themeProps}
             />
-          </View>
         );
       case "goals":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <PersonalizationStep
               title="What brings you to Deen?"
               hint="Select all that apply"
@@ -389,11 +399,9 @@ export default function OnboardingScreen() {
               multi
               {...themeProps}
             />
-          </View>
         );
       case "knowledge":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <PersonalizationStep
               title="How familiar are you with Shi'a Islam?"
               helperText="You can change this anytime."
@@ -402,11 +410,9 @@ export default function OnboardingScreen() {
               onChange={handleKnowledgeChange}
               {...themeProps}
             />
-          </View>
         );
       case "topics":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <PersonalizationStep
               title="What do you want to learn most?"
               hint="Pick up to 3"
@@ -418,67 +424,50 @@ export default function OnboardingScreen() {
               submitError={submitError}
               {...themeProps}
             />
-          </View>
         );
       case "about":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <AboutStep
               accentColor={themeProps.accentColor}
               textColor={themeProps.textColor}
               mutedColor={themeProps.mutedColor}
             />
-          </View>
         );
       case "chatbot":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <FeatureChatbotStep {...themeProps} />
-          </View>
         );
       case "references":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <FeatureReferencesStep {...themeProps} />
-          </View>
         );
       case "hikmah":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <FeatureHikmahStep {...themeProps} />
-          </View>
         );
       case "ask-deen":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <FeatureAskDeenStep {...themeProps} />
-          </View>
         );
       case "primers":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <FeaturePrimersStep {...themeProps} />
-          </View>
         );
       case "ai-usage":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <AiUsageStep
               aiAccepted={aiAccepted}
               onAiToggle={handleAiToggle}
               {...themeProps}
             />
-          </View>
         );
       case "done":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <DoneStep
               accentColor={themeProps.accentColor}
               textColor={themeProps.textColor}
               mutedColor={themeProps.mutedColor}
             />
-          </View>
         );
     }
   };
@@ -558,5 +547,10 @@ const styles = StyleSheet.create({
     right: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: 16,
+  },
+  stepContent: {
+    flex: 1,
+    width: "100%",
+    alignSelf: "center",
   },
 });

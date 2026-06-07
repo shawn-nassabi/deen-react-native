@@ -7,6 +7,7 @@
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -41,6 +42,7 @@ export default function ReferencesContainer({
 }: ReferencesContainerProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { isDesktop, contentMaxWidth, readingMaxWidth } = useResponsiveLayout();
 
   // Tab state: 'shia' or 'sunni'
   const [activeTab, setActiveTab] = useState<"shia" | "sunni">("shia");
@@ -82,6 +84,11 @@ export default function ReferencesContainer({
           style={[
             styles.loadingContainer,
             { paddingBottom: bottomPadding, paddingTop: topPadding },
+            isDesktop && {
+              maxWidth: readingMaxWidth,
+              alignSelf: "center",
+              width: "100%",
+            },
           ]}
         >
           <View style={styles.skeletonStack}>
@@ -107,6 +114,11 @@ export default function ReferencesContainer({
           style={[
             styles.centerContainer,
             { paddingBottom: bottomPadding, paddingTop: topPadding },
+            isDesktop && {
+              maxWidth: readingMaxWidth,
+              alignSelf: "center",
+              width: "100%",
+            },
           ]}
         >
           <Image
@@ -137,6 +149,11 @@ export default function ReferencesContainer({
           style={[
             styles.centerContainer,
             { paddingBottom: bottomPadding, paddingTop: topPadding },
+            isDesktop && {
+              maxWidth: readingMaxWidth,
+              alignSelf: "center",
+              width: "100%",
+            },
           ]}
         >
           <ThemedText
@@ -157,6 +174,11 @@ export default function ReferencesContainer({
           style={[
             styles.centerContainer,
             { paddingBottom: bottomPadding, paddingTop: topPadding },
+            isDesktop && {
+              maxWidth: readingMaxWidth,
+              alignSelf: "center",
+              width: "100%",
+            },
           ]}
         >
           <View
@@ -192,6 +214,11 @@ export default function ReferencesContainer({
         {
           paddingTop: topPadding,
           paddingBottom: bottomPadding,
+        },
+        isDesktop && {
+          maxWidth: contentMaxWidth,
+          alignSelf: "center",
+          width: "100%",
         },
       ]}
       showsVerticalScrollIndicator={false}
