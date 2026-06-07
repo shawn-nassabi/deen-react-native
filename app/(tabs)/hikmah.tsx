@@ -17,6 +17,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useWebGlobalTextInputShortcuts } from "@/hooks/use-web-global-text-input-shortcuts";
 import {
   getHikmahTrees,
   getLessonsByTreeId,
@@ -191,52 +192,15 @@ export default function HikmahScreen() {
     handleSearchSubmit();
   };
 
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
+  const handleGlobalTextInput = useCallback((text: string) => {
+    setQuery((prev) => `${prev}${text}`);
+    searchInputRef.current?.focus();
+  }, []);
 
-    const handleWindowKeyDown = (event: any) => {
-      if (event.defaultPrevented || event.isComposing) {
-        return;
-      }
-
-      const hasModifier = event.metaKey || event.ctrlKey || event.altKey;
-      const isEnterSearch =
-        event.key === "Enter" && !event.shiftKey && !hasModifier;
-      const isPrintableKey =
-        typeof event.key === "string" && event.key.length === 1 && !hasModifier;
-
-      if (!isEnterSearch && !isPrintableKey) {
-        return;
-      }
-
-      const target = event.target;
-      const activeElement =
-        target instanceof HTMLElement ? target : document.activeElement;
-      const interactiveElement = activeElement?.closest?.(
-        "input, textarea, select, button, [contenteditable='true'], [role='button'], [role='menuitem'], [role='option']"
-      );
-
-      if (interactiveElement) {
-        return;
-      }
-
-      if (isEnterSearch) {
-        event.preventDefault();
-        handleSearchSubmit();
-        return;
-      }
-
-      event.preventDefault();
-      setQuery((prev) => `${prev}${event.key}`);
-      searchInputRef.current?.focus();
-    };
-
-    window.addEventListener("keydown", handleWindowKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleWindowKeyDown);
-    };
-  }, [handleSearchSubmit]);
+  useWebGlobalTextInputShortcuts({
+    onSubmit: handleSearchSubmit,
+    onTextInput: handleGlobalTextInput,
+  });
 
   const headerPaddingTop = Math.max(
     insets.top + 12,

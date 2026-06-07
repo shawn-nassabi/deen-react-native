@@ -22,6 +22,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useWebGlobalTextInputShortcuts } from "@/hooks/use-web-global-text-input-shortcuts";
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatInput from "@/components/chat/ChatInput";
 import LoadingIndicator from "@/components/ui/LoadingIndicator";
@@ -605,71 +606,21 @@ export default function ChatScreen() {
     }
   }, [input, sessionId, selectedLanguage, isLoading]);
 
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
+  const handleGlobalTextInput = useCallback((text: string) => {
+    setInput((prev) => `${prev}${text}`);
+    setInputFocusRequest((prev) => prev + 1);
+  }, []);
 
-    const handleWindowKeyDown = (event: any) => {
-      if (event.defaultPrevented || event.isComposing) {
-        return;
-      }
-
-      const hasModifier = event.metaKey || event.ctrlKey || event.altKey;
-      const isEnterSend =
-        event.key === "Enter" && !event.shiftKey && !hasModifier;
-      const isPrintableKey =
-        typeof event.key === "string" && event.key.length === 1 && !hasModifier;
-
-      if (!isEnterSend && !isPrintableKey) {
-        return;
-      }
-
-      const target = event.target;
-      const activeElement =
-        target instanceof HTMLElement ? target : document.activeElement;
-      const interactiveElement = activeElement?.closest?.(
-        "input, textarea, select, button, [contenteditable='true'], [role='button'], [role='menuitem'], [role='option']"
-      );
-
-      if (interactiveElement) {
-        return;
-      }
-
-      if (
-        isLoading ||
-        isLanguageModalVisible ||
-        isDrawerOpen ||
-        isElaborationModalVisible
-      ) {
-        return;
-      }
-
-      if (isEnterSend) {
-        if (!input.trim() || !sessionId) return;
-
-        event.preventDefault();
-        handleSendMessage();
-        return;
-      }
-
-      event.preventDefault();
-      setInput((prev) => `${prev}${event.key}`);
-      setInputFocusRequest((prev) => prev + 1);
-    };
-
-    window.addEventListener("keydown", handleWindowKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleWindowKeyDown);
-    };
-  }, [
-    input,
-    sessionId,
-    isLoading,
-    isLanguageModalVisible,
-    isDrawerOpen,
-    isElaborationModalVisible,
-    handleSendMessage,
-  ]);
+  useWebGlobalTextInputShortcuts({
+    canSubmit: !!input.trim() && !!sessionId,
+    disabled:
+      isLoading ||
+      isLanguageModalVisible ||
+      isDrawerOpen ||
+      isElaborationModalVisible,
+    onSubmit: handleSendMessage,
+    onTextInput: handleGlobalTextInput,
+  });
 
   const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
     if (

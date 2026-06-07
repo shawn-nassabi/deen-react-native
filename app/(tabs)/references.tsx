@@ -2,7 +2,7 @@
  * References screen - Search and display Islamic references
  */
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   StyleSheet,
   Platform,
@@ -22,6 +22,7 @@ import SearchInput from "@/components/references/SearchInput";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useWebGlobalTextInputShortcuts } from "@/hooks/use-web-global-text-input-shortcuts";
 
 // Estimated input container height for padding calculations
 const INPUT_CONTAINER_HEIGHT = 70;
@@ -71,54 +72,17 @@ export default function ReferencesScreen() {
     }
   }, [query]);
 
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
+  const handleGlobalTextInput = useCallback((text: string) => {
+    setQuery((prev) => `${prev}${text}`);
+    setInputFocusRequest((prev) => prev + 1);
+  }, []);
 
-    const handleWindowKeyDown = (event: any) => {
-      if (event.defaultPrevented || event.isComposing) {
-        return;
-      }
-
-      const hasModifier = event.metaKey || event.ctrlKey || event.altKey;
-      const isEnterSearch =
-        event.key === "Enter" && !event.shiftKey && !hasModifier;
-      const isPrintableKey =
-        typeof event.key === "string" && event.key.length === 1 && !hasModifier;
-
-      if (!isEnterSearch && !isPrintableKey) {
-        return;
-      }
-
-      const target = event.target;
-      const activeElement =
-        target instanceof HTMLElement ? target : document.activeElement;
-      const interactiveElement = activeElement?.closest?.(
-        "input, textarea, select, button, [contenteditable='true'], [role='button'], [role='menuitem'], [role='option']"
-      );
-
-      if (interactiveElement || isLoading) {
-        return;
-      }
-
-      if (isEnterSearch) {
-        if (!query.trim()) return;
-
-        event.preventDefault();
-        handleSearch();
-        return;
-      }
-
-      event.preventDefault();
-      setQuery((prev) => `${prev}${event.key}`);
-      setInputFocusRequest((prev) => prev + 1);
-    };
-
-    window.addEventListener("keydown", handleWindowKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleWindowKeyDown);
-    };
-  }, [query, isLoading, handleSearch]);
+  useWebGlobalTextInputShortcuts({
+    canSubmit: !!query.trim(),
+    disabled: isLoading,
+    onSubmit: handleSearch,
+    onTextInput: handleGlobalTextInput,
+  });
 
   const headerPaddingTop = Math.max(
     insets.top + 12,
