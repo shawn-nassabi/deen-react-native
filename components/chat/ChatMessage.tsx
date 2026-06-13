@@ -3,7 +3,7 @@
  * Displays individual user or bot messages
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { View, StyleSheet, Image, Platform, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
@@ -11,6 +11,7 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import ReferencesContainer from "@/components/references/ReferencesContainer";
 import ReferencesModal from "./ReferencesModal";
 import ChatMessageMarkdownRenderer from "./ChatMessageMarkdownRenderer";
 import ChatMessageWebView from "./ChatMessageWebView";
@@ -29,6 +30,28 @@ export default function ChatMessage({ message, onSelectionChange, isStreaming = 
   const [showReferencesModal, setShowReferencesModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isWeb = Platform.OS === "web";
+
+  const referenceGroups = useMemo(() => {
+    const allReferences = Array.isArray(message.references)
+      ? message.references
+      : [];
+    const shia = allReferences.filter(
+      (ref) => String(ref.sect || "").toLowerCase() === "shia"
+    );
+    const sunni = allReferences.filter(
+      (ref) => String(ref.sect || "").toLowerCase() === "sunni"
+    );
+
+    return {
+      allReferences,
+      results: { shia, sunni },
+      totalCounts: {
+        shia: shia.length,
+        sunni: sunni.length,
+      },
+    };
+  }, [message.references]);
 
   useEffect(() => {
     return () => {
@@ -71,7 +94,12 @@ export default function ChatMessage({ message, onSelectionChange, isStreaming = 
   // Bot message
   return (
     <View style={styles.messageRow}>
-      <View style={styles.botMessageContainer}>
+      <View
+        style={[
+          styles.botMessageContainer,
+          isWeb && styles.webBotMessageContainer,
+        ]}
+      >
         <View style={styles.botHeader}>
           <Image
             source={require("@/assets/images/deen-logo-icon.png")}
@@ -138,27 +166,61 @@ export default function ChatMessage({ message, onSelectionChange, isStreaming = 
                   borderColor: colors.border,
                 },
               ]}
-              onPress={() => setShowReferencesModal(true)}
+              onPress={() =>
+                setShowReferencesModal((current) =>
+                  isWeb ? !current : true
+                )
+              }
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityState={
+                isWeb ? { expanded: showReferencesModal } : undefined
+              }
             >
               <ThemedText
                 style={[styles.referencesText, { color: colors.textSecondary }]}
               >
-                {message.references.length} reference
-                {message.references.length !== 1 ? "s" : ""} available
+                {isWeb && showReferencesModal
+                  ? "Hide references"
+                  : `${message.references.length} reference${
+                      message.references.length !== 1 ? "s" : ""
+                    } available`}
               </ThemedText>
               <Ionicons
-                name="chevron-forward"
+                name={
+                  isWeb
+                    ? showReferencesModal
+                      ? "chevron-up"
+                      : "chevron-down"
+                    : "chevron-forward"
+                }
                 size={16}
                 color={colors.primary}
                 style={styles.chevronIcon}
               />
             </TouchableOpacity>
-            <ReferencesModal
-              visible={showReferencesModal}
-              onClose={() => setShowReferencesModal(false)}
-              references={message.references}
-            />
+            {isWeb && showReferencesModal ? (
+              <View style={styles.inlineReferencesPanel}>
+                <ReferencesContainer
+                  results={referenceGroups.results}
+                  isLoading={false}
+                  searchPerformed={true}
+                  submittedQuery="Chat response references"
+                  bottomPadding={0}
+                  topPadding={0}
+                  variant="webPanel"
+                  totalCounts={referenceGroups.totalCounts}
+                  embedded
+                />
+              </View>
+            ) : null}
+            {!isWeb ? (
+              <ReferencesModal
+                visible={showReferencesModal}
+                onClose={() => setShowReferencesModal(false)}
+                references={referenceGroups.allReferences}
+              />
+            ) : null}
           </>
         )}
       </View>
@@ -201,6 +263,10 @@ const styles = StyleSheet.create({
   botMessageContainer: {
     maxWidth: "90%",
   },
+  webBotMessageContainer: {
+    maxWidth: "100%",
+    width: "100%",
+  },
   botHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -229,6 +295,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  inlineReferencesPanel: {
+    marginTop: 10,
+    width: "100%",
   },
   referencesText: {
     fontSize: 12,

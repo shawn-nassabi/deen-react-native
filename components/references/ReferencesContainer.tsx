@@ -35,6 +35,7 @@ interface ReferencesContainerProps {
     shia: number;
     sunni: number;
   };
+  embedded?: boolean;
 }
 
 export default function ReferencesContainer({
@@ -46,6 +47,7 @@ export default function ReferencesContainer({
   topPadding,
   variant = "default",
   totalCounts,
+  embedded = false,
 }: ReferencesContainerProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
@@ -293,6 +295,79 @@ export default function ReferencesContainer({
       );
     };
 
+    const webPanelContent = (
+      <View
+        style={[
+          styles.webPanel,
+          { backgroundColor: colors.panel, borderColor: colors.border },
+        ]}
+      >
+        <View
+          style={[
+            styles.webPanelToolbar,
+            { borderBottomColor: colors.border },
+          ]}
+        >
+          <View
+            style={[
+              styles.webSegmentControl,
+              { backgroundColor: colors.background, borderColor: colors.border },
+            ]}
+          >
+            {renderWebTab("shia", hasShiaRefs)}
+            {renderWebTab("sunni", hasSunniRefs)}
+          </View>
+
+          <ThemedText
+            style={[styles.webPanelStatus, { color: colors.textSecondary }]}
+          >
+            {webStatusText}
+          </ThemedText>
+        </View>
+
+        <View style={styles.webPanelBody}>
+          {activeRefs.length > 0 ? (
+            <View style={styles.section}>
+              {activeRefs.map((ref: any, idx: number) => (
+                <ReferenceItem
+                  key={`${activeTab}-${idx}`}
+                  reference={ref}
+                  type={activeTab}
+                  animationDelay={idx * 100}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyTabContainer}>
+              <ThemedText
+                style={[styles.emptyTabText, { color: colors.textSecondary }]}
+              >
+                No {activeLabel} references found
+              </ThemedText>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+
+    const webPanelContainerStyle = [
+      styles.webPanelResultsContainer,
+      embedded && styles.webPanelEmbeddedContainer,
+      {
+        paddingTop: topPadding,
+        paddingBottom: bottomPadding,
+      },
+      isDesktop && {
+        maxWidth: contentMaxWidth,
+        alignSelf: "center" as const,
+        width: "100%" as const,
+      },
+    ];
+
+    if (embedded) {
+      return <View style={webPanelContainerStyle}>{webPanelContent}</View>;
+    }
+
     return (
       <ScrollView
         style={styles.scrollContainer}
@@ -312,58 +387,7 @@ export default function ReferencesContainer({
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-        <View
-          style={[
-            styles.webPanel,
-            { backgroundColor: colors.panel, borderColor: colors.border },
-          ]}
-        >
-          <View
-            style={[
-              styles.webPanelToolbar,
-              { borderBottomColor: colors.border },
-            ]}
-          >
-            <View
-              style={[
-                styles.webSegmentControl,
-                { backgroundColor: colors.background, borderColor: colors.border },
-              ]}
-            >
-              {renderWebTab("shia", hasShiaRefs)}
-              {renderWebTab("sunni", hasSunniRefs)}
-            </View>
-
-            <ThemedText
-              style={[styles.webPanelStatus, { color: colors.textSecondary }]}
-            >
-              {webStatusText}
-            </ThemedText>
-          </View>
-
-          <View style={styles.webPanelBody}>
-            {activeRefs.length > 0 ? (
-              <View style={styles.section}>
-                {activeRefs.map((ref: any, idx: number) => (
-                  <ReferenceItem
-                    key={`${activeTab}-${idx}`}
-                    reference={ref}
-                    type={activeTab}
-                    animationDelay={idx * 100}
-                  />
-                ))}
-              </View>
-            ) : (
-              <View style={styles.emptyTabContainer}>
-                <ThemedText
-                  style={[styles.emptyTabText, { color: colors.textSecondary }]}
-                >
-                  No {activeLabel} references found
-                </ThemedText>
-              </View>
-            )}
-          </View>
-        </View>
+        {webPanelContent}
       </ScrollView>
     );
   }
@@ -532,6 +556,9 @@ const styles = StyleSheet.create({
   },
   webPanelResultsContainer: {
     paddingHorizontal: 16,
+  },
+  webPanelEmbeddedContainer: {
+    paddingHorizontal: 0,
   },
   webPanel: {
     borderRadius: 14,

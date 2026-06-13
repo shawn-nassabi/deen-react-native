@@ -23,6 +23,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { setPendingChatPrompt } from "@/utils/pendingChatPrompt";
 
 interface ReferenceMetadata {
+  type?: "hadith" | "quran";
   text?: string;
   text_ar?: string;
   author?: string;
@@ -35,6 +36,13 @@ interface ReferenceMetadata {
   chapter_title?: string;
   hadith_no?: string;
   grade_en?: string;
+  surah_name?: string;
+  title?: string;
+  verses_covered?: string;
+  starting_verse?: string;
+  ending_verse?: string;
+  quran_translation?: string;
+  tafsir_text?: string;
 }
 
 interface ReferenceItemProps {
@@ -76,11 +84,26 @@ export default function ReferenceItem({
   }, [animationDelay]);
 
   const metadata = reference || {};
-  const en = (reference?.text || "").trim();
-  const ar = (reference?.text_ar || "").trim();
+  const isQuran =
+    metadata.type === "quran" || Boolean(metadata.surah_name);
+  const en = (metadata.text || "").trim();
+  const ar = (metadata.text_ar || "").trim();
+  const quranTranslation = (metadata.quran_translation || "").trim();
+  const tafsirText = (metadata.tafsir_text || "").trim();
+  const quranVerseLabel =
+    metadata.verses_covered ||
+    (metadata.starting_verse && metadata.ending_verse
+      ? `${metadata.starting_verse}-${metadata.ending_verse}`
+      : metadata.starting_verse || metadata.ending_verse);
+
+  const isEmpty = (value: any) =>
+    !value ||
+    String(value).trim() === "" ||
+    String(value).trim() === "N/A" ||
+    String(value).trim() === "unspecified";
 
   // Build condensed preview with essential metadata
-  const buildMetadataLine = () => {
+  const buildHadithMetadataLine = () => {
     const parts = [];
     
     // Primary identifiers
@@ -91,7 +114,7 @@ export default function ReferenceItem({
     return parts.filter(Boolean).join(" • ");
   };
 
-  const buildSecondaryLine = () => {
+  const buildHadithSecondaryLine = () => {
     const parts = [];
     
     // Secondary details
@@ -103,9 +126,34 @@ export default function ReferenceItem({
     return parts.filter(Boolean).join(" • ");
   };
 
-  const metadataLine1 = buildMetadataLine() || "Reference";
-  const metadataLine2 = buildSecondaryLine();
-  const textPreview = en ? en.substring(0, 80) : "No text available";
+  const buildQuranMetadataLine = () => {
+    const parts = [];
+    if (metadata.surah_name) parts.push(metadata.surah_name);
+    if (quranVerseLabel) parts.push(`Verses ${quranVerseLabel}`);
+    if (metadata.title) parts.push(metadata.title);
+    return parts.filter(Boolean).join(" • ");
+  };
+
+  const buildQuranSecondaryLine = () => {
+    const parts = [];
+    if (metadata.author) parts.push(metadata.author);
+    if (metadata.collection) parts.push(metadata.collection);
+    if (metadata.volume) parts.push(`Vol. ${metadata.volume}`);
+    return parts.filter(Boolean).join(" • ");
+  };
+
+  const metadataLine1 = isQuran
+    ? buildQuranMetadataLine() || "Quran Reference"
+    : buildHadithMetadataLine() || "Reference";
+  const metadataLine2 = isQuran
+    ? buildQuranSecondaryLine()
+    : buildHadithSecondaryLine();
+  const textPreview = isQuran
+    ? (quranTranslation || tafsirText).substring(0, 80) ||
+      "No translation available"
+    : en
+      ? en.substring(0, 80)
+      : "No text available";
 
   const buildCopyText = () => {
     const lines: string[] = [];
@@ -116,37 +164,64 @@ export default function ReferenceItem({
       }
     };
 
-    // Header line
-    const header = [metadata.collection, metadata.hadith_no ? `Hadith #${metadata.hadith_no}` : ""].filter(Boolean).join(" — ");
-    if (header) lines.push(header);
+    if (isQuran) {
+      const header = [
+        metadata.surah_name,
+        quranVerseLabel ? `Verses ${quranVerseLabel}` : "",
+      ].filter(Boolean).join(" — ");
+      if (header) lines.push(header);
 
-    add("Author", metadata.author);
-    add("Reference", metadata.reference);
+      add("Title", metadata.title);
 
-    // Book line
-    const bookParts = [
-      metadata.book_title,
-      metadata.volume ? `Vol. ${metadata.volume}` : "",
-      metadata.book_number ? `Book ${metadata.book_number}` : "",
-    ].filter(Boolean);
-    if (bookParts.length) lines.push(`Book: ${bookParts.join(", ")}`);
+      const sourceParts = [
+        metadata.author ? `Author: ${metadata.author}` : "",
+        metadata.collection ? `Source: ${metadata.collection}` : "",
+      ].filter(Boolean);
+      if (sourceParts.length) lines.push(sourceParts.join(" | "));
 
-    // Chapter line
-    const chapterParts = [
-      metadata.chapter_number ? `Chapter ${metadata.chapter_number}` : "",
-      metadata.chapter_title,
-    ].filter(Boolean);
-    if (chapterParts.length) lines.push(chapterParts.join(": "));
+      if (quranTranslation) {
+        lines.push("");
+        lines.push("Translation:");
+        lines.push(quranTranslation);
+      }
+      if (tafsirText) {
+        lines.push("");
+        lines.push("Tafsir:");
+        lines.push(tafsirText);
+      }
+    } else {
+      // Header line
+      const header = [metadata.collection, metadata.hadith_no ? `Hadith #${metadata.hadith_no}` : ""].filter(Boolean).join(" — ");
+      if (header) lines.push(header);
 
-    add("Grade", metadata.grade_en);
+      add("Author", metadata.author);
+      add("Reference", metadata.reference);
 
-    if (en) {
-      lines.push("");
-      lines.push(en);
-    }
-    if (ar) {
-      lines.push("");
-      lines.push(ar);
+      // Book line
+      const bookParts = [
+        metadata.book_title,
+        metadata.volume ? `Vol. ${metadata.volume}` : "",
+        metadata.book_number ? `Book ${metadata.book_number}` : "",
+      ].filter(Boolean);
+      if (bookParts.length) lines.push(`Book: ${bookParts.join(", ")}`);
+
+      // Chapter line
+      const chapterParts = [
+        metadata.chapter_number ? `Chapter ${metadata.chapter_number}` : "",
+        metadata.chapter_title,
+      ].filter(Boolean);
+      if (chapterParts.length) lines.push(chapterParts.join(": "));
+
+      add("Grade", metadata.grade_en);
+
+      if (en) {
+        lines.push("");
+        lines.push(en);
+      }
+      if (ar) {
+        lines.push("");
+        lines.push(ar);
+      }
     }
 
     return lines.join("\n");
@@ -160,16 +235,19 @@ export default function ReferenceItem({
 
   const handleAskAboutThis = () => {
     const citation = buildCitation();
-    const englishText = (reference?.text || "").trim();
+    const referenceText = isQuran
+      ? quranTranslation || tafsirText
+      : (reference?.text || "").trim();
 
     // Template MUST match the spec exactly. Citation is required-ish; if empty,
     // fall back to "this reference" so the sentence stays grammatical.
     const citationSegment = citation || "this reference";
+    const referenceKind = isQuran ? "Quran/tafsir reference" : "reference";
     const prompt =
-      `Please elaborate on this reference from ${citationSegment}. ` +
+      `Please elaborate on this ${referenceKind} from ${citationSegment}. ` +
       `Help me understand its meaning, the context in which it was given, ` +
       `and how it has traditionally been understood in Islamic scholarship.\n\n` +
-      `Reference text: ${englishText || "(no English text available)"}`;
+      `Reference text: ${referenceText || "(no English text available)"}`;
 
     setPendingChatPrompt(prompt);
     router.push("/(tabs)/chat");
@@ -184,41 +262,44 @@ export default function ReferenceItem({
   };
 
   const buildCitation = () => {
-    const isEmpty = (value: any) =>
-      !value ||
-      String(value).trim() === "" ||
-      String(value).trim() === "N/A" ||
-      String(value).trim() === "unspecified";
-
     const parts: string[] = [];
 
-    if (!isEmpty(metadata.collection)) parts.push(String(metadata.collection).trim());
-    if (!isEmpty(metadata.author)) parts.push(String(metadata.author).trim());
-    if (!isEmpty(metadata.hadith_no)) parts.push(`Hadith #${String(metadata.hadith_no).trim()}`);
+    if (isQuran) {
+      if (!isEmpty(metadata.surah_name)) parts.push(String(metadata.surah_name).trim());
+      if (!isEmpty(quranVerseLabel)) parts.push(`Verses ${String(quranVerseLabel).trim()}`);
+      if (!isEmpty(metadata.title)) parts.push(String(metadata.title).trim());
+      if (!isEmpty(metadata.author)) parts.push(String(metadata.author).trim());
+      if (!isEmpty(metadata.collection)) parts.push(String(metadata.collection).trim());
+      if (!isEmpty(metadata.volume)) parts.push(`Vol. ${String(metadata.volume).trim()}`);
+    } else {
+      if (!isEmpty(metadata.collection)) parts.push(String(metadata.collection).trim());
+      if (!isEmpty(metadata.author)) parts.push(String(metadata.author).trim());
+      if (!isEmpty(metadata.hadith_no)) parts.push(`Hadith #${String(metadata.hadith_no).trim()}`);
 
-    const bookNumber = !isEmpty(metadata.book_number) ? String(metadata.book_number).trim() : "";
-    const bookTitle = !isEmpty(metadata.book_title) ? String(metadata.book_title).trim() : "";
-    if (bookNumber && bookTitle) {
-      parts.push(`Book ${bookNumber}: ${bookTitle}`);
-    } else if (bookNumber) {
-      parts.push(`Book ${bookNumber}`);
-    } else if (bookTitle) {
-      parts.push(bookTitle);
+      const bookNumber = !isEmpty(metadata.book_number) ? String(metadata.book_number).trim() : "";
+      const bookTitle = !isEmpty(metadata.book_title) ? String(metadata.book_title).trim() : "";
+      if (bookNumber && bookTitle) {
+        parts.push(`Book ${bookNumber}: ${bookTitle}`);
+      } else if (bookNumber) {
+        parts.push(`Book ${bookNumber}`);
+      } else if (bookTitle) {
+        parts.push(bookTitle);
+      }
+
+      const chapterNumber = !isEmpty(metadata.chapter_number) ? String(metadata.chapter_number).trim() : "";
+      const chapterTitle = !isEmpty(metadata.chapter_title) ? String(metadata.chapter_title).trim() : "";
+      if (chapterNumber && chapterTitle) {
+        parts.push(`Ch. ${chapterNumber}: ${chapterTitle}`);
+      } else if (chapterNumber) {
+        parts.push(`Ch. ${chapterNumber}`);
+      } else if (chapterTitle) {
+        parts.push(chapterTitle);
+      }
+
+      if (!isEmpty(metadata.volume)) parts.push(`Vol. ${String(metadata.volume).trim()}`);
+      if (!isEmpty(metadata.reference)) parts.push(String(metadata.reference).trim());
+      if (!isEmpty(metadata.grade_en)) parts.push(`Graded ${String(metadata.grade_en).trim()}`);
     }
-
-    const chapterNumber = !isEmpty(metadata.chapter_number) ? String(metadata.chapter_number).trim() : "";
-    const chapterTitle = !isEmpty(metadata.chapter_title) ? String(metadata.chapter_title).trim() : "";
-    if (chapterNumber && chapterTitle) {
-      parts.push(`Ch. ${chapterNumber}: ${chapterTitle}`);
-    } else if (chapterNumber) {
-      parts.push(`Ch. ${chapterNumber}`);
-    } else if (chapterTitle) {
-      parts.push(chapterTitle);
-    }
-
-    if (!isEmpty(metadata.volume)) parts.push(`Vol. ${String(metadata.volume).trim()}`);
-    if (!isEmpty(metadata.reference)) parts.push(String(metadata.reference).trim());
-    if (!isEmpty(metadata.grade_en)) parts.push(`Graded ${String(metadata.grade_en).trim()}`);
 
     return parts.join(" · ");
   };
@@ -259,24 +340,64 @@ export default function ReferenceItem({
 
             {/* Text Section */}
             <View style={styles.textSection}>
-              <View>
-                {en && (
-                  <Text style={[styles.textContent, { color: colors.text }]}>
-                    {en}
-                  </Text>
-                )}
-                {ar && (
-                  <Text
-                    style={[
-                      styles.textContent,
-                      styles.arabicText,
-                      { color: colors.text },
-                    ]}
-                  >
-                    {ar}
-                  </Text>
-                )}
-              </View>
+              {isQuran ? (
+                <>
+                  {quranTranslation ? (
+                    <>
+                      <Text style={[styles.textLabel, { color: colors.textSecondary }]}>
+                        Translation
+                      </Text>
+                      <Text style={[styles.textContent, { color: colors.text }]}>
+                        {quranTranslation}
+                      </Text>
+                    </>
+                  ) : null}
+                  {tafsirText ? (
+                    <>
+                      <Text
+                        style={[
+                          styles.textLabel,
+                          { color: colors.textSecondary, marginTop: 12 },
+                        ]}
+                      >
+                        Tafsir
+                      </Text>
+                      <Text style={[styles.textContent, { color: colors.text }]}>
+                        {tafsirText}
+                      </Text>
+                    </>
+                  ) : null}
+                  {!quranTranslation && !tafsirText ? (
+                    <Text style={[styles.textContent, { color: colors.textSecondary }]}>
+                      No translation available
+                    </Text>
+                  ) : null}
+                </>
+              ) : (
+                <View>
+                  {en && (
+                    <Text style={[styles.textContent, { color: colors.text }]}>
+                      {en}
+                    </Text>
+                  )}
+                  {ar && (
+                    <Text
+                      style={[
+                        styles.textContent,
+                        styles.arabicText,
+                        { color: colors.text },
+                      ]}
+                    >
+                      {ar}
+                    </Text>
+                  )}
+                  {!en && !ar ? (
+                    <Text style={[styles.textContent, { color: colors.textSecondary }]}>
+                      No text available
+                    </Text>
+                  ) : null}
+                </View>
+              )}
             </View>
 
             {/* Expanded Footer: Copy + Ask about this + Chevron Up */}
@@ -452,6 +573,12 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     gap: 8,
   },
+  textLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
   textContent: {
     fontSize: 14,
     lineHeight: 22,
@@ -463,4 +590,3 @@ const styles = StyleSheet.create({
     writingDirection: "rtl",
   },
 });
-
