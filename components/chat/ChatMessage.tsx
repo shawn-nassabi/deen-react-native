@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet, Image, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Image, Platform, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
@@ -12,6 +12,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import ReferencesModal from "./ReferencesModal";
+import ChatMessageMarkdownRenderer from "./ChatMessageMarkdownRenderer";
 import ChatMessageWebView from "./ChatMessageWebView";
 import type { Message } from "@/utils/chatStorage";
 
@@ -89,10 +90,17 @@ export default function ChatMessage({ message, onSelectionChange, isStreaming = 
             },
           ]}
         >
-          <ChatMessageWebView
-            markdown={message.text}
-            onSelectionChange={onSelectionChange}
-          />
+          {Platform.OS === "web" ? (
+            <ChatMessageMarkdownRenderer
+              markdown={message.text}
+              onSelectionChange={onSelectionChange}
+            />
+          ) : (
+            <ChatMessageWebView
+              markdown={message.text}
+              onSelectionChange={onSelectionChange}
+            />
+          )}
         </View>
         {!isStreaming && (
           <TouchableOpacity

@@ -18,6 +18,7 @@ import {
 } from "@expo-google-fonts/montserrat";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useRef } from "react";
+import { Platform } from "react-native";
 
 import {
   ThemeProvider,
@@ -56,9 +57,13 @@ function RootNavigator() {
       seg0 === "signup" ||
       seg0 === "forgot-password" ||
       seg0 === "reset-password";
+    const isPublicWebHomeShell =
+      Platform.OS === "web" && (seg0 === "(tabs)" || seg0 === undefined);
 
     let atCorrectRoute = false;
-    if (!onboardingCompleted) {
+    if (isPublicWebHomeShell) {
+      atCorrectRoute = true;
+    } else if (!onboardingCompleted) {
       atCorrectRoute = seg0 === "onboarding";
     } else if (status !== "signedIn") {
       atCorrectRoute = isOnAuthScreen;
@@ -91,6 +96,12 @@ function RootNavigator() {
       seg0 === "reset-password";
     const isOnOnboarding = seg0 === "onboarding";
     const isOnPersonalize = seg0 === "personalize";
+    const isPublicWebHomeShell =
+      Platform.OS === "web" && (seg0 === "(tabs)" || seg0 === undefined);
+
+    if (isPublicWebHomeShell && status !== "signedIn") {
+      return;
+    }
 
     if (!onboardingCompleted && !isOnOnboarding) {
       // First install — gate everyone through onboarding regardless of auth state

@@ -22,10 +22,14 @@ const QUESTION_POOL = [
 
 interface SuggestedQuestionsProps {
   onQuestionClick: (question: string) => void;
+  count?: number;
+  variant?: "default" | "webGrid";
 }
 
 export default function SuggestedQuestions({
+  count = 3,
   onQuestionClick,
+  variant = "default",
 }: SuggestedQuestionsProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
@@ -33,16 +37,22 @@ export default function SuggestedQuestions({
   // Randomly select 3 questions on mount
   const selectedQuestions = useMemo(() => {
     const shuffled = [...QUESTION_POOL].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 3);
-  }, []);
+    return shuffled.slice(0, count);
+  }, [count]);
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        variant === "webGrid" && styles.webGridContainer,
+      ]}
+    >
       {selectedQuestions.map((question, index) => (
         <TouchableOpacity
           key={index}
           style={[
             styles.questionCard,
+            variant === "webGrid" && styles.webGridCard,
             {
               backgroundColor: colors.panel,
               borderColor: colors.border,
@@ -72,6 +82,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
   },
+  webGridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    paddingHorizontal: 0,
+  },
   questionCard: {
     borderRadius: 12,
     borderWidth: 1,
@@ -81,6 +97,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  webGridCard: {
+    minHeight: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    width: "48.5%",
   },
   questionContent: {
     flexDirection: "row",

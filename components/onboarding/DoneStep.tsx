@@ -8,14 +8,24 @@ import { StyleSheet, View } from "react-native";
 import Animated, { FadeInDown, ZoomIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/themed-text";
+import OnboardingStepAction from "./OnboardingStepAction";
+import { OnboardingActionProps } from "./onboardingActionProps";
 
-interface DoneStepProps {
+interface DoneStepProps extends OnboardingActionProps {
   accentColor: string;
   textColor: string;
   mutedColor: string;
 }
 
-export default function DoneStep({ accentColor, textColor, mutedColor }: DoneStepProps) {
+export default function DoneStep({
+  accentColor,
+  textColor,
+  mutedColor,
+  actionLabel,
+  onActionPress,
+  actionDisabled = false,
+  actionBusy = false,
+}: DoneStepProps) {
   return (
     <View style={styles.container}>
       <Animated.View entering={ZoomIn.delay(100).duration(500)} style={styles.iconWrap}>
@@ -53,6 +63,18 @@ export default function DoneStep({ accentColor, textColor, mutedColor }: DoneSte
           </View>
         ))}
       </Animated.View>
+
+      {actionLabel && onActionPress ? (
+        <Animated.View entering={FadeInDown.delay(560).duration(500)}>
+          <OnboardingStepAction
+            accentColor={accentColor}
+            busy={actionBusy}
+            disabled={actionDisabled}
+            label={actionLabel}
+            onPress={onActionPress}
+          />
+        </Animated.View>
+      ) : null}
     </View>
   );
 }

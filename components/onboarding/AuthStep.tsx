@@ -36,6 +36,15 @@ interface AuthStepProps {
 
 type Mode = "signup" | "signin";
 
+const webInputFocusReset = Platform.select({
+  web: {
+    outlineStyle: "none",
+    outlineWidth: 0,
+    boxShadow: "none",
+  },
+  default: {},
+}) as Record<string, unknown>;
+
 // ---- Component ----
 
 export default function AuthStep({
@@ -153,7 +162,7 @@ export default function AuthStep({
             <View style={[styles.inputWrap, { backgroundColor: panelColor, borderColor }]}>
               <Ionicons name="person-outline" size={18} color={mutedColor} style={styles.inputIcon} />
               <TextInput
-                style={[styles.input, { color: textColor }]}
+                style={[styles.input, webInputFocusReset, { color: textColor }]}
                 placeholder="Display name"
                 placeholderTextColor={mutedColor}
                 autoCapitalize="words"
@@ -172,7 +181,7 @@ export default function AuthStep({
             <Ionicons name="mail-outline" size={18} color={mutedColor} style={styles.inputIcon} />
             <TextInput
               ref={emailRef}
-              style={[styles.input, { color: textColor }]}
+              style={[styles.input, webInputFocusReset, { color: textColor }]}
               placeholder="Email address"
               placeholderTextColor={mutedColor}
               autoCapitalize="none"
@@ -190,7 +199,7 @@ export default function AuthStep({
             <Ionicons name="lock-closed-outline" size={18} color={mutedColor} style={styles.inputIcon} />
             <TextInput
               ref={passwordRef}
-              style={[styles.input, { color: textColor }]}
+              style={[styles.input, webInputFocusReset, { color: textColor }]}
               placeholder="Password"
               placeholderTextColor={mutedColor}
               secureTextEntry={!showPassword}

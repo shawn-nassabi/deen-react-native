@@ -1,7 +1,8 @@
 import React from "react";
 import FeatureStepLayout from "./FeatureStepLayout";
+import { OnboardingActionProps } from "./onboardingActionProps";
 
-interface Props {
+interface Props extends OnboardingActionProps {
   accentColor: string;
   textColor: string;
   mutedColor: string;
