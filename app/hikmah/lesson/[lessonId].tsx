@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,8 +33,10 @@ import { setLastRead } from "@/utils/hikmahStorage";
 import ElaborationModal from "@/components/hikmah/ElaborationModal";
 import { useHikmahProgress } from "@/hooks/useHikmahProgress";
 import LessonContentWebView from "@/components/hikmah/LessonContentWebView";
+import LessonContentMarkdownRenderer from "@/components/hikmah/LessonContentMarkdownRenderer";
 import LessonPrimerPage from "@/components/hikmah/LessonPrimerPage";
 import LessonQuizPage from "@/components/hikmah/LessonQuizPage";
+import ProgressBar from "@/components/ui/ProgressBar";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function LessonReaderScreen() {
@@ -81,22 +84,52 @@ export default function LessonReaderScreen() {
   const pageUpsertSkipRef = useRef(false);
   const skipCompletionSyncRef = useRef(false);
   const personalizedPrimerAbortRef = useRef<AbortController | null>(null);
+  const effectiveTreeId =
+    treeId ??
+    (tree?.id != null
+      ? String(tree.id)
+      : lesson?.hikmah_tree_id != null
+        ? String(lesson.hikmah_tree_id)
+        : undefined);
 
   // Load Data
   useEffect(() => {
     let mounted = true;
     setLoading(true);
     setError("");
+    setLesson(null);
+    setTree(null);
+    setLessons([]);
+    setPages([]);
+    setQuizzesByContentId({});
 
-    if (!lessonId || !treeId) return;
+    if (!lessonId) {
+      setError("Missing lesson id.");
+      setLoading(false);
+      return () => {
+        mounted = false;
+      };
+    }
 
-    Promise.all([
-      getLessonById(lessonId),
-      getHikmahTree(treeId),
-      getLessonsByTreeId(Number(treeId), { limit: 200 }),
-      getLessonContent(Number(lessonId), { limit: 500 }),
-    ])
-      .then(async ([lsn, tr, ls, content]) => {
+    const loadLesson = async () => {
+      try {
+        const lsn = await getLessonById(lessonId);
+        if (!mounted) return;
+
+        const resolvedTreeId =
+          treeId ??
+          (lsn?.hikmah_tree_id != null ? String(lsn.hikmah_tree_id) : "");
+
+        if (!resolvedTreeId || Number.isNaN(Number(resolvedTreeId))) {
+          throw new Error("Missing Hikmah tree for this lesson.");
+        }
+
+        const [tr, ls, content] = await Promise.all([
+          getHikmahTree(resolvedTreeId),
+          getLessonsByTreeId(Number(resolvedTreeId), { limit: 200 }),
+          getLessonContent(Number(lessonId), { limit: 500 }),
+        ]);
+
         if (!mounted) return;
         setLesson(lsn);
         setTree(tr);
@@ -106,7 +139,8 @@ export default function LessonReaderScreen() {
           : [];
         setPages(sortedPages);
         setCurrentPageIndex(0);
-        setLastRead(treeId, lessonId);
+        setLastRead(resolvedTreeId, lessonId);
+        setLoading(false);
 
         // Fetch quizzes for all pages in parallel; failures are non-fatal
         const quizResults = await Promise.all(
@@ -125,16 +159,15 @@ export default function LessonReaderScreen() {
           }
         }
         setQuizzesByContentId(quizMap);
-      })
-      .catch((err) => {
+      } catch (err: any) {
         if (!mounted) return;
         console.error("Failed to load lesson content:", err);
         setError(err?.message || "Failed to load lesson content.");
-      })
-      .finally(() => {
-        if (!mounted) return;
         setLoading(false);
-      });
+      }
+    };
+
+    loadLesson();
 
     return () => {
       mounted = false;
@@ -296,13 +329,13 @@ export default function LessonReaderScreen() {
 
   // Hydrate Progress (Last Position)
   useEffect(() => {
-    if (!pages.length || !treeId || !lessonId || !progressLoaded) return;
+    if (!pages.length || !effectiveTreeId || !lessonId || !progressLoaded) return;
     if (!userId) return;
 
     let mounted = true;
     listUserProgress({
       user_id: userId,
-      hikmah_tree_id: Number(treeId),
+      hikmah_tree_id: Number(effectiveTreeId),
       lesson_id: Number(lessonId),
     })
       .then((arr) => {
@@ -346,7 +379,7 @@ export default function LessonReaderScreen() {
 
   // Upsert Progress on Page Change
   useEffect(() => {
-    if (!pages.length || !treeId || !lessonId) return;
+    if (!pages.length || !effectiveTreeId || !lessonId) return;
     if (!userId) return;
 
     // Clear selection on page change
@@ -379,7 +412,7 @@ export default function LessonReaderScreen() {
 
     upsertUserProgress({
       user_id: userId,
-      hikmah_tree_id: Number(treeId),
+      hikmah_tree_id: Number(effectiveTreeId),
       lesson_id: Number(lessonId),
       last_position: contentPosition,
       percent_complete: percent,
@@ -388,7 +421,7 @@ export default function LessonReaderScreen() {
     currentPageIndex,
     pages.length,
     lessonId,
-    treeId,
+    effectiveTreeId,
     userId,
     currentEntry,
     displayPages,
@@ -414,20 +447,22 @@ export default function LessonReaderScreen() {
 
     try {
       // Optimistic upsert
-      upsertUserProgress({
-        user_id: userId,
-        hikmah_tree_id: Number(treeId),
-        lesson_id: Number(lessonId),
-        is_completed: true,
-        percent_complete: 100,
-      }).catch((err) => console.warn("Progress complete upsert failed:", err));
+      if (userId && effectiveTreeId) {
+        upsertUserProgress({
+          user_id: userId,
+          hikmah_tree_id: Number(effectiveTreeId),
+          lesson_id: Number(lessonId),
+          is_completed: true,
+          percent_complete: 100,
+        }).catch((err) => console.warn("Progress complete upsert failed:", err));
+      }
     } catch {}
 
     if (nextLesson) {
       // Replace current screen with next lesson to avoid stack buildup if user reads many lessons
       router.replace({
         pathname: "/hikmah/lesson/[lessonId]",
-        params: { lessonId: nextLesson.id, treeId },
+        params: { lessonId: nextLesson.id, treeId: effectiveTreeId },
       });
     } else {
       router.back();
@@ -453,6 +488,11 @@ export default function LessonReaderScreen() {
 
   const hasSelection = !!selection.text;
   const isLastPage = totalPages > 0 && currentPageIndex >= totalPages - 1;
+  const safeTotalPages = Math.max(totalPages, 1);
+  const safeCurrentPage = Math.min(currentPageIndex + 1, safeTotalPages);
+  const lessonProgressValue =
+    totalPages > 0 ? (safeCurrentPage / safeTotalPages) * 100 : 0;
+  const lessonProgressLabel = `Page ${safeCurrentPage} of ${safeTotalPages}`;
   const desktopRailOffset = isDesktop
     ? Math.max((width - readingMaxWidth) / 2 + 20, 20)
     : 20;
@@ -474,10 +514,11 @@ export default function LessonReaderScreen() {
           <ThemedText type="defaultSemiBold" numberOfLines={1}>
             {lesson.title}
           </ThemedText>
-          <ThemedText style={{ fontSize: 10, color: colors.textSecondary }}>
-            Page {Math.min(currentPageIndex + 1, Math.max(totalPages, 1))} of{" "}
-            {Math.max(totalPages, 1)}
-          </ThemedText>
+          <ProgressBar
+            compact
+            value={lessonProgressValue}
+            label={lessonProgressLabel}
+          />
         </View>
 
         <View style={{ width: 40 }} />
@@ -507,6 +548,11 @@ export default function LessonReaderScreen() {
             questions={currentEntry.questions}
             userId={userId}
             onContinue={isLastPage ? handleCompleteAndNext : handleNextPage}
+          />
+        ) : currentEntry?.kind === "content" && Platform.OS === "web" ? (
+          <LessonContentMarkdownRenderer
+            markdown={currentEntry.content.content_body}
+            onSelectionChange={setSelection}
           />
         ) : currentEntry?.kind === "content" ? (
           <LessonContentWebView
@@ -546,12 +592,12 @@ export default function LessonReaderScreen() {
             {isLastPage ? (
               <TouchableOpacity
                 onPress={() => {
-                  if (!userId) return;
+                  if (!userId || !effectiveTreeId) return;
                   skipCompletionSyncRef.current = true;
                   toggleComplete(lessonId!);
                   upsertUserProgress({
                     user_id: userId,
-                    hikmah_tree_id: Number(treeId),
+                    hikmah_tree_id: Number(effectiveTreeId),
                     lesson_id: Number(lessonId),
                     is_completed: !done,
                     percent_complete: !done

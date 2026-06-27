@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
@@ -24,7 +25,8 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
-  const { width, isDesktop, pagePadding, homeMaxWidth } = useResponsiveLayout();
+  const { width, isWeb, isDesktop, pagePadding, homeMaxWidth } =
+    useResponsiveLayout();
 
   // Calculate vertical spacing based on screen height
   // Increased base padding to push content lower
@@ -47,14 +49,36 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={[
             styles.visionButton,
+            isDesktop && styles.visionButtonDesktop,
             { backgroundColor: colors.panel, borderColor: colors.border },
+            isWeb && ({
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+            } as any),
           ]}
           onPress={() => router.push("/vision")}
           activeOpacity={0.7}
           accessibilityLabel="Join the Vision"
         >
-          <Ionicons name="heart" size={16} color={colors.primary} />
-          <ThemedText style={[styles.visionButtonText, { color: colors.primary }]}>
+          <View
+            style={[
+              styles.visionButtonIcon,
+              { backgroundColor: colors.primary + "18" },
+            ]}
+          >
+            <Ionicons
+              name="heart"
+              size={isDesktop ? 18 : 16}
+              color={colors.primary}
+            />
+          </View>
+          <ThemedText
+            style={[
+              styles.visionButtonText,
+              isDesktop && styles.visionButtonTextDesktop,
+              { color: colors.primary },
+            ]}
+            numberOfLines={1}
+          >
             Join the Vision
           </ThemedText>
         </TouchableOpacity>
@@ -223,9 +247,31 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  visionButtonDesktop: {
+    height: 48,
+    minWidth: 190,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    gap: 10,
+    justifyContent: "flex-start",
+    shadowOpacity: Platform.OS === "web" ? 0 : 0.1,
+    elevation: Platform.OS === "web" ? 0 : 3,
+  },
+  visionButtonIcon: {
+    alignItems: "center",
+    borderRadius: 999,
+    height: 28,
+    justifyContent: "center",
+    width: 28,
+  },
   visionButtonText: {
     fontSize: 12,
     fontFamily: "Montserrat_600SemiBold",
+  },
+  visionButtonTextDesktop: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 18,
   },
   contentContainer: {
     flex: 1,

@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { Linking, StyleSheet, View } from "react-native";
+import { Linking, ScrollView, StyleSheet, View } from "react-native";
 import Markdown from "react-native-markdown-display";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
-interface ChatMessageMarkdownRendererProps {
+interface LessonContentMarkdownRendererProps {
   markdown: string;
-  onSelectionChange?: (selection: { text: string; context: string }) => void;
+  onSelectionChange: (selection: { text: string; context: string }) => void;
 }
 
-const CONTEXT_RADIUS = 2000;
+const CONTEXT_RADIUS = 1000;
 
 function getSelectionContext(baseText: string, selectedText: string) {
   const selectionIndex = baseText.indexOf(selectedText);
@@ -36,17 +36,17 @@ function getSelectionContext(baseText: string, selectedText: string) {
   return baseText.slice(Math.max(0, start), end).trim();
 }
 
-export default function ChatMessageMarkdownRenderer({
+export default function LessonContentMarkdownRenderer({
   markdown,
   onSelectionChange,
-}: ChatMessageMarkdownRendererProps) {
+}: LessonContentMarkdownRendererProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const containerRef = useRef<View>(null);
   const lastSelectionKeyRef = useRef("");
 
   useEffect(() => {
-    if (!onSelectionChange || typeof document === "undefined") return;
+    if (typeof document === "undefined") return;
 
     const handleSelectionChange = () => {
       const container = containerRef.current as unknown as HTMLElement | null;
@@ -62,9 +62,9 @@ export default function ChatMessageMarkdownRenderer({
       }
 
       const range = selection.getRangeAt(0);
-      const isInsideMessage = container.contains(range.commonAncestorContainer);
+      const isInsideLesson = container.contains(range.commonAncestorContainer);
 
-      if (!isInsideMessage) {
+      if (!isInsideLesson) {
         if (lastSelectionKeyRef.current) {
           lastSelectionKeyRef.current = "";
           onSelectionChange({ text: "", context: "" });
@@ -94,13 +94,13 @@ export default function ChatMessageMarkdownRenderer({
       StyleSheet.create({
         body: {
           color: colors.text,
-          fontSize: 15,
-          lineHeight: 25,
+          fontSize: 18,
+          lineHeight: 29,
           userSelect: "text",
         } as any,
         paragraph: {
           marginTop: 0,
-          marginBottom: 15,
+          marginBottom: 16,
           userSelect: "text",
         } as any,
         textgroup: {
@@ -110,57 +110,44 @@ export default function ChatMessageMarkdownRenderer({
         text: {
           color: colors.text,
           userSelect: "text",
-        },
+        } as any,
         heading1: {
           color: colors.text,
-          fontSize: 24,
+          fontSize: 28,
           fontWeight: "700",
-          lineHeight: 31,
+          lineHeight: 36,
           marginTop: 24,
           marginBottom: 12,
         },
         heading2: {
           color: colors.text,
-          fontSize: 20,
+          fontSize: 24,
           fontWeight: "700",
-          lineHeight: 28,
-          marginTop: 22,
-          marginBottom: 11,
+          lineHeight: 32,
+          marginTop: 24,
+          marginBottom: 12,
         },
         heading3: {
           color: colors.text,
-          fontSize: 18,
+          fontSize: 21,
           fontWeight: "700",
-          lineHeight: 25,
-          marginTop: 20,
+          lineHeight: 29,
+          marginTop: 22,
           marginBottom: 10,
         },
         heading4: {
           color: colors.text,
-          fontSize: 16,
+          fontSize: 18,
           fontWeight: "700",
           marginTop: 18,
           marginBottom: 9,
-        },
-        heading5: {
-          color: colors.text,
-          fontSize: 15,
-          fontWeight: "700",
-          marginTop: 16,
-          marginBottom: 8,
-        },
-        heading6: {
-          color: colors.text,
-          fontSize: 14,
-          fontWeight: "700",
-          marginTop: 14,
-          marginBottom: 7,
         },
         strong: {
           color: colors.text,
           fontWeight: "700",
         },
         em: {
+          color: colors.text,
           fontStyle: "italic",
         },
         link: {
@@ -169,11 +156,11 @@ export default function ChatMessageMarkdownRenderer({
         },
         bullet_list: {
           marginTop: 8,
-          marginBottom: 15,
+          marginBottom: 16,
         },
         ordered_list: {
           marginTop: 8,
-          marginBottom: 15,
+          marginBottom: 16,
         },
         list_item: {
           marginBottom: 8,
@@ -194,58 +181,58 @@ export default function ChatMessageMarkdownRenderer({
           color: colors.text,
           flex: 1,
         },
-        code_inline: {
-          backgroundColor: colors.panel2,
-          color: colorScheme === "dark" ? "#d1fae5" : "#059669",
-          borderRadius: 4,
-          fontFamily: "monospace",
-          fontSize: 14,
-          paddingHorizontal: 6,
-          paddingVertical: 2,
-        },
-        code_block: {
-          backgroundColor: colors.panel2,
-          borderColor: colors.border,
-          borderWidth: 1,
-          borderRadius: 12,
-          color: colors.text,
-          fontFamily: "monospace",
-          fontSize: 14,
-          marginTop: 15,
-          marginBottom: 15,
-          padding: 12,
-        },
-        fence: {
-          backgroundColor: colors.panel2,
-          borderColor: colors.border,
-          borderWidth: 1,
-          borderRadius: 12,
-          color: colors.text,
-          fontFamily: "monospace",
-          fontSize: 14,
-          marginTop: 15,
-          marginBottom: 15,
-          padding: 12,
-        },
         blockquote: {
           backgroundColor: colors.panel2,
           borderColor: colors.primary,
           borderLeftColor: colors.primary,
           borderLeftWidth: 4,
           borderRadius: 8,
-          marginTop: 15,
-          marginBottom: 15,
           marginLeft: 0,
+          marginTop: 16,
+          marginBottom: 16,
           overflow: "hidden",
-          paddingLeft: 15,
-          paddingRight: 15,
+          paddingLeft: 16,
+          paddingRight: 16,
           paddingVertical: 12,
         } as any,
+        code_inline: {
+          backgroundColor: colors.panel2,
+          borderRadius: 4,
+          color: colors.primary,
+          fontFamily: "monospace",
+          fontSize: 16,
+          paddingHorizontal: 6,
+          paddingVertical: 2,
+        },
+        code_block: {
+          backgroundColor: colors.panel2,
+          borderColor: colors.border,
+          borderRadius: 8,
+          borderWidth: 1,
+          color: colors.text,
+          fontFamily: "monospace",
+          fontSize: 15,
+          marginTop: 16,
+          marginBottom: 16,
+          padding: 16,
+        },
+        fence: {
+          backgroundColor: colors.panel2,
+          borderColor: colors.border,
+          borderRadius: 8,
+          borderWidth: 1,
+          color: colors.text,
+          fontFamily: "monospace",
+          fontSize: 15,
+          marginTop: 16,
+          marginBottom: 16,
+          padding: 16,
+        },
         table: {
           borderColor: colors.border,
           borderWidth: 1,
-          marginTop: 15,
-          marginBottom: 15,
+          marginTop: 16,
+          marginBottom: 16,
         },
         th: {
           backgroundColor: colors.panel2,
@@ -262,30 +249,45 @@ export default function ChatMessageMarkdownRenderer({
           paddingHorizontal: 10,
           paddingVertical: 8,
         },
+        hr: {
+          backgroundColor: colors.border,
+          height: 1,
+          marginTop: 20,
+          marginBottom: 20,
+        },
       }),
-    [colorScheme, colors.border, colors.panel2, colors.primary, colors.text]
+    [colors.border, colors.panel2, colors.primary, colors.text]
   );
 
   return (
-    <View ref={containerRef} style={styles.container}>
-      <Markdown
-        mergeStyle
-        onLinkPress={(url) => {
-          Linking.openURL(url).catch(() => {});
-          return false;
-        }}
-        style={markdownStyles}
-      >
-        {markdown}
-      </Markdown>
-    </View>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.panel }]}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator
+    >
+      <View ref={containerRef}>
+        <Markdown
+          mergeStyle
+          onLinkPress={(url) => {
+            Linking.openURL(url).catch(() => {});
+            return false;
+          }}
+          style={markdownStyles}
+        >
+          {markdown}
+        </Markdown>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    width: "100%",
-    cursor: "text",
-    userSelect: "text",
-  } as any,
+    flex: 1,
+  },
+  content: {
+    padding: 20,
+    paddingBottom: 60,
+  },
 });

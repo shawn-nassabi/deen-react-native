@@ -232,7 +232,16 @@ export default function ChatScreen() {
     if (!isLoading) return null;
 
     return (
-      <View style={styles.loadingContainer}>
+      <View
+        style={[
+          styles.loadingContainer,
+          isDesktop && {
+            alignSelf: "center",
+            maxWidth: readingMaxWidth,
+            width: "100%",
+          },
+        ]}
+      >
         <View
           style={[
             styles.loadingBox,
@@ -246,7 +255,7 @@ export default function ChatScreen() {
         </View>
       </View>
     );
-  }, [colors.border, colors.panel, isLoading, statusMessage]);
+  }, [colors.border, colors.panel, isDesktop, isLoading, readingMaxWidth, statusMessage]);
 
   const askDeenFab = hasSelection ? (
     <TouchableOpacity
