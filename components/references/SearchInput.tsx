@@ -4,13 +4,14 @@
  * ChatGPT-style input field
  */
 
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   View,
   TextInput,
   TouchableOpacity,
   StyleSheet,
   Platform,
+  type TextStyle,
 } from "react-native";
 import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,11 +25,19 @@ interface SearchInputProps {
   onSubmit: () => void;
   isLoading: boolean;
   placeholder?: string;
+  focusRequest?: number;
 }
 
 // Height constants
 const MIN_INPUT_HEIGHT = 40;
 const MAX_INPUT_HEIGHT = 120; // Roughly 4 lines
+const webInputFocusReset = Platform.select({
+  web: {
+    outlineStyle: "none",
+    outlineWidth: 0,
+    boxShadow: "none",
+  } as unknown as TextStyle,
+});
 
 export default function SearchInput({
   value,
@@ -36,6 +45,7 @@ export default function SearchInput({
   onSubmit,
   isLoading,
   placeholder = PLACEHOLDERS.REFERENCES,
+  focusRequest = 0,
 }: SearchInputProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
@@ -47,7 +57,23 @@ export default function SearchInput({
     }
   };
 
+  const handleKeyPress = (event: any) => {
+    if (Platform.OS !== "web") return;
+
+    const key = event?.key ?? event?.nativeEvent?.key;
+    if (key !== "Enter" || event?.shiftKey) return;
+
+    event.preventDefault?.();
+    handleSubmit();
+  };
+
   const isDisabled = isLoading || !value.trim();
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || focusRequest <= 0) return;
+
+    inputRef.current?.focus();
+  }, [focusRequest]);
 
   return (
     <View style={styles.container}>
@@ -72,6 +98,7 @@ export default function SearchInput({
           ref={inputRef}
           style={[
             styles.input,
+            webInputFocusReset,
             {
               color: colors.text,
             },
@@ -82,8 +109,10 @@ export default function SearchInput({
           onChangeText={onChange}
           multiline
           editable={!isLoading}
-          returnKeyType="default"
+          returnKeyType={Platform.OS === "web" ? "search" : "default"}
+          enterKeyHint={Platform.OS === "web" ? "search" : undefined}
           blurOnSubmit={false}
+          onKeyPress={handleKeyPress}
           textAlignVertical="center"
         />
         <TouchableOpacity

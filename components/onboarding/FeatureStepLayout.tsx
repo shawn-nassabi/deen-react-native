@@ -15,10 +15,12 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/themed-text";
+import OnboardingStepAction from "./OnboardingStepAction";
+import { OnboardingActionProps } from "./onboardingActionProps";
 
 // ---- Types ----
 
-interface FeatureStepLayoutProps {
+interface FeatureStepLayoutProps extends OnboardingActionProps {
   title: string;
   subtitle: string;
   /** Screenshots to show (1 or 2). */
@@ -48,6 +50,10 @@ export default function FeatureStepLayout({
   mutedColor,
   panelColor,
   borderColor,
+  actionLabel,
+  onActionPress,
+  actionDisabled = false,
+  actionBusy = false,
 }: FeatureStepLayoutProps) {
   return (
     <ScrollView
@@ -108,6 +114,19 @@ export default function FeatureStepLayout({
           </View>
         ))}
       </Animated.View>
+
+      {actionLabel && onActionPress ? (
+        <Animated.View entering={FadeInDown.delay(340).duration(400)}>
+          <OnboardingStepAction
+            accentColor={accentColor}
+            busy={actionBusy}
+            disabled={actionDisabled}
+            label={actionLabel}
+            onPress={onActionPress}
+            style={styles.actionWrap}
+          />
+        </Animated.View>
+      ) : null}
     </ScrollView>
   );
 }
@@ -165,5 +184,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Montserrat_400Regular",
     lineHeight: 22,
+  },
+  actionWrap: {
+    alignSelf: "center",
+    maxWidth: 260,
   },
 });

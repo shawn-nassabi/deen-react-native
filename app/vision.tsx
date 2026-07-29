@@ -27,6 +27,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { EXTERNAL_URLS } from "@/utils/constants";
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -37,14 +38,23 @@ type PillarProps = {
   description: string;
   delay: number;
   colors: typeof Colors.light;
+  isDesktop?: boolean;
 };
 
-function Pillar({ icon, title, description, delay, colors }: PillarProps) {
+function Pillar({
+  icon,
+  title,
+  description,
+  delay,
+  colors,
+  isDesktop = false,
+}: PillarProps) {
   return (
     <Animated.View
       entering={FadeInUp.delay(delay).duration(500)}
       style={[
         styles.pillarCard,
+        isDesktop && styles.pillarCardDesktop,
         { backgroundColor: colors.panel, borderColor: colors.border },
       ]}
     >
@@ -56,7 +66,7 @@ function Pillar({ icon, title, description, delay, colors }: PillarProps) {
       >
         <Ionicons name={icon} size={18} color={colors.primary} />
       </View>
-      <View style={styles.pillarText}>
+      <View style={[styles.pillarText, isDesktop && styles.pillarTextDesktop]}>
         <ThemedText style={styles.pillarTitle}>{title}</ThemedText>
         <ThemedText
           style={[styles.pillarDescription, { color: colors.textSecondary }]}
@@ -73,6 +83,11 @@ export default function VisionScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
+  const { width, isWeb, isDesktop, pagePadding, contentMaxWidth, readingMaxWidth } =
+    useResponsiveLayout();
+  const railEdgeOffset = isDesktop
+    ? Math.max((width - contentMaxWidth) / 2 + pagePadding, pagePadding)
+    : 16;
 
   const pulse = useSharedValue(1);
   useEffect(() => {
@@ -109,7 +124,10 @@ export default function VisionScreen() {
       {/* Close button */}
       <Animated.View
         entering={FadeIn.duration(300)}
-        style={[styles.closeButtonContainer, { top: insets.top + 10 }]}
+        style={[
+          styles.closeButtonContainer,
+          { left: railEdgeOffset, top: insets.top + 10 },
+        ]}
       >
         <TouchableOpacity
           onPress={() => router.back()}
@@ -128,7 +146,12 @@ export default function VisionScreen() {
         style={styles.container}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 32 },
+          isDesktop && styles.scrollContentDesktop,
+          {
+            paddingBottom: insets.bottom + (isDesktop ? 48 : 32),
+            paddingHorizontal: isDesktop ? pagePadding : 0,
+            paddingTop: isDesktop ? insets.top + 28 : 0,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -138,7 +161,11 @@ export default function VisionScreen() {
             colors={[colors.primary, colors.primaryDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={[styles.hero, { paddingTop: insets.top + 56 }]}
+            style={[
+              styles.hero,
+              isDesktop && styles.heroDesktop,
+              { paddingTop: isDesktop ? 56 : insets.top + 56 },
+            ]}
           >
             <Animated.View
               entering={FadeInDown.delay(100).duration(450)}
@@ -151,11 +178,20 @@ export default function VisionScreen() {
             </Animated.View>
 
             <Animated.View entering={FadeInDown.delay(180).duration(450)}>
-              <ThemedText style={styles.heroTitle}>Our Vision</ThemedText>
+              <ThemedText
+                style={[styles.heroTitle, isDesktop && styles.heroTitleDesktop]}
+              >
+                Our Vision
+              </ThemedText>
             </Animated.View>
 
             <Animated.View entering={FadeInDown.delay(260).duration(450)}>
-              <ThemedText style={styles.heroSubtitle}>
+              <ThemedText
+                style={[
+                  styles.heroSubtitle,
+                  isDesktop && styles.heroSubtitleDesktop,
+                ]}
+              >
                 Making authentic Islamic knowledge accessible to everyone,
                 everywhere.
               </ThemedText>
@@ -166,7 +202,10 @@ export default function VisionScreen() {
               <TouchableOpacity
                 onPress={handleDonate}
                 activeOpacity={0.85}
-                style={styles.heroDonatePill}
+                style={[
+                  styles.heroDonatePill,
+                  isDesktop && styles.heroDonatePillDesktop,
+                ]}
               >
                 <Ionicons name="heart" size={14} color={colors.primary} />
                 <ThemedText
@@ -185,16 +224,31 @@ export default function VisionScreen() {
         </Animated.View>
 
         {/* Mission */}
-        <View style={styles.section}>
+        <View
+          style={[
+            styles.section,
+            isDesktop && styles.sectionDesktop,
+            isDesktop && { maxWidth: readingMaxWidth },
+          ]}
+        >
           <Animated.View entering={FadeInUp.delay(420).duration(500)}>
             <ThemedText style={[styles.eyebrow, { color: colors.primary }]}>
               Our Mission
             </ThemedText>
-            <ThemedText style={styles.sectionHeading}>
+            <ThemedText
+              style={[
+                styles.sectionHeading,
+                isDesktop && styles.sectionHeadingDesktop,
+              ]}
+            >
               Knowledge that moves with you.
             </ThemedText>
             <ThemedText
-              style={[styles.bodyText, { color: colors.textSecondary }]}
+              style={[
+                styles.bodyText,
+                isDesktop && styles.bodyTextDesktop,
+                { color: colors.textSecondary },
+              ]}
             >
               The Deen Foundation is a registered 501(c)(3) non-profit
               revolutionizing Islamic education with technology grounded in
@@ -206,13 +260,14 @@ export default function VisionScreen() {
         </View>
 
         {/* Pillars */}
-        <View style={styles.section}>
+        <View style={[styles.section, isDesktop && styles.pillarsSectionDesktop]}>
           <Pillar
             icon="sparkles"
             title="Rooted in tradition"
             description="Guided by classical scholarship, reviewed by qualified teachers."
             delay={500}
             colors={colors}
+            isDesktop={isDesktop}
           />
           <Pillar
             icon="globe-outline"
@@ -220,6 +275,7 @@ export default function VisionScreen() {
             description="Free for everyone, everywhere."
             delay={580}
             colors={colors}
+            isDesktop={isDesktop}
           />
           <Pillar
             icon="heart-circle-outline"
@@ -227,18 +283,37 @@ export default function VisionScreen() {
             description="The Deen Foundation is donor-funded so it can serve the community free of commercial pressure."
             delay={660}
             colors={colors}
+            isDesktop={isDesktop}
           />
         </View>
 
         {/* CTA */}
         <Animated.View
           entering={FadeInUp.delay(740).duration(500)}
-          style={styles.ctaContainer}
+          style={[
+            styles.ctaContainer,
+            isDesktop && [
+              styles.ctaContainerDesktop,
+              { backgroundColor: colors.panel, borderColor: colors.border },
+              isWeb &&
+                ({
+                  boxShadow: "0 18px 48px rgba(0, 0, 0, 0.10)",
+                } as any),
+            ],
+          ]}
         >
-          <ThemedText style={styles.ctaHeading}>
+          <ThemedText
+            style={[styles.ctaHeading, isDesktop && styles.ctaHeadingDesktop]}
+          >
             Support authentic Shia Islamic education.
           </ThemedText>
-          <ThemedText style={[styles.ctaBody, { color: colors.textSecondary }]}>
+          <ThemedText
+            style={[
+              styles.ctaBody,
+              isDesktop && styles.ctaBodyDesktop,
+              { color: colors.textSecondary },
+            ]}
+          >
             Your tax-deductible gift to The Deen Foundation supports authentic
             Shia Islamic education and our vision to combat misinformation.
           </ThemedText>
@@ -246,7 +321,11 @@ export default function VisionScreen() {
           <AnimatedTouchable
             onPress={handleDonate}
             activeOpacity={0.85}
-            style={[styles.ctaButton, pulseStyle]}
+            style={[
+              styles.ctaButton,
+              isDesktop && styles.ctaButtonDesktop,
+              pulseStyle,
+            ]}
           >
             <LinearGradient
               colors={[colors.primary, colors.primaryDark]}
@@ -277,9 +356,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 32,
   },
+  scrollContentDesktop: {
+    alignItems: "center",
+  },
   closeButtonContainer: {
     position: "absolute",
-    left: 16,
     zIndex: 10,
   },
   closeButton: {
@@ -301,6 +382,15 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     alignItems: "center",
+  },
+  heroDesktop: {
+    width: "100%",
+    maxWidth: 1120,
+    borderRadius: 28,
+    paddingHorizontal: 48,
+    paddingBottom: 48,
+    minHeight: 340,
+    justifyContent: "center",
   },
   heroBadge: {
     flexDirection: "row",
@@ -326,6 +416,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     includeFontPadding: false,
   },
+  heroTitleDesktop: {
+    fontSize: 48,
+    lineHeight: 58,
+    marginBottom: 12,
+  },
   heroSubtitle: {
     fontSize: 13,
     lineHeight: 19,
@@ -334,6 +429,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 8,
     marginBottom: 14,
+  },
+  heroSubtitleDesktop: {
+    fontSize: 18,
+    lineHeight: 28,
+    maxWidth: 660,
+    marginBottom: 26,
   },
   heroDonatePill: {
     flexDirection: "row",
@@ -349,6 +450,10 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
+  heroDonatePillDesktop: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
   heroDonatePillText: {
     fontSize: 12,
     fontFamily: "Montserrat_600SemiBold",
@@ -356,6 +461,12 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 20,
     marginTop: 22,
+  },
+  sectionDesktop: {
+    width: "100%",
+    alignSelf: "center",
+    marginTop: 40,
+    paddingHorizontal: 0,
   },
   eyebrow: {
     fontSize: 11,
@@ -370,10 +481,27 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_700Bold",
     marginBottom: 10,
   },
+  sectionHeadingDesktop: {
+    fontSize: 30,
+    lineHeight: 38,
+    marginBottom: 14,
+  },
   bodyText: {
     fontSize: 13.5,
     fontFamily: "Montserrat_400Regular",
     lineHeight: 21,
+  },
+  bodyTextDesktop: {
+    fontSize: 16,
+    lineHeight: 27,
+  },
+  pillarsSectionDesktop: {
+    width: "100%",
+    maxWidth: 1120,
+    flexDirection: "row",
+    gap: 16,
+    marginTop: 34,
+    paddingHorizontal: 0,
   },
   pillarCard: {
     flexDirection: "row",
@@ -383,6 +511,14 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
     gap: 12,
+  },
+  pillarCardDesktop: {
+    flex: 1,
+    flexDirection: "column",
+    minHeight: 164,
+    marginBottom: 0,
+    padding: 18,
+    borderRadius: 18,
   },
   pillarIconWrap: {
     width: 34,
@@ -394,6 +530,9 @@ const styles = StyleSheet.create({
   pillarText: {
     flex: 1,
     paddingTop: 1,
+  },
+  pillarTextDesktop: {
+    width: "100%",
   },
   pillarTitle: {
     fontSize: 14,
@@ -410,12 +549,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: "center",
   },
+  ctaContainerDesktop: {
+    width: "100%",
+    maxWidth: 760,
+    borderWidth: 1,
+    borderRadius: 24,
+    marginTop: 40,
+    padding: 32,
+  },
   ctaHeading: {
     fontSize: 18,
     lineHeight: 24,
     fontFamily: "Montserrat_700Bold",
     textAlign: "center",
     marginBottom: 6,
+  },
+  ctaHeadingDesktop: {
+    fontSize: 28,
+    lineHeight: 36,
+    marginBottom: 10,
   },
   ctaBody: {
     fontSize: 13,
@@ -425,6 +577,12 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     paddingHorizontal: 8,
   },
+  ctaBodyDesktop: {
+    fontSize: 15,
+    lineHeight: 24,
+    maxWidth: 620,
+    paddingHorizontal: 0,
+  },
   ctaButton: {
     width: "100%",
     borderRadius: 16,
@@ -433,6 +591,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 14,
     elevation: 6,
+  },
+  ctaButtonDesktop: {
+    maxWidth: 380,
   },
   ctaGradient: {
     flexDirection: "row",

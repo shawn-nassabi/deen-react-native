@@ -18,6 +18,7 @@ import {
 } from "@expo-google-fonts/montserrat";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useRef } from "react";
+import { Platform } from "react-native";
 
 import {
   ThemeProvider,
@@ -47,7 +48,12 @@ function RootNavigator() {
   // screen and rejects with "No native splash screen registered...".
   useEffect(() => {
     if (splashHidden.current) return;
-    if (status === "loading" || onboardingCompleted === null) return;
+
+    // Web skips onboarding entirely — treat as completed regardless of storage
+    const isWeb = Platform.OS === "web";
+    const effectiveOnboardingCompleted = isWeb ? true : onboardingCompleted;
+
+    if (status === "loading" || effectiveOnboardingCompleted === null) return;
     if (status === "signedIn" && personalizationCompleted === null) return;
 
     const seg0 = (segments as string[])?.[0];
@@ -56,9 +62,13 @@ function RootNavigator() {
       seg0 === "signup" ||
       seg0 === "forgot-password" ||
       seg0 === "reset-password";
+    const isPublicWebHomeShell =
+      isWeb && (seg0 === "(tabs)" || seg0 === undefined);
 
     let atCorrectRoute = false;
-    if (!onboardingCompleted) {
+    if (isPublicWebHomeShell) {
+      atCorrectRoute = true;
+    } else if (!effectiveOnboardingCompleted) {
       atCorrectRoute = seg0 === "onboarding";
     } else if (status !== "signedIn") {
       atCorrectRoute = isOnAuthScreen;
@@ -77,7 +87,12 @@ function RootNavigator() {
   useEffect(() => {
     // Wait until both auth and onboarding flag are resolved before routing.
     // For signed-in users, also wait for the personalization check to resolve.
-    if (status === "loading" || onboardingCompleted === null) return;
+
+    // Web skips onboarding entirely — treat as completed regardless of storage
+    const isWeb = Platform.OS === "web";
+    const effectiveOnboardingCompleted = isWeb ? true : onboardingCompleted;
+
+    if (status === "loading" || effectiveOnboardingCompleted === null) return;
     if (status === "signedIn" && personalizationCompleted === null) return;
 
     // Cast to string[] — Expo Router's typed segments don't include newly added
@@ -91,22 +106,34 @@ function RootNavigator() {
       seg0 === "reset-password";
     const isOnOnboarding = seg0 === "onboarding";
     const isOnPersonalize = seg0 === "personalize";
+    const isPublicWebHomeShell =
+      isWeb && (seg0 === "(tabs)" || seg0 === undefined);
 
-    if (!onboardingCompleted && !isOnOnboarding) {
-      // First install — gate everyone through onboarding regardless of auth state
+    if (isPublicWebHomeShell && status !== "signedIn") {
+      return;
+    }
+
+    if (!effectiveOnboardingCompleted && !isOnOnboarding) {
+      // First install (mobile only) — gate through onboarding
       router.replace("/onboarding" as never);
     } else if (
-      onboardingCompleted &&
+      effectiveOnboardingCompleted &&
       status === "signedIn" &&
       personalizationCompleted === false &&
       !isOnPersonalize
     ) {
       // Signed-in returning user who hasn't personalized yet (new device or pre-feature)
       router.replace("/personalize" as never);
-    } else if (onboardingCompleted && status !== "signedIn" && !isOnAuthScreen && !isOnOnboarding) {
+    } else if (
+      effectiveOnboardingCompleted &&
+      status !== "signedIn" &&
+      !isOnAuthScreen &&
+      // On web, also redirect away from /onboarding; on mobile, user may be mid-flow
+      (isWeb || !isOnOnboarding)
+    ) {
       router.replace("/login");
     } else if (
-      onboardingCompleted &&
+      effectiveOnboardingCompleted &&
       status === "signedIn" &&
       personalizationCompleted !== false &&
       (isOnAuthScreen || isOnOnboarding || isOnPersonalize) &&

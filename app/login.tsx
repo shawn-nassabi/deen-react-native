@@ -15,11 +15,13 @@ import { ThemedText } from "@/components/themed-text";
 import { useAuth } from "@/hooks/useAuth";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { isDesktop, formMaxWidth, pagePadding } = useResponsiveLayout();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,7 +62,15 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.inner}>
+        <View
+          style={[
+            styles.inner,
+            isDesktop && {
+              maxWidth: formMaxWidth,
+              paddingHorizontal: pagePadding,
+            },
+          ]}
+        >
           {/* Logo above card */}
           <Image
             source={require("@/assets/images/deen-logo-with-text.png")}
@@ -197,6 +207,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   inner: {
+    width: "100%",
+    alignSelf: "center",
     alignItems: "center",
     paddingHorizontal: 24,
     paddingVertical: 32,

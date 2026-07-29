@@ -27,6 +27,7 @@ import { useHikmahProgress } from "@/hooks/useHikmahProgress";
 import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LessonRowSkeleton from "@/components/hikmah/LessonRowSkeleton";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 export default function TreeDetailScreen() {
   const { treeId } = useLocalSearchParams<{ treeId: string }>();
@@ -34,6 +35,7 @@ export default function TreeDetailScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
+  const { isDesktop, pagePadding, readingMaxWidth } = useResponsiveLayout();
 
   const [tree, setTree] = useState<HikmahTree | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -123,7 +125,12 @@ export default function TreeDetailScreen() {
             },
           ]}
         >
-          <View style={styles.headerContent}>
+          <View
+            style={[
+              styles.headerContent,
+              isDesktop && { maxWidth: readingMaxWidth, alignSelf: "center", width: "100%" },
+            ]}
+          >
             <View style={styles.headerLeft}>
               <TouchableOpacity
                 onPress={() => router.back()}
@@ -158,7 +165,15 @@ export default function TreeDetailScreen() {
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: headerPaddingTop + 72 + 16 },
+            {
+              paddingTop: headerPaddingTop + 72 + 16,
+              paddingHorizontal: pagePadding,
+            },
+            isDesktop && {
+              maxWidth: readingMaxWidth,
+              alignSelf: "center",
+              width: "100%",
+            },
           ]}
           scrollEnabled={false}
           showsVerticalScrollIndicator={false}
@@ -197,7 +212,12 @@ export default function TreeDetailScreen() {
           setHeaderHeight(nativeEvent.layout.height)
         }
       >
-        <View style={styles.headerContent}>
+        <View
+          style={[
+            styles.headerContent,
+            isDesktop && { maxWidth: readingMaxWidth, alignSelf: "center", width: "100%" },
+          ]}
+        >
           <View style={styles.headerLeft}>
             <TouchableOpacity
               onPress={() => router.back()}
@@ -231,7 +251,12 @@ export default function TreeDetailScreen() {
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: contentTopOffset },
+          { paddingTop: contentTopOffset, paddingHorizontal: pagePadding },
+          isDesktop && {
+            maxWidth: readingMaxWidth,
+            alignSelf: "center",
+            width: "100%",
+          },
         ]}
       >
         {/* Hero / Summary Card */}

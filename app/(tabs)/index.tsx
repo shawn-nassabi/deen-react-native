@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
@@ -13,6 +14,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
@@ -23,30 +25,60 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
+  const { width, isWeb, isDesktop, pagePadding, homeMaxWidth } =
+    useResponsiveLayout();
 
   // Calculate vertical spacing based on screen height
   // Increased base padding to push content lower
   const topPadding = SCREEN_HEIGHT < 700 ? 80 : 160;
   const headerMargin = SCREEN_HEIGHT < 700 ? 40 : 80;
+  const railEdgeOffset = isDesktop
+    ? Math.max((width - homeMaxWidth) / 2, 16)
+    : 16;
 
   return (
     <ThemedView style={styles.container}>
       {/* Vision / Donate Button - Top Left */}
       <Animated.View
         entering={FadeIn.delay(200).duration(300)}
-        style={[styles.visionButtonContainer, { top: insets.top + 10 }]}
+        style={[
+          styles.visionButtonContainer,
+          { left: railEdgeOffset, top: insets.top + 10 },
+        ]}
       >
         <TouchableOpacity
           style={[
             styles.visionButton,
+            isDesktop && styles.visionButtonDesktop,
             { backgroundColor: colors.panel, borderColor: colors.border },
+            isWeb && ({
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+            } as any),
           ]}
           onPress={() => router.push("/vision")}
           activeOpacity={0.7}
           accessibilityLabel="Join the Vision"
         >
-          <Ionicons name="heart" size={16} color={colors.primary} />
-          <ThemedText style={[styles.visionButtonText, { color: colors.primary }]}>
+          <View
+            style={[
+              styles.visionButtonIcon,
+              { backgroundColor: colors.primary + "18" },
+            ]}
+          >
+            <Ionicons
+              name="heart"
+              size={isDesktop ? 18 : 16}
+              color={colors.primary}
+            />
+          </View>
+          <ThemedText
+            style={[
+              styles.visionButtonText,
+              isDesktop && styles.visionButtonTextDesktop,
+              { color: colors.primary },
+            ]}
+            numberOfLines={1}
+          >
             Join the Vision
           </ThemedText>
         </TouchableOpacity>
@@ -55,7 +87,10 @@ export default function HomeScreen() {
       {/* Settings Button - Top Right */}
       <Animated.View
         entering={FadeIn.delay(200).duration(300)}
-        style={[styles.settingsButtonContainer, { top: insets.top + 10 }]}
+        style={[
+          styles.settingsButtonContainer,
+          { right: railEdgeOffset, top: insets.top + 10 },
+        ]}
       >
         <TouchableOpacity
           style={[
@@ -73,6 +108,8 @@ export default function HomeScreen() {
         style={[
           styles.contentContainer,
           {
+            maxWidth: isDesktop ? homeMaxWidth : undefined,
+            paddingHorizontal: pagePadding,
             paddingTop: topPadding,
             paddingBottom: insets.bottom + 20,
           },
@@ -176,7 +213,6 @@ const styles = StyleSheet.create({
   },
   settingsButtonContainer: {
     position: "absolute",
-    right: 16,
     zIndex: 10,
   },
   settingsButton: {
@@ -194,7 +230,6 @@ const styles = StyleSheet.create({
   },
   visionButtonContainer: {
     position: "absolute",
-    left: 16,
     zIndex: 10,
   },
   visionButton: {
@@ -212,12 +247,36 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  visionButtonDesktop: {
+    height: 48,
+    minWidth: 190,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    gap: 10,
+    justifyContent: "flex-start",
+    shadowOpacity: Platform.OS === "web" ? 0 : 0.1,
+    elevation: Platform.OS === "web" ? 0 : 3,
+  },
+  visionButtonIcon: {
+    alignItems: "center",
+    borderRadius: 999,
+    height: 28,
+    justifyContent: "center",
+    width: 28,
+  },
   visionButtonText: {
     fontSize: 12,
     fontFamily: "Montserrat_600SemiBold",
   },
+  visionButtonTextDesktop: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 18,
+  },
   contentContainer: {
     flex: 1,
+    width: "100%",
+    alignSelf: "center",
     paddingHorizontal: 20,
   },
   header: {

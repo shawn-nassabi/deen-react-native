@@ -8,10 +8,12 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import OnboardingStepAction from "./OnboardingStepAction";
+import { OnboardingActionProps } from "./onboardingActionProps";
 
 // ---- Types ----
 
-interface AboutStepProps {
+interface AboutStepProps extends OnboardingActionProps {
   accentColor: string;
   textColor: string;
   mutedColor: string;
@@ -41,6 +43,10 @@ export default function AboutStep({
   accentColor,
   textColor,
   mutedColor,
+  actionLabel,
+  onActionPress,
+  actionDisabled = false,
+  actionBusy = false,
 }: AboutStepProps) {
   return (
     <View style={styles.container}>
@@ -83,6 +89,19 @@ export default function AboutStep({
           </Animated.View>
         ))}
       </View>
+
+      {actionLabel && onActionPress ? (
+        <Animated.View entering={FadeInDown.delay(440).duration(400)}>
+          <OnboardingStepAction
+            accentColor={accentColor}
+            busy={actionBusy}
+            disabled={actionDisabled}
+            label={actionLabel}
+            onPress={onActionPress}
+            style={styles.actionWrap}
+          />
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
@@ -141,5 +160,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Montserrat_400Regular",
     lineHeight: 21,
+  },
+  actionWrap: {
+    alignSelf: "center",
+    maxWidth: 260,
   },
 });

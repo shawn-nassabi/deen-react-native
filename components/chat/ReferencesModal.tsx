@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import ReferencesContainer from "@/components/references/ReferencesContainer";
 import ModalReferenceItem from "./ModalReferenceItem";
 import type { Reference } from "@/utils/chatStorage";
 
@@ -134,6 +135,120 @@ export default function ReferencesModal({
     inputRange: [0, 1],
     outputRange: [600, 0],
   });
+
+  const webScale = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.96, 1],
+  });
+
+  if (Platform.OS === "web") {
+    const webResults = {
+      shia: shiaRefs,
+      sunni: sunniRefs,
+    };
+    const totalCounts = {
+      shia: shiaRefs.length,
+      sunni: sunniRefs.length,
+    };
+
+    return (
+      <Modal
+        visible={visible}
+        animationType="none"
+        transparent={true}
+        onRequestClose={handleClose}
+        statusBarTranslucent
+      >
+        <View style={styles.webModalOverlay}>
+          <Animated.View
+            style={[
+              styles.backdrop,
+              {
+                opacity: opacityAnim,
+              },
+            ]}
+          >
+            <TouchableOpacity
+              style={[
+                styles.backdropTouchable,
+                {
+                  backgroundColor:
+                    colorScheme === "dark"
+                      ? "rgba(0, 0, 0, 0.68)"
+                      : "rgba(15, 23, 42, 0.32)",
+                },
+              ]}
+              activeOpacity={1}
+              onPress={handleClose}
+            />
+          </Animated.View>
+
+          <Animated.View
+            style={[
+              styles.webModalContent,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.border,
+                opacity: opacityAnim,
+                transform: [{ scale: webScale }],
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.webHeader,
+                { borderBottomColor: colors.border },
+              ]}
+            >
+              <View>
+                <ThemedText
+                  type="subtitle"
+                  style={[styles.webHeaderTitle, { color: colors.text }]}
+                >
+                  References
+                </ThemedText>
+                <ThemedText
+                  style={[
+                    styles.webHeaderSubtitle,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  {allRefs.length} from this chat response
+                </ThemedText>
+              </View>
+
+              <TouchableOpacity
+                onPress={handleClose}
+                style={[
+                  styles.closeButton,
+                  {
+                    backgroundColor: colors.panel2,
+                    borderColor: colors.border,
+                  },
+                ]}
+                hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
+              >
+                <Ionicons name="close" size={22} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.webReferencesBody}>
+              <ReferencesContainer
+                results={webResults}
+                isLoading={false}
+                searchPerformed={true}
+                submittedQuery="Chat response references"
+                bottomPadding={24}
+                topPadding={0}
+                variant="webPanel"
+                totalCounts={totalCounts}
+              />
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+    );
+  }
 
   return (
     <Modal
@@ -331,6 +446,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
   },
+  webModalOverlay: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
   },
@@ -346,6 +468,39 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 8,
+  },
+  webModalContent: {
+    borderRadius: 18,
+    borderWidth: 1,
+    width: "100%",
+    maxWidth: 1120,
+    height: "86%",
+    maxHeight: 820,
+    minHeight: 420,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.24,
+    shadowRadius: 34,
+    elevation: 10,
+  },
+  webHeader: {
+    alignItems: "center",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    paddingVertical: 18,
+  },
+  webHeaderTitle: {
+    fontSize: 22,
+  },
+  webHeaderSubtitle: {
+    fontSize: 13,
+    marginTop: 3,
+  },
+  webReferencesBody: {
+    flex: 1,
   },
   header: {
     flexDirection: "row",
@@ -419,4 +574,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-

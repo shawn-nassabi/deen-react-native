@@ -2,168 +2,53 @@
  * Chat screen - Main chat interface with streaming AI responses
  */
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  Platform,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  Modal,
-  KeyboardAvoidingView,
-  Keyboard,
-  Dimensions,
-} from "react-native";
-import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { Ionicons } from "@expo/vector-icons";
-import { ThemedText } from "@/components/themed-text";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import ChatMessage from "@/components/chat/ChatMessage";
-import ChatInput from "@/components/chat/ChatInput";
-import LoadingIndicator from "@/components/ui/LoadingIndicator";
-import SuggestedQuestions from "@/components/chat/SuggestedQuestions";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  getOrCreateSessionId,
-  sendChatMessage,
-  startNewConversation,
-  fetchSavedChatDetail,
-} from "@/utils/api";
-import {
-  loadMessages,
-  saveMessages,
-  clearMessages,
-  purgeExpiredSessions,
-  getChatLanguage,
-  setChatLanguage,
-  getLastChatLanguage,
-  setLastChatLanguage,
-  type Message,
-} from "@/utils/chatStorage";
-import { consumePendingChatPrompt } from "@/utils/pendingChatPrompt";
-import { ERROR_MESSAGES, UI_CONSTANTS } from "@/utils/constants";
-import { useFocusEffect } from "expo-router";
+  Dimensions,
+  FlatList,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "@/hooks/useAuth";
-import { useStreamingText } from "@/hooks/useStreamingText";
-import ChatHistoryDrawer from "@/components/chat/ChatHistoryDrawer";
-import ElaborationModal from "@/components/hikmah/ElaborationModal";
 
-// Module-level flag: true once the chat screen has mounted at least once in this JS runtime.
-// Reset to false on every cold start (new process / OS-kill / dev reload), which is exactly
-// when we want to start a fresh chat instead of restoring the previously-active session.
-let coldStartHandled = false;
+import ChatEmptyState from "@/components/chat/ChatEmptyState";
+import ChatHistoryDrawer from "@/components/chat/ChatHistoryDrawer";
+import ChatInput from "@/components/chat/ChatInput";
+import ChatMessage from "@/components/chat/ChatMessage";
+import ChatWebScreen from "@/components/chat/ChatWebScreen";
+import ElaborationModal from "@/components/hikmah/ElaborationModal";
+import { ThemedText } from "@/components/themed-text";
+import LoadingIndicator from "@/components/ui/LoadingIndicator";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
+import { WebBackHomeButton } from "@/components/ui/WebBackHomeButton";
+import { Colors } from "@/constants/theme";
+import { useChatController } from "@/hooks/useChatController";
+import { useAuth } from "@/hooks/useAuth";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
+import { useWebGlobalTextInputShortcuts } from "@/hooks/use-web-global-text-input-shortcuts";
+import type { Message } from "@/utils/chatStorage";
+import { CHAT_LANGUAGES } from "@/utils/chatLanguage";
 
 // Estimated input container height for padding calculations
 const INPUT_CONTAINER_HEIGHT = 70;
-const INPUT_ACCESSORY_ID = "chatInputAccessory";
 const HEADER_HORIZONTAL_PADDING = 20;
 const HEADER_BOTTOM_PADDING = 12;
-const HEADER_ACTION_SIZE = 28;
 const HEADER_ACTION_HIT_SLOP = { top: 12, right: 12, bottom: 12, left: 12 };
-
-type ChatLanguage = "english" | "arabic" | "french" | "urdu" | "farsi";
-
-const CHAT_LANGUAGES: { value: ChatLanguage; label: string }[] = [
-  { value: "english", label: "English" },
-  { value: "arabic", label: "العربية" },
-  { value: "french", label: "Français" },
-  { value: "urdu", label: "اردو" },
-  { value: "farsi", label: "فارسی" },
-];
-
-const DEFAULT_LANGUAGE: ChatLanguage = "english";
-
-// Memoized empty state component to prevent re-renders
-const EmptyState = React.memo(({
-  showSuggestions,
-  onQuestionClick,
-  showLanguageSelector,
-  selectedLanguageLabel,
-  onPressLanguageSelector,
-  pillBackgroundColor,
-  pillBorderColor,
-  pillTextColor,
-  textSecondaryColor,
-  minHeight,
-}: {
-  showSuggestions: boolean;
-  onQuestionClick: (question: string) => void;
-  showLanguageSelector: boolean;
-  selectedLanguageLabel: string;
-  onPressLanguageSelector: () => void;
-  pillBackgroundColor: string;
-  pillBorderColor: string;
-  pillTextColor: string;
-  textSecondaryColor: string;
-  minHeight: number;
-}) => {
-  const verticalOffset = useMemo(() => {
-    if (!minHeight || minHeight <= 0) {
-      return 64;
-    }
-
-    const derivedOffset = minHeight * 0.12;
-    return Math.max(48, Math.min(derivedOffset, 120));
-  }, [minHeight]);
-
-  return (
-    <View
-      style={[
-        styles.emptyContainer,
-        { minHeight, paddingTop: verticalOffset },
-      ]}
-    >
-      <Image
-        source={require("@/assets/images/deen-logo-icon.png")}
-        style={styles.emptyLogo}
-      />
-      <ThemedText type="title" style={styles.emptyTitle}>
-        How can I help you today?
-      </ThemedText>
-      <ThemedText
-        style={[styles.emptySubtitle, { color: textSecondaryColor }]}
-      >
-        {"Ask any question about Islam and I'll do my best to provide a helpful response."}
-      </ThemedText>
-      {showLanguageSelector && (
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={[
-            styles.languagePill,
-            {
-              backgroundColor: pillBackgroundColor,
-              borderColor: pillBorderColor,
-            },
-          ]}
-          onPress={onPressLanguageSelector}
-        >
-          <ThemedText style={[styles.languagePillTitle, { color: pillTextColor }]}>
-            Language
-          </ThemedText>
-          <View style={styles.languagePillRight}>
-            <ThemedText style={[styles.languagePillValue, { color: pillTextColor }]}>
-              {selectedLanguageLabel}
-            </ThemedText>
-            <Ionicons name="chevron-down" size={16} color={pillTextColor} />
-          </View>
-        </TouchableOpacity>
-      )}
-      {showSuggestions && (
-        <SuggestedQuestions onQuestionClick={onQuestionClick} />
-      )}
-    </View>
-  );
-});
-
-EmptyState.displayName = "EmptyState";
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { isWeb, isDesktop, pagePadding, contentMaxWidth, readingMaxWidth } =
+    useResponsiveLayout();
   const blurIntensity = Platform.OS === "android" ? 120 : 60;
   const headerOverlayColor =
     colorScheme === "dark" ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
@@ -171,117 +56,50 @@ export default function ChatScreen() {
   const { status: authStatus } = useAuth();
   const isAuthenticated = authStatus === "signedIn";
 
+  const {
+    canSelectLanguage,
+    displayedStreamingText,
+    handleGlobalTextInput,
+    handleNewChat,
+    handleOpenLanguagePicker,
+    handleSelectChat,
+    handleSelectLanguage,
+    handleSelectionChange,
+    handleSendMessage,
+    handleSuggestedQuestion,
+    hasSelection,
+    input,
+    inputFocusRequest,
+    isLanguageModalVisible,
+    isLoading,
+    isNewChatLoading,
+    isStreaming,
+    messages,
+    selectedLanguage,
+    selectedLanguageLabel,
+    selection,
+    sessionId,
+    setInput,
+    setIsLanguageModalVisible,
+    showSuggestions,
+    statusMessage,
+  } = useChatController();
+
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isElaborationModalVisible, setIsElaborationModalVisible] =
+    useState(false);
+  const flatListRef = useRef<FlatList<Message>>(null);
+
   const headerPaddingTop = Math.max(
     insets.top + 12,
     Platform.OS === "ios" ? 64 : 32
   );
   const messagesPaddingTop = headerPaddingTop + 56;
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
-  // Target text fed by sendChatMessage onChunk; the typewriter hook smooths
-  // this into displayedStreamingText for the active streaming bot row.
-  const [streamingTarget, setStreamingTarget] = useState("");
-  const displayedStreamingText = useStreamingText(streamingTarget, isStreaming);
-  const [statusMessage, setStatusMessage] = useState("Thinking...");
-  const [isNewChatLoading, setIsNewChatLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [selectedLanguage, setSelectedLanguage] =
-    useState<ChatLanguage>(DEFAULT_LANGUAGE);
-  const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [selection, setSelection] = useState<{ text: string; context: string }>({ text: "", context: "" });
-  const [isElaborationModalVisible, setIsElaborationModalVisible] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // When true, the next session-id-driven message load is skipped. Set in the
-  // cold-start branch so we don't overwrite the freshly-emptied messages list
-  // with whatever loadMessages() returns for the new (empty) session.
-  const skipNextMessageLoadRef = useRef(false);
-
-  const hasSelection = !!selection.text;
-
-  // Track if suggestions should show (separate state to avoid re-renders on every keystroke)
-  const [showSuggestions, setShowSuggestions] = useState(true);
-
-  // Update showSuggestions when input changes (debounced effect)
   useEffect(() => {
-    const shouldShow = !input.trim();
-    if (shouldShow !== showSuggestions) {
-      setShowSuggestions(shouldShow);
-    }
-  }, [input, showSuggestions]);
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
 
-  // Initialize session: on cold start, force a fresh session and empty chat.
-  // On warm remounts (tab switches within the same JS runtime), restore the active session.
-  useEffect(() => {
-    // Read-then-set synchronously (before any await) so React StrictMode's
-    // double-invocation in dev falls into the warm branch on the second pass.
-    const isColdStart = !coldStartHandled;
-    coldStartHandled = true;
-
-    const initialize = async () => {
-      console.log(
-        isColdStart
-          ? "🚀 Chat screen cold-start — starting fresh session"
-          : "🚀 Chat screen warm-mount — restoring active session"
-      );
-      // Always safe to run; only deletes sessions older than CHAT_EXPIRY_SECONDS.
-      await purgeExpiredSessions();
-
-      if (isColdStart) {
-        // Fresh session id; also overwrites the persisted "active session" pointer
-        // so any future code that reads it sees the new one. Old per-session message
-        // blobs under deen:msgs:<oldId>:v1 are intentionally left untouched — history
-        // remains available via the ChatHistoryDrawer (server-backed).
-        skipNextMessageLoadRef.current = true;
-        const freshId = await startNewConversation();
-        setSessionId(freshId);
-        setMessages([]);
-        setShowSuggestions(true);
-      } else {
-        const sid = await getOrCreateSessionId();
-        setSessionId(sid);
-      }
-    };
-    initialize();
-  }, []);
-
-  // Pending-prompt handoff from the References tab ("Ask about this"). Runs on
-  // every focus of the Chat tab — not just first mount — because Expo Router
-  // keeps tab screens mounted across navigations. If a pending prompt is
-  // present, start a fresh session and seed the input (do NOT auto-send).
-  useFocusEffect(
-    useCallback(() => {
-      const pendingPrompt = consumePendingChatPrompt();
-      if (!pendingPrompt) return;
-
-      let cancelled = false;
-      const seedFromReferences = async () => {
-        console.log("🚀 Chat screen focus — seeding from References 'Ask about this'");
-        skipNextMessageLoadRef.current = true;
-        const freshId = await startNewConversation();
-        if (cancelled) return;
-        setMessages([]);
-        setSessionId(freshId);
-        setInput(pendingPrompt);
-        setShowSuggestions(false);
-        setSelection({ text: "", context: "" });
-      };
-      seedFromReferences();
-
-      return () => {
-        cancelled = true;
-      };
-    }, [])
-  );
-
-  // Scroll to bottom when keyboard opens
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    
     const showSub = Keyboard.addListener(showEvent, () => {
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
@@ -293,331 +111,137 @@ export default function ChatScreen() {
     };
   }, []);
 
-  // Load messages when session ID changes
-  useEffect(() => {
-    if (!sessionId) return;
-    // On cold-start the initialize effect has already set messages to []
-    // for the freshly-created session — skip the load so we don't re-fetch.
-    if (skipNextMessageLoadRef.current) {
-      skipNextMessageLoadRef.current = false;
-      return;
-    }
-
-    const loadInitialMessages = async () => {
-      const initial = await loadMessages(sessionId);
-      if (initial.length > 0) {
-        console.log(`💾 Loaded ${initial.length} message(s) from storage`);
-      }
-      setMessages(initial);
-    };
-    loadInitialMessages();
-  }, [sessionId]);
-
-  // Load / resolve language when session ID changes
-  useEffect(() => {
-    if (!sessionId) return;
-
-    let isCancelled = false;
-
-    const loadInitialLanguage = async () => {
-      const sessionLanguage = (await getChatLanguage(sessionId)) as
-        | ChatLanguage
-        | null;
-      const lastLanguage = (await getLastChatLanguage()) as ChatLanguage | null;
-
-      const resolved: ChatLanguage =
-        sessionLanguage || lastLanguage || DEFAULT_LANGUAGE;
-
-      if (!isCancelled) {
-        setSelectedLanguage(resolved);
-      }
-
-      // Ensure the session has a stored language for consistent reloads
-      if (!sessionLanguage) {
-        await setChatLanguage(sessionId, resolved);
-      }
-    };
-
-    loadInitialLanguage();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [sessionId]);
-
-  // Save messages with debouncing
-  useEffect(() => {
-    if (!sessionId) return;
-
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-    }
-
-    saveTimerRef.current = setTimeout(() => {
-      saveMessages(sessionId, messages);
-    }, UI_CONSTANTS.DEBOUNCE_DELAY);
-
-    return () => {
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-      }
-    };
-  }, [sessionId, messages]);
-
-  // Smart auto-scroll
-  const hasStartedChat = messages.some((m) => m.sender === "user");
-
-  const canSelectLanguage = !hasStartedChat;
-
-  const selectedLanguageLabel =
-    CHAT_LANGUAGES.find((l) => l.value === selectedLanguage)?.label ||
-    selectedLanguage;
-
-  const handleSuggestedQuestion = useCallback((question: string) => {
-    setInput(question);
-  }, []);
-
-  const handleSelectionChange = useCallback((sel: { text: string; context: string }) => {
-    setSelection(sel);
-  }, []);
-
-  const handleOpenLanguagePicker = useCallback(() => {
-    if (!canSelectLanguage) return;
-    setIsLanguageModalVisible(true);
-  }, [canSelectLanguage]);
-
-  const handleSelectLanguage = useCallback(
-    async (language: ChatLanguage) => {
-      if (!canSelectLanguage) return;
-
-      setSelectedLanguage(language);
-      setIsLanguageModalVisible(false);
-
-      await setLastChatLanguage(language);
-      if (sessionId) {
-        await setChatLanguage(sessionId, language);
-      }
-    },
-    [canSelectLanguage, sessionId]
-  );
-
-  const handleNewChat = useCallback(async () => {
-    if (isLoading || isNewChatLoading) return;
-
-    setIsNewChatLoading(true);
-
-    try {
-      if (sessionId) {
-        await clearMessages(sessionId);
-      }
-
-      const newId = await startNewConversation();
-      setSessionId(newId);
-      setMessages([]);
-      setInput("");
-      setShowSuggestions(true);
-      setSelection({ text: "", context: "" });
-
-      // Default new chats to the last selected language (or English)
-      const lastLanguage = (await getLastChatLanguage()) as ChatLanguage | null;
-      const resolved = lastLanguage || DEFAULT_LANGUAGE;
-      setSelectedLanguage(resolved);
-      await setChatLanguage(newId, resolved);
-    } catch (e) {
-      console.error("❌ Failed to start new chat:", e);
-    } finally {
-      setIsNewChatLoading(false);
-    }
-  }, [isLoading, isNewChatLoading, sessionId]);
-
-  const handleSelectChat = useCallback(
+  const handleDrawerSelectChat = useCallback(
     async (selectedSessionId: string) => {
-      if (isLoading) return;
-
-      try {
-        const detail = await fetchSavedChatDetail(selectedSessionId);
-        if (!detail) return;
-
-        const hydrated: Message[] = detail.messages.map((m) => ({
-          sender: m.role === "user" ? "user" : "bot",
-          text: m.content,
-        }));
-
-        setMessages(hydrated);
-        setSessionId(selectedSessionId);
-        setInput("");
-        setShowSuggestions(false);
-        setSelection({ text: "", context: "" });
-
-        // Warm the local cache so future loads are instant
-        await saveMessages(selectedSessionId, hydrated);
-      } catch (e) {
-        console.error("❌ Failed to load saved chat:", e);
+      const didSelect = await handleSelectChat(selectedSessionId);
+      if (didSelect) {
+        setIsDrawerOpen(false);
       }
-
-      setIsDrawerOpen(false);
     },
-    [isLoading]
+    [handleSelectChat]
   );
 
-  const handleSendMessage = useCallback(async () => {
-    if (!input.trim() || !sessionId || isLoading) return;
+  useWebGlobalTextInputShortcuts({
+    canSubmit: !!input.trim() && !!sessionId,
+    disabled:
+      isLoading ||
+      isLanguageModalVisible ||
+      isDrawerOpen ||
+      isElaborationModalVisible,
+    onSubmit: handleSendMessage,
+    onTextInput: handleGlobalTextInput,
+  });
 
-    const userMessage: Message = { sender: "user", text: input };
-    const botPlaceholder: Message = { sender: "bot", text: "" };
+  const renderMessage = useCallback(
+    ({ item, index }: { item: Message; index: number }) => {
+      if (
+        item.sender === "bot" &&
+        !item.text &&
+        !item.references &&
+        isLoading &&
+        index === messages.length - 1
+      ) {
+        return null;
+      }
 
-    setMessages((prev) => [...prev, userMessage, botPlaceholder]);
-    setInput("");
-    setIsLoading(true);
-    setIsStreaming(true);
-    // Clear any leftover target from a previous response so the smoother doesn't
-    // bleed prior text into the new reveal.
-    setStreamingTarget("");
-    setStatusMessage("Thinking...");
-    setSelection({ text: "", context: "" });
-    try {
-      await sendChatMessage(
-        input,
-        sessionId,
-        selectedLanguage,
-        (fullMessage) => {
-          // First chunk has arrived — hide the loading indicator
-          setIsLoading(false);
-          // Feed the smoother. Do NOT write into messages[] on every chunk —
-          // the typewriter renders via displayedStreamingText in renderMessage.
-          setStreamingTarget(fullMessage);
-        },
-        (responseText, references) => {
-          setMessages((prev) => {
-            const updated = [...prev];
-            const lastIndex = updated.length - 1;
-            updated[lastIndex] = {
-              sender: "bot",
-              text: responseText,
-              references: references,
-            };
-            return updated;
-          });
-          setIsStreaming(false);
-          // Do NOT reset streamingTarget here — the hook will keep ticking
-          // until displayed catches up to target, then stop on its own. The
-          // next handleSendMessage call clears it before the new stream starts.
-        },
-        (error) => {
-          console.error("❌ Chat error:", error);
-          setIsLoading(false);
-          setIsStreaming(false);
-          setStreamingTarget("");
-          setMessages((prev) => {
-            const updated = [...prev];
-            const lastIndex = updated.length - 1;
-            updated[lastIndex] = {
-              sender: "bot",
-              text: ERROR_MESSAGES.CHAT_FAILED,
-            };
-            return updated;
-          });
-        },
-        (status) => {
-          // Show the current agentic step as the loading message
-          setStatusMessage(status.message || "Thinking...");
-        }
+      const isThisStreaming =
+        isStreaming && item.sender === "bot" && index === messages.length - 1;
+
+      const messageToRender: Message = isThisStreaming
+        ? { ...item, text: displayedStreamingText }
+        : item;
+
+      return (
+        <View
+          style={[
+            styles.messageRail,
+            isDesktop && { maxWidth: readingMaxWidth },
+          ]}
+        >
+          <ChatMessage
+            message={messageToRender}
+            onSelectionChange={handleSelectionChange}
+            isStreaming={isThisStreaming}
+          />
+        </View>
       );
-    } catch (error) {
-      console.error("❌ Error in handleSendMessage:", error);
-      setIsLoading(false);
-      setIsStreaming(false);
-      setStreamingTarget("");
-      setMessages((prev) => {
-        const updated = [...prev];
-        const lastIndex = updated.length - 1;
-        updated[lastIndex] = {
-          sender: "bot",
-          text: ERROR_MESSAGES.CHAT_FAILED,
-        };
-        return updated;
-      });
-    }
-  }, [input, sessionId, selectedLanguage, isLoading]);
-
-  const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
-    if (
-      item.sender === "bot" &&
-      !item.text &&
-      !item.references &&
-      isLoading &&
-      index === messages.length - 1
-    ) {
-      return null;
-    }
-
-    const isThisStreaming =
-      isStreaming && item.sender === "bot" && index === messages.length - 1;
-
-    // While this specific message is streaming, render the smoothed displayed
-    // text instead of whatever's in messages[].text. After streaming completes,
-    // messages[].text already holds the final value (set by onComplete) and
-    // isThisStreaming flips to false, so the substitution disappears cleanly.
-    const messageToRender: Message = isThisStreaming
-      ? { ...item, text: displayedStreamingText }
-      : item;
-
-    return (
-      <ChatMessage
-        message={messageToRender}
-        onSelectionChange={handleSelectionChange}
-        isStreaming={isThisStreaming}
-      />
-    );
-  }, [isLoading, isStreaming, messages.length, handleSelectionChange, displayedStreamingText]);
+    },
+    [
+      displayedStreamingText,
+      handleSelectionChange,
+      isDesktop,
+      isLoading,
+      isStreaming,
+      messages.length,
+      readingMaxWidth,
+    ]
+  );
 
   const bottomPadding = INPUT_CONTAINER_HEIGHT + insets.bottom + 16;
-
-  // Calculate available height for empty state (screen - header - input - paddings)
   const screenHeight = Dimensions.get("window").height;
   const emptyStateHeight = Math.max(
     0,
     screenHeight - messagesPaddingTop - bottomPadding - INPUT_CONTAINER_HEIGHT
   );
 
-  // Memoized empty state to prevent re-renders
   const emptyComponent = useMemo(() => {
     if (isLoading && messages.length === 0) return null;
 
     return (
-      <EmptyState
+      <ChatEmptyState
         showSuggestions={showSuggestions}
         onQuestionClick={handleSuggestedQuestion}
         showLanguageSelector={canSelectLanguage}
         selectedLanguageLabel={selectedLanguageLabel}
+        selectedLanguage={selectedLanguage}
         onPressLanguageSelector={handleOpenLanguagePicker}
+        isLanguageDropdownVisible={isLanguageModalVisible}
+        languageOptions={CHAT_LANGUAGES}
+        onSelectLanguage={handleSelectLanguage}
         pillBackgroundColor={colors.panel2}
         pillBorderColor={colors.border}
         pillTextColor={colors.text}
+        dropdownBackgroundColor={colors.panel}
+        dropdownSelectedColor={colors.primary + "18"}
+        accentColor={colors.primary}
         textSecondaryColor={colors.textSecondary}
         minHeight={emptyStateHeight}
       />
     );
   }, [
-    isLoading,
-    messages.length,
-    showSuggestions,
-    handleSuggestedQuestion,
     canSelectLanguage,
-    selectedLanguageLabel,
-    handleOpenLanguagePicker,
-    colors.panel2,
     colors.border,
+    colors.panel,
+    colors.panel2,
+    colors.primary,
     colors.text,
     colors.textSecondary,
     emptyStateHeight,
+    handleOpenLanguagePicker,
+    handleSelectLanguage,
+    handleSuggestedQuestion,
+    isLanguageModalVisible,
+    isLoading,
+    messages.length,
+    selectedLanguage,
+    selectedLanguageLabel,
+    showSuggestions,
   ]);
 
   const renderFooter = useCallback(() => {
     if (!isLoading) return null;
 
     return (
-      <View style={styles.loadingContainer}>
+      <View
+        style={[
+          styles.loadingContainer,
+          isDesktop && {
+            alignSelf: "center",
+            maxWidth: readingMaxWidth,
+            width: "100%",
+          },
+        ]}
+      >
         <View
           style={[
             styles.loadingBox,
@@ -631,14 +255,91 @@ export default function ChatScreen() {
         </View>
       </View>
     );
-  }, [isLoading, statusMessage, colors.panel, colors.border]);
+  }, [colors.border, colors.panel, isDesktop, isLoading, readingMaxWidth, statusMessage]);
+
+  const askDeenFab = hasSelection ? (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={() => setIsElaborationModalVisible(true)}
+      style={[
+        styles.askDeenFab,
+        {
+          backgroundColor: colors.panel,
+          borderColor: colors.primary,
+          bottom: INPUT_CONTAINER_HEIGHT + insets.bottom + 12,
+          shadowColor: colors.primary,
+        },
+      ]}
+    >
+      <View style={[styles.askDeenFabIcon, { backgroundColor: colors.primary }]}>
+        <Image
+          source={require("@/assets/images/deen-logo-icon.png")}
+          style={{ width: 20, height: 20, tintColor: "#fff" }}
+          resizeMode="contain"
+        />
+      </View>
+      <ThemedText style={{ color: colors.primary, fontWeight: "600" }}>
+        Ask Deen
+      </ThemedText>
+    </TouchableOpacity>
+  ) : null;
+
+  const elaborationModal = (
+    <ElaborationModal
+      visible={isElaborationModalVisible}
+      onClose={() => setIsElaborationModalVisible(false)}
+      contextText={selection.context}
+      lessonTitle=""
+      treeTitle=""
+      lessonSummary=""
+      initialQuery={selection.text}
+    />
+  );
+
+  if (isWeb) {
+    return (
+      <ChatWebScreen
+        askDeenFab={askDeenFab}
+        canSelectLanguage={canSelectLanguage}
+        colors={colors}
+        contentMaxWidth={contentMaxWidth}
+        elaborationModal={elaborationModal}
+        flatListRef={flatListRef}
+        handleDrawerSelectChat={handleDrawerSelectChat}
+        handleNewChat={handleNewChat}
+        handleOpenLanguagePicker={handleOpenLanguagePicker}
+        handleSelectLanguage={handleSelectLanguage}
+        handleSendMessage={handleSendMessage}
+        handleSuggestedQuestion={handleSuggestedQuestion}
+        input={input}
+        inputFocusRequest={inputFocusRequest}
+        isAuthenticated={isAuthenticated}
+        isDrawerOpen={isDrawerOpen}
+        isLanguageModalVisible={isLanguageModalVisible}
+        isLoading={isLoading}
+        isNewChatLoading={isNewChatLoading}
+        messages={messages}
+        pagePadding={pagePadding}
+        readingMaxWidth={readingMaxWidth}
+        renderFooter={renderFooter}
+        renderMessage={renderMessage}
+        screenHeight={screenHeight}
+        selectedLanguage={selectedLanguage}
+        selectedLanguageLabel={selectedLanguageLabel}
+        sessionId={sessionId}
+        setInput={setInput}
+        setIsDrawerOpen={setIsDrawerOpen}
+        showSuggestions={showSuggestions}
+      />
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Modal
         transparent
         animationType="fade"
-        visible={isLanguageModalVisible}
+        visible={isLanguageModalVisible && !isDesktop}
         onRequestClose={() => setIsLanguageModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
@@ -657,28 +358,34 @@ export default function ChatScreen() {
               Choose language
             </ThemedText>
             <View style={styles.modalOptions}>
-              {CHAT_LANGUAGES.map((lang) => {
-                const isSelected = lang.value === selectedLanguage;
+              {CHAT_LANGUAGES.map((language) => {
+                const isSelected = language.value === selectedLanguage;
+
                 return (
                   <TouchableOpacity
-                    key={lang.value}
+                    key={language.value}
                     activeOpacity={0.8}
-                    onPress={() => handleSelectLanguage(lang.value)}
+                    onPress={() => handleSelectLanguage(language.value)}
                     style={[
                       styles.modalOptionRow,
                       { borderColor: colors.border },
                     ]}
                   >
-                    <ThemedText style={[styles.modalOptionLabel, { color: colors.text }]}>
-                      {lang.label}
+                    <ThemedText
+                      style={[
+                        styles.modalOptionLabel,
+                        { color: colors.text },
+                      ]}
+                    >
+                      {language.label}
                     </ThemedText>
-                    {isSelected && (
+                    {isSelected ? (
                       <Ionicons
                         name="checkmark"
                         size={18}
                         color={colors.primary}
                       />
-                    )}
+                    ) : null}
                   </TouchableOpacity>
                 );
               })}
@@ -687,21 +394,26 @@ export default function ChatScreen() {
         </View>
       </Modal>
 
-      {/* Header */}
       <PlatformBlurView
         intensity={blurIntensity}
         tint={colorScheme === "dark" ? "dark" : "light"}
         style={[
           styles.header,
           {
+            backgroundColor: headerOverlayColor,
             borderBottomColor: colors.border,
             paddingTop: headerPaddingTop,
-            backgroundColor: headerOverlayColor,
           },
         ]}
       >
-        <View style={styles.headerContent}>
+        <View
+          style={[
+            styles.headerContent,
+            isDesktop && { alignSelf: "center", maxWidth: readingMaxWidth },
+          ]}
+        >
           <View style={styles.headerLeft}>
+            <WebBackHomeButton />
             <TouchableOpacity
               hitSlop={HEADER_ACTION_HIT_SLOP}
               onPress={() => setIsDrawerOpen((prev) => !prev)}
@@ -717,42 +429,14 @@ export default function ChatScreen() {
               Deen Chat
             </ThemedText>
           </View>
-          <TouchableOpacity
-            hitSlop={HEADER_ACTION_HIT_SLOP}
-            style={[
-              styles.newChatButton,
-              {
-                backgroundColor: hasStartedChat
-                  ? colors.panel2
-                  : "transparent",
-                borderColor: colors.border,
-              },
-            ]}
-            onPress={handleNewChat}
-            disabled={isLoading || isNewChatLoading}
-            activeOpacity={0.7}
-          >
-            {isNewChatLoading ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <>
-                <ThemedText style={[styles.newChatLabel, { color: colors.text }]}>
-                  New
-                </ThemedText>
-                <Ionicons name="add" size={20} color={colors.text} />
-              </>
-            )}
-          </TouchableOpacity>
         </View>
       </PlatformBlurView>
 
-      {/* Main Content with KeyboardAvoidingView */}
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={0}
       >
-        {/* Messages List */}
         <FlatList
           ref={flatListRef}
           data={messages}
@@ -760,9 +444,9 @@ export default function ChatScreen() {
           keyExtractor={(_, index) => `message-${index}`}
           contentContainerStyle={[
             styles.messagesList,
-            { 
-              paddingTop: messagesPaddingTop,
+            {
               paddingBottom: bottomPadding,
+              paddingTop: messagesPaddingTop,
             },
           ]}
           ListEmptyComponent={emptyComponent}
@@ -772,61 +456,33 @@ export default function ChatScreen() {
           removeClippedSubviews={false}
         />
 
-        {/* Input at bottom */}
-        <View style={styles.inputContainer}>
+        <View
+          style={[
+            styles.inputContainer,
+            isDesktop && {
+              alignSelf: "center",
+              maxWidth: readingMaxWidth,
+              width: "100%",
+            },
+          ]}
+        >
           <ChatInput
             value={input}
             onChange={setInput}
             onSubmit={handleSendMessage}
             isLoading={isLoading}
+            focusRequest={inputFocusRequest}
           />
         </View>
       </KeyboardAvoidingView>
 
-      {/* Ask Deen FAB — visible only when text is selected */}
-      {hasSelection && (
-        <TouchableOpacity
-          style={[
-            styles.askDeenFab,
-            {
-              backgroundColor: colors.panel,
-              borderColor: colors.primary,
-              shadowColor: colors.primary,
-              bottom: INPUT_CONTAINER_HEIGHT + insets.bottom + 12,
-            },
-          ]}
-          onPress={() => setIsElaborationModalVisible(true)}
-          activeOpacity={0.8}
-        >
-          <View style={[styles.askDeenFabIcon, { backgroundColor: colors.primary }]}>
-            <Image
-              source={require("@/assets/images/deen-logo-icon.png")}
-              style={{ width: 20, height: 20, tintColor: "#fff" }}
-              resizeMode="contain"
-            />
-          </View>
-          <ThemedText style={{ fontWeight: "600", color: colors.primary }}>
-            Ask Deen
-          </ThemedText>
-        </TouchableOpacity>
-      )}
+      {askDeenFab}
+      {elaborationModal}
 
-      {/* Elaboration Modal */}
-      <ElaborationModal
-        visible={isElaborationModalVisible}
-        onClose={() => setIsElaborationModalVisible(false)}
-        contextText={selection.context}
-        lessonTitle=""
-        treeTitle=""
-        lessonSummary=""
-        initialQuery={selection.text}
-      />
-
-      {/* Chat history side drawer — renders as absolute overlay */}
       <ChatHistoryDrawer
         visible={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        onSelectChat={handleSelectChat}
+        onSelectChat={handleDrawerSelectChat}
         onNewChat={handleNewChat}
         activeSessionId={sessionId}
         isAuthenticated={isAuthenticated}
@@ -837,170 +493,112 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  askDeenFab: {
+    alignItems: "center",
+    borderRadius: 24,
+    borderWidth: 2,
+    elevation: 6,
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    position: "absolute",
+    right: 16,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    zIndex: 5,
   },
-  keyboardAvoid: {
+  askDeenFabIcon: {
+    alignItems: "center",
+    borderRadius: 14,
+    height: 28,
+    justifyContent: "center",
+    width: 28,
+  },
+  container: {
     flex: 1,
   },
   header: {
     borderBottomWidth: 1,
+    left: 0,
+    overflow: "hidden",
     paddingBottom: HEADER_BOTTOM_PADDING,
     paddingHorizontal: HEADER_HORIZONTAL_PADDING,
     position: "absolute",
-    top: 0,
-    left: 0,
     right: 0,
+    top: 0,
     zIndex: 10,
-    overflow: "hidden",
   },
   headerContent: {
-    flexDirection: "row",
     alignItems: "center",
+    flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
   },
   headerLeft: {
-    flexDirection: "row",
     alignItems: "center",
+    flexDirection: "row",
     gap: 10,
   },
   headerLogo: {
-    width: 28,
     height: 28,
+    width: 28,
   },
   headerTitle: {
     fontSize: 17,
   },
-  newChatButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    height: HEADER_ACTION_SIZE,
-    borderRadius: HEADER_ACTION_SIZE / 2,
-    borderWidth: 1,
-    justifyContent: "center",
+  inputContainer: {
+    borderTopWidth: 0,
   },
-  newChatLabel: {
-    fontSize: 13,
-    fontWeight: "500",
+  keyboardAvoid: {
+    flex: 1,
+  },
+  loadingBox: {
+    borderRadius: 16,
+    borderWidth: 1,
+    maxWidth: "85%",
+    padding: 12,
+  },
+  loadingContainer: {
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+  },
+  messageRail: {
+    alignSelf: "center",
+    width: "100%",
   },
   messagesList: {
     flexGrow: 1,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-    gap: 16,
-  },
-  emptyLogo: {
-    width: 64,
-    height: 64,
-    opacity: 0.8,
-    marginBottom: 8,
-  },
-  emptyTitle: {
-    marginBottom: 4,
-    textAlign: "center",
-  },
-  emptySubtitle: {
-    fontSize: 15,
-    textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  languagePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-    maxWidth: 340,
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginTop: -4,
-  },
-  languagePillTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  languagePillRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  languagePillValue: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 20,
-    backgroundColor: "rgba(0,0,0,0.35)",
   },
   modalCard: {
     borderRadius: 18,
     borderWidth: 1,
     padding: 16,
   },
-  modalTitle: {
-    marginBottom: 10,
-  },
-  modalOptions: {
-    gap: 6,
-  },
-  modalOptionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderRadius: 12,
-  },
   modalOptionLabel: {
     fontSize: 16,
     fontWeight: "500",
   },
-  loadingContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  loadingBox: {
-    maxWidth: "85%",
-    borderRadius: 16,
+  modalOptionRow: {
+    alignItems: "center",
+    borderRadius: 12,
     borderWidth: 1,
-    padding: 12,
-  },
-  inputContainer: {
-    borderTopWidth: 0,
-  },
-  askDeenFab: {
-    position: "absolute",
-    right: 16,
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    borderWidth: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 6,
-    zIndex: 5,
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
-  askDeenFabIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
+  modalOptions: {
+    gap: 6,
+  },
+  modalOverlay: {
+    backgroundColor: "rgba(0,0,0,0.35)",
+    flex: 1,
     justifyContent: "center",
+    paddingHorizontal: 20,
+  },
+  modalTitle: {
+    marginBottom: 10,
   },
 });

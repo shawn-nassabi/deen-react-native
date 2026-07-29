@@ -26,6 +26,7 @@ import {
   StyleSheet,
   View,
   FlatList,
+  Platform,
   useWindowDimensions,
   ViewToken,
 } from "react-native";
@@ -34,11 +35,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import { Colors } from "@/constants/theme";
 import { saveOnboardingState, getOnboardingState } from "@/utils/onboardingStorage";
 import { submitOnboarding } from "@/utils/onboardingApi";
 
 import OnboardingFooter from "@/components/onboarding/OnboardingFooter";
+import OnboardingWebProgressHeader, {
+  WEB_ONBOARDING_PROGRESS_HEIGHT,
+} from "@/components/onboarding/OnboardingWebProgressHeader";
 import OnboardingIntro from "@/components/onboarding/OnboardingIntro";
 import WelcomeStep from "@/components/onboarding/WelcomeStep";
 import AuthStep from "@/components/onboarding/AuthStep";
@@ -142,6 +147,8 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
+  const responsive = useResponsiveLayout();
+  const isOnboardingWeb = Platform.OS === "web";
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const { markOnboardingComplete, markPersonalizationComplete, status } = useAuth();
@@ -169,7 +176,37 @@ export default function OnboardingScreen() {
   // ---- Restore partial progress ----
   useEffect(() => {
     getOnboardingState().then((state) => {
-      if (state.tosAccepted) setTosAccepted(true);
+      if (isOnboardingWeb) {
+        setTosAccepted(false);
+        setAiAccepted(false);
+        setTradition([]);
+        setGoals([]);
+        setKnowledge([]);
+        setTopics([]);
+        saveOnboardingState({
+          aiAccepted: false,
+          goals: [],
+          knowledge: null,
+          topics: [],
+          tosAccepted: false,
+          tradition: null,
+        });
+
+        if (state.step > 0) {
+          setCurrentStep(state.step);
+          setTimeout(() => {
+            flatListRef.current?.scrollToIndex({
+              index: state.step,
+              animated: false,
+            });
+          }, 50);
+        }
+        return;
+      }
+
+      if (state.tosAccepted) {
+        setTosAccepted(true);
+      }
       if (state.aiAccepted) setAiAccepted(true);
       if (state.tradition) setTradition([state.tradition]);
       if (state.goals.length > 0) setGoals(state.goals);
@@ -182,7 +219,7 @@ export default function OnboardingScreen() {
         }, 50);
       }
     });
-  }, []);
+  }, [isOnboardingWeb]);
 
   // If the user is already signed in (e.g. resumed after email confirmation), reflect that
   useEffect(() => {
@@ -265,17 +302,46 @@ export default function OnboardingScreen() {
     topics,
   ]);
 
+  const handleBack = useCallback(() => {
+    if (currentStep <= 0 || submitting) return;
+
+    if (isOnboardingWeb && currentStep === 1) {
+      setTosAccepted(false);
+      saveOnboardingState({ tosAccepted: false });
+    }
+
+    goToStep(currentStep - 1);
+  }, [currentStep, goToStep, isOnboardingWeb, submitting]);
+
   const handleTosToggle = useCallback(() => {
+    if (isOnboardingWeb && currentStep === 0) {
+      if (!tosAccepted) {
+        setTosAccepted(true);
+        saveOnboardingState({ tosAccepted: true });
+      }
+
+      setTimeout(() => {
+        goToStep(1);
+      }, 160);
+      return;
+    }
+
     const next = !tosAccepted;
     setTosAccepted(next);
     saveOnboardingState({ tosAccepted: next });
-  }, [tosAccepted]);
+  }, [currentStep, goToStep, isOnboardingWeb, tosAccepted]);
 
   const handleAiToggle = useCallback(() => {
     const next = !aiAccepted;
     setAiAccepted(next);
     saveOnboardingState({ aiAccepted: next });
-  }, [aiAccepted]);
+
+    if (isOnboardingWeb && currentStep === 12 && next) {
+      setTimeout(() => {
+        goToStep(13);
+      }, 160);
+    }
+  }, [aiAccepted, currentStep, goToStep, isOnboardingWeb]);
 
   const handleAuthenticated = useCallback(() => {
     setAuthenticated(true);
@@ -285,7 +351,13 @@ export default function OnboardingScreen() {
   const handleTraditionChange = useCallback((next: string[]) => {
     setTradition(next);
     saveOnboardingState({ tradition: next[0] ?? null });
-  }, []);
+
+    if (isOnboardingWeb && currentStep === 2 && next.length > 0) {
+      setTimeout(() => {
+        goToStep(3);
+      }, 160);
+    }
+  }, [currentStep, goToStep, isOnboardingWeb]);
 
   const handleGoalsChange = useCallback((next: string[]) => {
     setGoals(next);
@@ -295,7 +367,13 @@ export default function OnboardingScreen() {
   const handleKnowledgeChange = useCallback((next: string[]) => {
     setKnowledge(next);
     saveOnboardingState({ knowledge: next[0] ?? null });
-  }, []);
+
+    if (isOnboardingWeb && currentStep === 4 && next.length > 0) {
+      setTimeout(() => {
+        goToStep(5);
+      }, 160);
+    }
+  }, [currentStep, goToStep, isOnboardingWeb]);
 
   const handleTopicsChange = useCallback((next: string[]) => {
     setTopics(next);
@@ -337,16 +415,61 @@ export default function OnboardingScreen() {
     const stepStyle = {
       width: SCREEN_WIDTH,
       height: SCREEN_HEIGHT,
-      // Reserve space for the absolute-positioned footer at the bottom
-      paddingBottom: footerHeight,
+      // Native reserves space for the footer; web uses the top progress header.
+      paddingBottom: isOnboardingWeb ? insets.bottom + 32 : footerHeight,
     };
 
     // Themed (non-welcome) steps need dynamic top padding to clear the status bar.
     // Use insets.top (real device safe area) + 16px breathing room.
     const themedStepStyle = {
-      paddingTop: insets.top + 16,
+      paddingTop: isOnboardingWeb
+        ? insets.top + WEB_ONBOARDING_PROGRESS_HEIGHT + 24
+        : insets.top + 16,
       backgroundColor: colors.background,
     };
+
+    const renderThemedStep = (content: React.ReactNode) => (
+      <View style={[stepStyle, themedStepStyle]}>
+        <View
+          style={[
+            styles.stepContent,
+            responsive.isDesktop && { maxWidth: responsive.contentMaxWidth },
+          ]}
+        >
+          {content}
+        </View>
+      </View>
+    );
+
+    const getWebActionProps = (
+      step: number,
+      label: string,
+      options: { busy?: boolean; hideWhenDisabled?: boolean } = {}
+    ) => {
+      const { busy = false, hideWhenDisabled = false } = options;
+      const isActionDisabled = !isContinueEnabled(step) || busy;
+
+      if (!isOnboardingWeb || (hideWhenDisabled && isActionDisabled)) {
+        return {};
+      }
+
+      return {
+        actionLabel: label,
+        onActionPress: handleContinue,
+        actionDisabled: isActionDisabled,
+        actionBusy: busy,
+      };
+    };
+
+    const getWebNextActionProps = (
+      step: number,
+      label: string,
+      options: { busy?: boolean } = {}
+    ) =>
+      getWebActionProps(step, label, {
+        ...options,
+        hideWhenDisabled: true,
+      });
 
     switch (item) {
       case "welcome":
@@ -359,14 +482,11 @@ export default function OnboardingScreen() {
           </View>
         );
       case "auth":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <AuthStep onAuthenticated={handleAuthenticated} {...themeProps} />
-          </View>
         );
       case "tradition":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <PersonalizationStep
               title="Which tradition do you follow?"
               helperText="This helps tailor sources and learning paths. You can change this anytime."
@@ -375,11 +495,9 @@ export default function OnboardingScreen() {
               onChange={handleTraditionChange}
               {...themeProps}
             />
-          </View>
         );
       case "goals":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <PersonalizationStep
               title="What brings you to Deen?"
               hint="Select all that apply"
@@ -387,13 +505,12 @@ export default function OnboardingScreen() {
               selected={goals}
               onChange={handleGoalsChange}
               multi
+              {...getWebNextActionProps(3, "Next")}
               {...themeProps}
             />
-          </View>
         );
       case "knowledge":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <PersonalizationStep
               title="How familiar are you with Shi'a Islam?"
               helperText="You can change this anytime."
@@ -402,11 +519,9 @@ export default function OnboardingScreen() {
               onChange={handleKnowledgeChange}
               {...themeProps}
             />
-          </View>
         );
       case "topics":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <PersonalizationStep
               title="What do you want to learn most?"
               hint="Pick up to 3"
@@ -416,69 +531,70 @@ export default function OnboardingScreen() {
               multi
               max={3}
               submitError={submitError}
+              {...getWebNextActionProps(5, "Next", { busy: submitting })}
               {...themeProps}
             />
-          </View>
         );
       case "about":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <AboutStep
               accentColor={themeProps.accentColor}
               textColor={themeProps.textColor}
               mutedColor={themeProps.mutedColor}
+              {...getWebActionProps(6, "Continue")}
             />
-          </View>
         );
       case "chatbot":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
-            <FeatureChatbotStep {...themeProps} />
-          </View>
+        return renderThemedStep(
+            <FeatureChatbotStep
+              {...themeProps}
+              {...getWebActionProps(7, "Continue")}
+            />
         );
       case "references":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
-            <FeatureReferencesStep {...themeProps} />
-          </View>
+        return renderThemedStep(
+            <FeatureReferencesStep
+              {...themeProps}
+              {...getWebActionProps(8, "Continue")}
+            />
         );
       case "hikmah":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
-            <FeatureHikmahStep {...themeProps} />
-          </View>
+        return renderThemedStep(
+            <FeatureHikmahStep
+              {...themeProps}
+              {...getWebActionProps(9, "Continue")}
+            />
         );
       case "ask-deen":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
-            <FeatureAskDeenStep {...themeProps} />
-          </View>
+        return renderThemedStep(
+            <FeatureAskDeenStep
+              {...themeProps}
+              {...getWebActionProps(10, "Continue")}
+            />
         );
       case "primers":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
-            <FeaturePrimersStep {...themeProps} />
-          </View>
+        return renderThemedStep(
+            <FeaturePrimersStep
+              {...themeProps}
+              {...getWebActionProps(11, "Continue")}
+            />
         );
       case "ai-usage":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <AiUsageStep
               aiAccepted={aiAccepted}
               onAiToggle={handleAiToggle}
               {...themeProps}
             />
-          </View>
         );
       case "done":
-        return (
-          <View style={[stepStyle, themedStepStyle]}>
+        return renderThemedStep(
             <DoneStep
               accentColor={themeProps.accentColor}
               textColor={themeProps.textColor}
               mutedColor={themeProps.mutedColor}
+              {...getWebActionProps(13, "Enter Deen")}
             />
-          </View>
         );
     }
   };
@@ -512,32 +628,49 @@ export default function OnboardingScreen() {
         style={styles.list}
       />
 
-      {/* Footer overlays the pager via position:absolute — this is why steps need paddingBottom */}
-      <View
-        style={[
-          styles.footer,
-          {
-            paddingBottom: insets.bottom + 16,
-            backgroundColor: isWelcomeStep
-              ? "rgba(10,15,12,0.85)"
-              : colors.background,
-            borderTopColor: isWelcomeStep
-              ? "rgba(255,255,255,0.08)"
-              : colors.border,
-          },
-        ]}
-      >
-        <OnboardingFooter
-          totalSteps={TOTAL_STEPS}
-          currentStep={currentStep}
-          onContinue={handleContinue}
-          disabled={!isContinueEnabled(currentStep)}
-          busy={submitting}
-          label={continueLabel}
+      {isOnboardingWeb && (
+        <OnboardingWebProgressHeader
           accentColor={colors.primary}
-          dimColor={isWelcomeStep ? "rgba(255,255,255,0.25)" : colors.border}
+          backgroundColor={colors.background}
+          borderColor={isWelcomeStep ? "rgba(255,255,255,0.10)" : colors.border}
+          currentStep={currentStep}
+          disabled={submitting}
+          isWelcomeStep={isWelcomeStep}
+          mutedColor={colors.textSecondary}
+          onBack={handleBack}
+          textColor={colors.text}
+          totalSteps={TOTAL_STEPS}
         />
-      </View>
+      )}
+
+      {/* Footer overlays the pager via position:absolute — this is why steps need paddingBottom */}
+      {!isOnboardingWeb && (
+        <View
+          style={[
+            styles.footer,
+            {
+              paddingBottom: insets.bottom + 16,
+              backgroundColor: isWelcomeStep
+                ? "rgba(10,15,12,0.85)"
+                : colors.background,
+              borderTopColor: isWelcomeStep
+                ? "rgba(255,255,255,0.08)"
+                : colors.border,
+            },
+          ]}
+        >
+          <OnboardingFooter
+            totalSteps={TOTAL_STEPS}
+            currentStep={currentStep}
+            onContinue={handleContinue}
+            disabled={!isContinueEnabled(currentStep)}
+            busy={submitting}
+            label={continueLabel}
+            accentColor={colors.primary}
+            dimColor={isWelcomeStep ? "rgba(255,255,255,0.25)" : colors.border}
+          />
+        </View>
+      )}
 
       {!introDone && <OnboardingIntro onComplete={() => setIntroDone(true)} />}
     </View>
@@ -558,5 +691,10 @@ const styles = StyleSheet.create({
     right: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: 16,
+  },
+  stepContent: {
+    flex: 1,
+    width: "100%",
+    alignSelf: "center",
   },
 });

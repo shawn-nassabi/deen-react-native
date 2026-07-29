@@ -58,6 +58,11 @@ type Props = {
   activeSessionId: string | null;
   isAuthenticated: boolean;
   isLoadingChat: boolean;
+  presentation?: "overlay" | "inline";
+  showNewChatButton?: boolean;
+  subtitle?: string;
+  title?: string;
+  topOffset?: number;
 };
 
 export default function ChatHistoryDrawer({
@@ -68,6 +73,11 @@ export default function ChatHistoryDrawer({
   activeSessionId,
   isAuthenticated,
   isLoadingChat,
+  presentation = "overlay",
+  showNewChatButton = true,
+  subtitle,
+  title = "Chat History",
+  topOffset = 0,
 }: Props) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
@@ -265,32 +275,37 @@ export default function ChatHistoryDrawer({
 
   if (!isVisible) return null;
 
+  const isInline = presentation === "inline";
   const drawerBackground = colorScheme === "dark" ? colors.panel : colors.panel;
   const blurIntensity = Platform.OS === "android" ? 120 : 70;
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       {/* Backdrop overlay */}
-      <Animated.View
-        style={[styles.overlay, { opacity: overlayOpacity }]}
-        pointerEvents={visible ? "auto" : "none"}
-      >
-        <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-      </Animated.View>
+      {!isInline ? (
+        <Animated.View
+          style={[styles.overlay, { opacity: overlayOpacity }]}
+          pointerEvents={visible ? "auto" : "none"}
+        >
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={onClose}
+          />
+        </Animated.View>
+      ) : null}
 
       {/* Drawer panel */}
       <Animated.View
         style={[
           styles.drawer,
+          isInline && styles.inlineDrawer,
           {
             width: DRAWER_WIDTH,
             transform: [{ translateX }],
-            paddingTop: insets.top + 12,
+            paddingTop: isInline ? 12 : insets.top + 12,
             paddingBottom: insets.bottom + 16,
+            top: isInline ? topOffset : 0,
           },
         ]}
         pointerEvents={visible ? "auto" : "none"}
@@ -308,9 +323,18 @@ export default function ChatHistoryDrawer({
         <View style={styles.drawerInner}>
           {/* Header */}
           <View style={[styles.drawerHeader, { borderBottomColor: colors.border }]}>
-            <ThemedText type="subtitle" style={styles.drawerTitle}>
-              Chat History
-            </ThemedText>
+            <View style={styles.drawerTitleBlock}>
+              <ThemedText type="subtitle" style={styles.drawerTitle}>
+                {title}
+              </ThemedText>
+              {subtitle ? (
+                <ThemedText
+                  style={[styles.drawerSubtitle, { color: colors.textSecondary }]}
+                >
+                  {subtitle}
+                </ThemedText>
+              ) : null}
+            </View>
             <TouchableOpacity
               hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
               onPress={onClose}
@@ -321,22 +345,24 @@ export default function ChatHistoryDrawer({
           </View>
 
           {/* New Chat button */}
-          <TouchableOpacity
-            style={[
-              styles.newChatRow,
-              {
-                backgroundColor: colors.panel2,
-                borderColor: colors.border,
-              },
-            ]}
-            onPress={handleNewChat}
-            activeOpacity={0.75}
-          >
-            <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
-            <ThemedText style={[styles.newChatRowText, { color: colors.primary }]}>
-              New Chat
-            </ThemedText>
-          </TouchableOpacity>
+          {showNewChatButton ? (
+            <TouchableOpacity
+              style={[
+                styles.newChatRow,
+                {
+                  backgroundColor: colors.panel2,
+                  borderColor: colors.border,
+                },
+              ]}
+              onPress={handleNewChat}
+              activeOpacity={0.75}
+            >
+              <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+              <ThemedText style={[styles.newChatRowText, { color: colors.primary }]}>
+                New Chat
+              </ThemedText>
+            </TouchableOpacity>
+          ) : null}
 
           {/* Saved chats list or states */}
           <View style={styles.listWrapper}>{renderListContent()}</View>
@@ -360,6 +386,9 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: "rgba(0,0,0,0.08)",
   },
+  inlineDrawer: {
+    zIndex: 12,
+  },
   drawerInner: {
     flex: 1,
   },
@@ -371,8 +400,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderBottomWidth: 1,
   },
+  drawerTitleBlock: {
+    flex: 1,
+    gap: 4,
+    paddingRight: 12,
+  },
   drawerTitle: {
     fontSize: 17,
+  },
+  drawerSubtitle: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   newChatRow: {
     flexDirection: "row",

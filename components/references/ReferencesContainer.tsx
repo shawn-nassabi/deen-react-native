@@ -7,6 +7,7 @@
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -29,6 +30,12 @@ interface ReferencesContainerProps {
   submittedQuery: string;
   bottomPadding: number;
   topPadding: number;
+  variant?: "default" | "webPanel";
+  totalCounts?: {
+    shia: number;
+    sunni: number;
+  };
+  embedded?: boolean;
 }
 
 export default function ReferencesContainer({
@@ -38,12 +45,18 @@ export default function ReferencesContainer({
   submittedQuery,
   bottomPadding,
   topPadding,
+  variant = "default",
+  totalCounts,
+  embedded = false,
 }: ReferencesContainerProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { isDesktop, contentMaxWidth, readingMaxWidth } = useResponsiveLayout();
+  const isWebPanel = variant === "webPanel";
 
   // Tab state: 'shia' or 'sunni'
   const [activeTab, setActiveTab] = useState<"shia" | "sunni">("shia");
+  const previousResultsRef = useRef<any>(null);
 
   // Animation for count text reveal
   const countTranslateX = useRef(new Animated.Value(-50)).current;
@@ -74,6 +87,23 @@ export default function ReferencesContainer({
     }
   }, [activeTab, results]);
 
+  useEffect(() => {
+    if (!isWebPanel || !results || results.error) return;
+    if (previousResultsRef.current === results) return;
+
+    previousResultsRef.current = results;
+
+    const hasShiaRefs = Array.isArray(results.shia) && results.shia.length > 0;
+    const hasSunniRefs =
+      Array.isArray(results.sunni) && results.sunni.length > 0;
+
+    if (hasShiaRefs) {
+      setActiveTab("shia");
+    } else if (hasSunniRefs) {
+      setActiveTab("sunni");
+    }
+  }, [isWebPanel, results]);
+
   // Loading State
   if (isLoading) {
     return (
@@ -82,6 +112,11 @@ export default function ReferencesContainer({
           style={[
             styles.loadingContainer,
             { paddingBottom: bottomPadding, paddingTop: topPadding },
+            isDesktop && {
+              maxWidth: readingMaxWidth,
+              alignSelf: "center",
+              width: "100%",
+            },
           ]}
         >
           <View style={styles.skeletonStack}>
@@ -107,6 +142,11 @@ export default function ReferencesContainer({
           style={[
             styles.centerContainer,
             { paddingBottom: bottomPadding, paddingTop: topPadding },
+            isDesktop && {
+              maxWidth: readingMaxWidth,
+              alignSelf: "center",
+              width: "100%",
+            },
           ]}
         >
           <Image
@@ -129,34 +169,19 @@ export default function ReferencesContainer({
     );
   }
 
-  // No results found
-  if (!results || (!results.shia?.length && !results.sunni?.length)) {
-    return (
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View
-          style={[
-            styles.centerContainer,
-            { paddingBottom: bottomPadding, paddingTop: topPadding },
-          ]}
-        >
-          <ThemedText
-            style={[styles.emptyText, { color: colors.textSecondary }]}
-          >
-            No references found for your query.
-          </ThemedText>
-        </View>
-      </TouchableWithoutFeedback>
-    );
-  }
-
   // Error state
-  if (results.error) {
+  if (results?.error) {
     return (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View
           style={[
             styles.centerContainer,
             { paddingBottom: bottomPadding, paddingTop: topPadding },
+            isDesktop && {
+              maxWidth: readingMaxWidth,
+              alignSelf: "center",
+              width: "100%",
+            },
           ]}
         >
           <View
@@ -174,15 +199,198 @@ export default function ReferencesContainer({
     );
   }
 
+  // No results found
+  if (!results || (!results.shia?.length && !results.sunni?.length)) {
+    return (
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View
+          style={[
+            styles.centerContainer,
+            { paddingBottom: bottomPadding, paddingTop: topPadding },
+            isDesktop && {
+              maxWidth: readingMaxWidth,
+              alignSelf: "center",
+              width: "100%",
+            },
+          ]}
+        >
+          <ThemedText
+            style={[styles.emptyText, { color: colors.textSecondary }]}
+          >
+            No references found for your query.
+          </ThemedText>
+        </View>
+      </TouchableWithoutFeedback>
+    );
+  }
+
   // Calculate animation delays for staggered entrance
   const shiaRefs = results.shia || [];
   const sunniRefs = results.sunni || [];
-  const totalRefs = shiaRefs.length + sunniRefs.length;
+  const counts = {
+    shia: totalCounts?.shia ?? shiaRefs.length,
+    sunni: totalCounts?.sunni ?? sunniRefs.length,
+  };
 
   // Determine which references to display based on active tab
   const activeRefs = activeTab === "shia" ? shiaRefs : sunniRefs;
   const hasShiaRefs = shiaRefs.length > 0;
   const hasSunniRefs = sunniRefs.length > 0;
+  const activeLabel = activeTab === "shia" ? "Shia" : "Sunni";
+  const activeTotal = counts[activeTab];
+  const activeVisibleCount = activeRefs.length;
+  const webStatusText =
+    activeVisibleCount > 0
+      ? `Showing 1-${activeVisibleCount} of ${activeTotal} ${activeLabel} References`
+      : `No ${activeLabel} references found`;
+
+  if (isWebPanel) {
+    const renderWebTab = (tab: "shia" | "sunni", enabled: boolean) => {
+      const selected = activeTab === tab && enabled;
+      const label = tab === "shia" ? "Shia" : "Sunni";
+
+      return (
+        <TouchableOpacity
+          accessibilityLabel={`Show ${label} references`}
+          accessibilityRole="button"
+          activeOpacity={0.75}
+          disabled={!enabled}
+          onPress={() => setActiveTab(tab)}
+          style={[
+            styles.webSegmentButton,
+            {
+              backgroundColor: selected ? colors.primary : "transparent",
+              opacity: enabled ? 1 : 0.42,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.webSegmentText,
+              { color: selected ? "#0a0b09" : colors.textSecondary },
+            ]}
+          >
+            {label}
+          </Text>
+          <View
+            style={[
+              styles.webSegmentBadge,
+              {
+                backgroundColor: selected
+                  ? "rgba(255,255,255,0.22)"
+                  : colors.panel2,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.webSegmentBadgeText,
+                { color: selected ? "#0a0b09" : colors.textSecondary },
+              ]}
+            >
+              {counts[tab]}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    };
+
+    const webPanelContent = (
+      <View
+        style={[
+          styles.webPanel,
+          { backgroundColor: colors.panel, borderColor: colors.border },
+        ]}
+      >
+        <View
+          style={[
+            styles.webPanelToolbar,
+            { borderBottomColor: colors.border },
+          ]}
+        >
+          <View
+            style={[
+              styles.webSegmentControl,
+              { backgroundColor: colors.background, borderColor: colors.border },
+            ]}
+          >
+            {renderWebTab("shia", hasShiaRefs)}
+            {renderWebTab("sunni", hasSunniRefs)}
+          </View>
+
+          <ThemedText
+            style={[styles.webPanelStatus, { color: colors.textSecondary }]}
+          >
+            {webStatusText}
+          </ThemedText>
+        </View>
+
+        <View style={styles.webPanelBody}>
+          {activeRefs.length > 0 ? (
+            <View style={styles.section}>
+              {activeRefs.map((ref: any, idx: number) => (
+                <ReferenceItem
+                  key={`${activeTab}-${idx}`}
+                  reference={ref}
+                  type={activeTab}
+                  animationDelay={idx * 100}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyTabContainer}>
+              <ThemedText
+                style={[styles.emptyTabText, { color: colors.textSecondary }]}
+              >
+                No {activeLabel} references found
+              </ThemedText>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+
+    const webPanelContainerStyle = [
+      styles.webPanelResultsContainer,
+      embedded && styles.webPanelEmbeddedContainer,
+      {
+        paddingTop: topPadding,
+        paddingBottom: bottomPadding,
+      },
+      isDesktop && {
+        maxWidth: contentMaxWidth,
+        alignSelf: "center" as const,
+        width: "100%" as const,
+      },
+    ];
+
+    if (embedded) {
+      return <View style={webPanelContainerStyle}>{webPanelContent}</View>;
+    }
+
+    return (
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={[
+          styles.webPanelResultsContainer,
+          {
+            paddingTop: topPadding,
+            paddingBottom: bottomPadding,
+          },
+          isDesktop && {
+            maxWidth: contentMaxWidth,
+            alignSelf: "center",
+            width: "100%",
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
+        {webPanelContent}
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView
@@ -192,6 +400,11 @@ export default function ReferencesContainer({
         {
           paddingTop: topPadding,
           paddingBottom: bottomPadding,
+        },
+        isDesktop && {
+          maxWidth: contentMaxWidth,
+          alignSelf: "center",
+          width: "100%",
         },
       ]}
       showsVerticalScrollIndicator={false}
@@ -340,6 +553,70 @@ const styles = StyleSheet.create({
   },
   resultsContainer: {
     padding: 16,
+  },
+  webPanelResultsContainer: {
+    paddingHorizontal: 16,
+  },
+  webPanelEmbeddedContainer: {
+    paddingHorizontal: 0,
+  },
+  webPanel: {
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: "hidden",
+    width: "100%",
+  },
+  webPanelToolbar: {
+    alignItems: "center",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
+    justifyContent: "space-between",
+    minHeight: 74,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
+  webSegmentControl: {
+    alignItems: "center",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 4,
+    padding: 4,
+  },
+  webSegmentButton: {
+    alignItems: "center",
+    borderRadius: 8,
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 36,
+    paddingHorizontal: 16,
+  },
+  webSegmentText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  webSegmentBadge: {
+    alignItems: "center",
+    borderRadius: 999,
+    justifyContent: "center",
+    minWidth: 26,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  webSegmentBadgeText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  webPanelStatus: {
+    fontSize: 14,
+    textAlign: "right",
+  },
+  webPanelBody: {
+    paddingBottom: 20,
+    paddingHorizontal: 24,
+    paddingTop: 18,
   },
   centerContainer: {
     flex: 1,

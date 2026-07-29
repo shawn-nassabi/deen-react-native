@@ -20,6 +20,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/themed-text";
 import { useAuth } from "@/hooks/useAuth";
+import { useResponsiveLayout } from "@/hooks/use-responsive-layout";
 
 // ---- Types ----
 
@@ -35,6 +36,15 @@ interface AuthStepProps {
 
 type Mode = "signup" | "signin";
 
+const webInputFocusReset = Platform.select({
+  web: {
+    outlineStyle: "none",
+    outlineWidth: 0,
+    boxShadow: "none",
+  },
+  default: {},
+}) as Record<string, unknown>;
+
 // ---- Component ----
 
 export default function AuthStep({
@@ -47,6 +57,7 @@ export default function AuthStep({
   bgColor,
 }: AuthStepProps) {
   const { signIn, signUp } = useAuth();
+  const { isDesktop, formMaxWidth } = useResponsiveLayout();
   const [mode, setMode] = useState<Mode>("signup");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -127,7 +138,10 @@ export default function AuthStep({
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[
+          styles.scroll,
+          isDesktop && { maxWidth: formMaxWidth, alignSelf: "center", width: "100%" },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -148,7 +162,7 @@ export default function AuthStep({
             <View style={[styles.inputWrap, { backgroundColor: panelColor, borderColor }]}>
               <Ionicons name="person-outline" size={18} color={mutedColor} style={styles.inputIcon} />
               <TextInput
-                style={[styles.input, { color: textColor }]}
+                style={[styles.input, webInputFocusReset, { color: textColor }]}
                 placeholder="Display name"
                 placeholderTextColor={mutedColor}
                 autoCapitalize="words"
@@ -167,7 +181,7 @@ export default function AuthStep({
             <Ionicons name="mail-outline" size={18} color={mutedColor} style={styles.inputIcon} />
             <TextInput
               ref={emailRef}
-              style={[styles.input, { color: textColor }]}
+              style={[styles.input, webInputFocusReset, { color: textColor }]}
               placeholder="Email address"
               placeholderTextColor={mutedColor}
               autoCapitalize="none"
@@ -185,7 +199,7 @@ export default function AuthStep({
             <Ionicons name="lock-closed-outline" size={18} color={mutedColor} style={styles.inputIcon} />
             <TextInput
               ref={passwordRef}
-              style={[styles.input, { color: textColor }]}
+              style={[styles.input, webInputFocusReset, { color: textColor }]}
               placeholder="Password"
               placeholderTextColor={mutedColor}
               secureTextEntry={!showPassword}
