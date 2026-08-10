@@ -2,54 +2,54 @@
  * Chat screen - Main chat interface with streaming AI responses
  */
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  Platform,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  Modal,
-  KeyboardAvoidingView,
-  Keyboard,
-  Dimensions,
-} from "react-native";
-import PlatformBlurView from "@/components/ui/PlatformBlurView";
-import { Ionicons } from "@expo/vector-icons";
+import ChatHistoryDrawer from "@/components/chat/ChatHistoryDrawer";
+import ChatInput from "@/components/chat/ChatInput";
+import ChatMessage from "@/components/chat/ChatMessage";
+import SuggestedQuestions from "@/components/chat/SuggestedQuestions";
+import ElaborationModal from "@/components/hikmah/ElaborationModal";
 import { ThemedText } from "@/components/themed-text";
+import LoadingIndicator from "@/components/ui/LoadingIndicator";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import ChatMessage from "@/components/chat/ChatMessage";
-import ChatInput from "@/components/chat/ChatInput";
-import LoadingIndicator from "@/components/ui/LoadingIndicator";
-import SuggestedQuestions from "@/components/chat/SuggestedQuestions";
+import { useAuth } from "@/hooks/useAuth";
+import { useStreamingText } from "@/hooks/useStreamingText";
 import {
+  fetchSavedChatDetail,
   getOrCreateSessionId,
   sendChatMessage,
   startNewConversation,
-  fetchSavedChatDetail,
 } from "@/utils/api";
 import {
-  loadMessages,
-  saveMessages,
   clearMessages,
-  purgeExpiredSessions,
   getChatLanguage,
-  setChatLanguage,
   getLastChatLanguage,
+  loadMessages,
+  purgeExpiredSessions,
+  saveMessages,
+  setChatLanguage,
   setLastChatLanguage,
   type Message,
 } from "@/utils/chatStorage";
-import { consumePendingChatPrompt } from "@/utils/pendingChatPrompt";
 import { ERROR_MESSAGES, UI_CONSTANTS } from "@/utils/constants";
+import { consumePendingChatPrompt } from "@/utils/pendingChatPrompt";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "@/hooks/useAuth";
-import { useStreamingText } from "@/hooks/useStreamingText";
-import ChatHistoryDrawer from "@/components/chat/ChatHistoryDrawer";
-import ElaborationModal from "@/components/hikmah/ElaborationModal";
 
 // Module-level flag: true once the chat screen has mounted at least once in this JS runtime.
 // Reset to false on every cold start (new process / OS-kill / dev reload), which is exactly
@@ -749,7 +749,7 @@ export default function ChatScreen() {
       {/* Main Content with KeyboardAvoidingView */}
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+           behavior="padding"
         keyboardVerticalOffset={0}
       >
         {/* Messages List */}
