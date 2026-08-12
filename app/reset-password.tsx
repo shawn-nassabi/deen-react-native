@@ -21,20 +21,12 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { supabase } from "@/utils/supabase";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-
-// ---- Error message mapping ----
-
-function mapResetError(message: string): string {
-  if (/network/i.test(message)) {
-    return "Something went wrong. Check your connection and try again.";
-  }
-  return "Something went wrong. Try requesting a new reset link.";
-}
 
 // ---- Types ----
 
@@ -44,6 +36,7 @@ type ResetState = "loading" | "error" | "form";
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
@@ -93,11 +86,11 @@ export default function ResetPasswordScreen() {
     if (busy) return;
     setError(null);
     if (!newPassword || !confirmPassword) {
-      setError("Please fill in both password fields.");
+      setError(t("auth.fillBothFields"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Passwords don't match.");
+      setError(t("auth.passwordsDontMatch"));
       return;
     }
     setBusy(true);
@@ -107,7 +100,7 @@ export default function ResetPasswordScreen() {
       });
       if (updateError) {
         console.warn("🔑 updateUser error:", JSON.stringify(updateError));
-        setError(mapResetError(updateError.message));
+        setError(t("auth.errorNetwork"));
         setBusy(false);
       } else {
         // Password updated — navigate to main app.
@@ -115,9 +108,8 @@ export default function ResetPasswordScreen() {
         // so we handle the redirect explicitly here.
         router.replace("/(tabs)");
       }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "";
-      setError(mapResetError(msg));
+    } catch {
+      setError(t("auth.errorNetwork"));
       setBusy(false);
     }
   };
@@ -148,7 +140,7 @@ export default function ResetPasswordScreen() {
               <View style={styles.loadingWrap}>
                 <ActivityIndicator size="large" color={colors.primary} />
                 <ThemedText style={[styles.loadingText, { color: colors.muted }]}>
-                  Verifying reset link…
+                  {t("auth.verifyingResetLink")}
                 </ThemedText>
               </View>
             )}
@@ -157,11 +149,10 @@ export default function ResetPasswordScreen() {
               /* ---- Error state (expired / missing code) ---- */
               <>
                 <ThemedText style={[styles.heading, { textAlign: "center" }]}>
-                  Link expired
+                  {t("auth.linkExpired")}
                 </ThemedText>
                 <ThemedText style={[styles.errorBody, { color: colors.muted }]}>
-                  This reset link has expired or has already been used. Request a new
-                  one from the sign in screen.
+                  {t("auth.linkExpiredMessage")}
                 </ThemedText>
                 <View style={styles.linksRow}>
                   <TouchableOpacity
@@ -170,7 +161,7 @@ export default function ResetPasswordScreen() {
                     style={styles.linkTouchable}
                   >
                     <ThemedText style={[styles.linkText, { color: colors.primary }]}>
-                      Back to sign in
+                      {t("auth.backToSignIn")}
                     </ThemedText>
                   </TouchableOpacity>
                 </View>
@@ -180,7 +171,7 @@ export default function ResetPasswordScreen() {
             {resetState === "form" && (
               /* ---- New password form ---- */
               <>
-                <ThemedText style={styles.heading}>Set new password</ThemedText>
+                <ThemedText style={styles.heading}>{t("auth.setNewPassword")}</ThemedText>
 
                 {/* New password input */}
                 <View style={[styles.inputGroup, styles.inputGroupPassword]}>
@@ -195,7 +186,7 @@ export default function ResetPasswordScreen() {
                         color: colors.text,
                       },
                     ]}
-                    placeholder="New password"
+                    placeholder={t("auth.newPassword")}
                     placeholderTextColor={colors.muted}
                     value={newPassword}
                     onChangeText={setNewPassword}
@@ -210,7 +201,7 @@ export default function ResetPasswordScreen() {
                   <TouchableOpacity
                     style={styles.showHideToggle}
                     onPress={() => setShowPassword1((v) => !v)}
-                    accessibilityLabel={showPassword1 ? "Hide password" : "Show password"}
+                    accessibilityLabel={showPassword1 ? t("auth.hidePassword") : t("auth.showPassword")}
                   >
                     <Ionicons
                       name={showPassword1 ? "eye-off-outline" : "eye-outline"}
@@ -233,7 +224,7 @@ export default function ResetPasswordScreen() {
                         color: colors.text,
                       },
                     ]}
-                    placeholder="Confirm new password"
+                    placeholder={t("auth.confirmNewPassword")}
                     placeholderTextColor={colors.muted}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
@@ -248,7 +239,7 @@ export default function ResetPasswordScreen() {
                   <TouchableOpacity
                     style={styles.showHideToggle}
                     onPress={() => setShowPassword2((v) => !v)}
-                    accessibilityLabel={showPassword2 ? "Hide password" : "Show password"}
+                    accessibilityLabel={showPassword2 ? t("auth.hidePassword") : t("auth.showPassword")}
                   >
                     <Ionicons
                       name={showPassword2 ? "eye-off-outline" : "eye-outline"}
@@ -276,10 +267,10 @@ export default function ResetPasswordScreen() {
                   {busy ? (
                     <View style={styles.buttonRow}>
                       <ActivityIndicator color="#fff" />
-                      <ThemedText style={styles.buttonText}>Saving…</ThemedText>
+                      <ThemedText style={styles.buttonText}>{t("auth.saving")}</ThemedText>
                     </View>
                   ) : (
-                    <ThemedText style={styles.buttonText}>Save password</ThemedText>
+                    <ThemedText style={styles.buttonText}>{t("auth.savePassword")}</ThemedText>
                   )}
                 </TouchableOpacity>
               </>

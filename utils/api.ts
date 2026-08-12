@@ -1003,9 +1003,10 @@ export async function getHikmahTrees(params = {}): Promise<HikmahTree[]> {
 
 /** GET /hikmah-trees/{tree_id} */
 export async function getHikmahTree(
-  treeId: string | number
+  treeId: string | number,
+  params: Record<string, any> = {}
 ): Promise<HikmahTree> {
-  const response = await fetch(`${API_BASE_URL}/hikmah-trees/${treeId}`, {
+  const response = await fetch(`${API_BASE_URL}/hikmah-trees/${treeId}${buildQuery(params)}`, {
     method: "GET",
     headers: await withAuthHeaders({ "Content-Type": "application/json" }),
   });

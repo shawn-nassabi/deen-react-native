@@ -24,6 +24,7 @@ import {
   Lesson,
 } from "@/utils/api";
 import { useHikmahProgress } from "@/hooks/useHikmahProgress";
+import { useLanguagePreference } from "@/hooks/use-language-preference";
 import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LessonRowSkeleton from "@/components/hikmah/LessonRowSkeleton";
@@ -34,6 +35,7 @@ export default function TreeDetailScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
+  const { apiCode } = useLanguagePreference();
 
   const [tree, setTree] = useState<HikmahTree | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -50,10 +52,11 @@ export default function TreeDetailScreen() {
     if (!treeId) return;
 
     Promise.all([
-      getHikmahTree(treeId),
+      getHikmahTree(treeId, { language: apiCode }),
       getLessonsByTreeId(Number(treeId), {
         order_by: "order_position",
         limit: 200,
+        language: apiCode,
       }),
     ])
       .then(([t, ls]) => {
@@ -74,7 +77,7 @@ export default function TreeDetailScreen() {
     return () => {
       mounted = false;
     };
-  }, [treeId]);
+  }, [treeId, apiCode]);
 
   const sortedLessons = useMemo(() => {
     return lessons

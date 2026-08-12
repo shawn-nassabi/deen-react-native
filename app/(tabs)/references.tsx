@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import PlatformBlurView from "@/components/ui/PlatformBlurView";
+import { useTranslation } from "react-i18next";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { searchReferences } from "@/utils/api";
@@ -26,6 +27,7 @@ const INPUT_CONTAINER_HEIGHT = 70;
 
 export default function ReferencesScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const blurIntensity = Platform.OS === "android" ? 120 : 60;
@@ -101,7 +103,7 @@ export default function ReferencesScreen() {
               style={styles.headerLogo}
             />
             <ThemedText type="subtitle" style={styles.headerTitle}>
-              References
+              {t("references.title")}
             </ThemedText>
           </View>
         </View>

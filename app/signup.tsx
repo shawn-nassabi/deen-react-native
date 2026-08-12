@@ -16,35 +16,19 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { useAuth } from "@/hooks/useAuth";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
-// ---- Error message mapping ----
-
-function mapSignUpError(message: string): string {
-  if (message.includes("User already registered")) {
-    return "An account with this email already exists. Try signing in.";
-  }
-  if (
-    message.toLowerCase().includes("weak") ||
-    message.includes("Password should be")
-  ) {
-    return "Password must be at least 6 characters.";
-  }
-  if (message.toLowerCase().includes("network")) {
-    return "Something went wrong. Check your connection and try again.";
-  }
-  return "Something went wrong. Check your connection and try again.";
-}
-
 // ---- Screen ----
 
 export default function SignUpScreen() {
   const { signUp } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
@@ -62,10 +46,23 @@ export default function SignUpScreen() {
   const emailRef = React.useRef<TextInput>(null);
   const passwordRef = React.useRef<TextInput>(null);
 
+  const mapSignUpError = (message: string): string => {
+    if (message.includes("User already registered")) {
+      return t("auth.errorEmailInUse");
+    }
+    if (
+      message.toLowerCase().includes("weak") ||
+      message.includes("Password should be")
+    ) {
+      return t("auth.errorWeakPassword");
+    }
+    return t("auth.errorNetwork");
+  };
+
   const handleSignUp = async () => {
     if (busy) return;
     if (!displayName.trim()) {
-      setError("Please enter your display name.");
+      setError(t("auth.displayNameRequired"));
       return;
     }
     setBusy(true);
@@ -78,7 +75,7 @@ export default function SignUpScreen() {
         router.replace("/(tabs)");
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Something went wrong. Check your connection and try again.";
+      const msg = e instanceof Error ? e.message : "";
       setError(mapSignUpError(msg));
     } finally {
       setBusy(false);
@@ -117,14 +114,10 @@ export default function SignUpScreen() {
                   <Ionicons name="mail-outline" size={40} color={colors.primary} style={{ marginBottom: 12 }} />
                 </View>
                 <ThemedText style={[styles.heading, { textAlign: "center" }]}>
-                  Check your email
+                  {t("auth.checkEmail")}
                 </ThemedText>
                 <ThemedText style={[styles.confirmBody, { color: colors.muted }]}>
-                  {"We've sent a verification link to "}
-                  <ThemedText style={{ fontWeight: "600", color: colors.text }}>
-                    {email.trim()}
-                  </ThemedText>
-                  {". Please verify before signing in — don't forget to check your junk folder."}
+                  {t("auth.checkEmailVerificationBody", { email: email.trim() })}
                 </ThemedText>
                 <View style={styles.linksRow}>
                   <TouchableOpacity
@@ -133,7 +126,7 @@ export default function SignUpScreen() {
                     style={styles.linkButton}
                   >
                     <ThemedText style={[styles.linkText, { color: colors.primary }]}>
-                      Back to sign in
+                      {t("auth.backToSignIn")}
                     </ThemedText>
                   </TouchableOpacity>
                 </View>
@@ -142,7 +135,7 @@ export default function SignUpScreen() {
               /* ---- Sign Up form ---- */
               <>
                 {/* Heading */}
-                <ThemedText style={styles.heading}>Create account</ThemedText>
+                <ThemedText style={styles.heading}>{t("auth.signUpSubtitle")}</ThemedText>
 
                 {/* Display name input */}
                 <View style={styles.inputGroup}>
@@ -156,7 +149,7 @@ export default function SignUpScreen() {
                         color: colors.text,
                       },
                     ]}
-                    placeholder="Display name"
+                    placeholder={t("auth.displayName")}
                     placeholderTextColor={colors.muted}
                     autoCapitalize="words"
                     autoCorrect={false}
@@ -181,7 +174,7 @@ export default function SignUpScreen() {
                         color: colors.text,
                       },
                     ]}
-                    placeholder="Email address"
+                    placeholder={t("auth.email")}
                     placeholderTextColor={colors.muted}
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -208,7 +201,7 @@ export default function SignUpScreen() {
                         color: colors.text,
                       },
                     ]}
-                    placeholder="Password"
+                    placeholder={t("auth.password")}
                     placeholderTextColor={colors.muted}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
@@ -223,7 +216,7 @@ export default function SignUpScreen() {
                   <TouchableOpacity
                     style={styles.showHideToggle}
                     onPress={() => setShowPassword((v) => !v)}
-                    accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                    accessibilityLabel={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
                   >
                     <Ionicons
                       name={showPassword ? "eye-off-outline" : "eye-outline"}
@@ -251,10 +244,10 @@ export default function SignUpScreen() {
                   {busy ? (
                     <View style={styles.buttonRow}>
                       <ActivityIndicator color="#fff" />
-                      <ThemedText style={styles.buttonText}>Creating account…</ThemedText>
+                      <ThemedText style={styles.buttonText}>{t("auth.creatingAccount")}</ThemedText>
                     </View>
                   ) : (
-                    <ThemedText style={styles.buttonText}>Sign up</ThemedText>
+                    <ThemedText style={styles.buttonText}>{t("auth.signUp")}</ThemedText>
                   )}
                 </TouchableOpacity>
 
@@ -266,7 +259,7 @@ export default function SignUpScreen() {
                     style={styles.linkButton}
                   >
                     <ThemedText style={[styles.linkText, { color: colors.primary }]}>
-                      Already have an account? Sign in
+                      {t("auth.alreadyHaveAccountSignIn")}
                     </ThemedText>
                   </TouchableOpacity>
                 </View>

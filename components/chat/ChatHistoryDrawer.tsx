@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation, type TFunction } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -29,7 +30,7 @@ const DRAWER_MAX_WIDTH = 320;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.82, DRAWER_MAX_WIDTH);
 
-function formatRelativeTime(dateStr: string): string {
+function formatRelativeTime(dateStr: string, t: TFunction): string {
   try {
     const date = new Date(dateStr);
     const now = new Date();
@@ -38,11 +39,11 @@ function formatRelativeTime(dateStr: string): string {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return t("chat.justNow");
+    if (diffMins < 60) return t("chat.minutesAgo", { count: diffMins });
+    if (diffHours < 24) return t("chat.hoursAgo", { count: diffHours });
+    if (diffDays === 1) return t("chat.yesterday");
+    if (diffDays < 7) return t("chat.daysAgo", { count: diffDays });
 
     return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   } catch {
@@ -69,6 +70,7 @@ export default function ChatHistoryDrawer({
   isAuthenticated,
   isLoadingChat,
 }: Props) {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
@@ -169,11 +171,11 @@ export default function ChatHistoryDrawer({
                 { color: isActive ? colors.primary : colors.text },
               ]}
             >
-              {item.title || "Untitled Chat"}
+              {item.title || t("chat.untitledChat")}
             </ThemedText>
             <View style={styles.chatItemMeta}>
               <ThemedText style={[styles.chatItemTime, { color: colors.muted }]}>
-                {formatRelativeTime(item.last_message_at)}
+                {formatRelativeTime(item.last_message_at, t)}
               </ThemedText>
               <View
                 style={[
@@ -195,7 +197,7 @@ export default function ChatHistoryDrawer({
         </TouchableOpacity>
       );
     },
-    [activeSessionId, colors, handleSelectChat, isLoadingChat]
+    [activeSessionId, colors, handleSelectChat, isLoadingChat, t]
   );
 
   const renderListContent = () => {
@@ -204,7 +206,7 @@ export default function ChatHistoryDrawer({
         <View style={styles.centeredState}>
           <Ionicons name="lock-closed-outline" size={36} color={colors.muted} />
           <ThemedText style={[styles.stateText, { color: colors.textSecondary }]}>
-            Sign in to view your chat history
+            {t("chat.signInForHistory")}
           </ThemedText>
         </View>
       );
@@ -223,7 +225,7 @@ export default function ChatHistoryDrawer({
         <View style={styles.centeredState}>
           <Ionicons name="cloud-offline-outline" size={36} color={colors.muted} />
           <ThemedText style={[styles.stateText, { color: colors.textSecondary }]}>
-            Failed to load history
+            {t("chat.failedToLoadHistory")}
           </ThemedText>
           <TouchableOpacity
             style={[styles.retryButton, { borderColor: colors.border }]}
@@ -231,7 +233,7 @@ export default function ChatHistoryDrawer({
             activeOpacity={0.7}
           >
             <ThemedText style={[styles.retryText, { color: colors.primary }]}>
-              Retry
+              {t("chat.retry")}
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -243,10 +245,10 @@ export default function ChatHistoryDrawer({
         <View style={styles.centeredState}>
           <Ionicons name="chatbubble-outline" size={36} color={colors.muted} />
           <ThemedText style={[styles.stateText, { color: colors.textSecondary }]}>
-            No saved chats yet
+            {t("chat.noSavedChats")}
           </ThemedText>
           <ThemedText style={[styles.stateSubText, { color: colors.muted }]}>
-            Start a conversation and it will appear here
+            {t("chat.noSavedChatsHint")}
           </ThemedText>
         </View>
       );
@@ -309,7 +311,7 @@ export default function ChatHistoryDrawer({
           {/* Header */}
           <View style={[styles.drawerHeader, { borderBottomColor: colors.border }]}>
             <ThemedText type="subtitle" style={styles.drawerTitle}>
-              Chat History
+              {t("chat.history")}
             </ThemedText>
             <TouchableOpacity
               hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
@@ -334,7 +336,7 @@ export default function ChatHistoryDrawer({
           >
             <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
             <ThemedText style={[styles.newChatRowText, { color: colors.primary }]}>
-              New Chat
+              {t("chat.newChatFull")}
             </ThemedText>
           </TouchableOpacity>
 

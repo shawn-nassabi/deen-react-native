@@ -1,5 +1,7 @@
 // Import polyfills first for streaming support
 import "@/utils/polyfills";
+// Initialise i18next — runs synchronously before any JSX renders
+import "@/i18n/index";
 
 import {
   DarkTheme,
@@ -17,13 +19,22 @@ import {
   Montserrat_700Bold,
 } from "@expo-google-fonts/montserrat";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { I18nManager } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  DEFAULT_LANGUAGE_CODE,
+  getLanguageConfig,
+} from "@/utils/languageConfig";
+import type { LanguageCode } from "@/utils/languageConfig";
+import { STORAGE_KEYS } from "@/utils/constants";
 
 import {
   ThemeProvider,
   useThemePreference,
 } from "@/hooks/use-theme-preference";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { LanguageProvider } from "@/hooks/use-language-preference";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -147,22 +158,49 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  // Enable RTL layout capability in the native layer (idempotent; must be
+  // called before any component renders so forceRTL() calls take effect).
+  I18nManager.allowRTL(true);
+
   const [loaded, error] = useFonts({
     Montserrat_400Regular,
     Montserrat_500Medium,
     Montserrat_600SemiBold,
     Montserrat_700Bold,
   });
+  const [rtlReady, setRtlReady] = useState(false);
 
-  if (!loaded && !error) {
+  // Apply correct RTL direction from stored language before first render so
+  // the layout direction matches the app language on every cold start.
+  useEffect(() => {
+    async function applyStoredRTL() {
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEYS.APP_LANGUAGE);
+        const code = (stored ?? DEFAULT_LANGUAGE_CODE) as LanguageCode;
+        const config = getLanguageConfig(code);
+        I18nManager.forceRTL(config.rtl);
+      } catch {
+        I18nManager.forceRTL(false); // safe default: LTR
+      } finally {
+        setRtlReady(true);
+      }
+    }
+    applyStoredRTL();
+  }, []);
+
+  // Gate on both font load AND RTL init so the app never renders with a
+  // mismatched layout direction.
+  if ((!loaded && !error) || !rtlReady) {
     return null;
   }
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }
