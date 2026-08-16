@@ -52,13 +52,19 @@
       "اهمیت عاشورا در اسلام شیعی چیست؟",
       "آیا می‌توانید مفهوم امامت را توضیح دهید؟",
       "امام علی کیست؟"
-    ]
+    ],
+    "you": "شما",
+    "copy": "کپی",
+    "copied": "کپی شد",
+    "copyAccessibility": "کپی پاسخ به کلیپ‌بورد",
+    "copiedAccessibility": "پاسخ در کلیپ‌بورد کپی شد",
+    "referencesAvailable_one": "{{localizedCount}} منبع موجود",
+    "referencesAvailable_other": "{{localizedCount}} منبع موجود"
   },
   "settings": {
     "title": "تنظیمات",
     "language": "زبان",
     "languageDescription": "زبان مورد نظر خود را انتخاب کنید",
-    "languageRestartBanner": "تغییر جهت متن پس از راه‌اندازی مجدد برنامه اعمال می‌شود.",
     "appearance": "ظاهر",
     "appearanceDescription": "نحوه نمایش دین را انتخاب کنید",
     "themeSystem": "خودکار",

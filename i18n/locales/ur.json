@@ -52,13 +52,19 @@
       "شیعہ اسلام میں عاشورا کی کیا اہمیت ہے؟",
       "کیا آپ امامت کے تصور کی وضاحت کر سکتے ہیں؟",
       "امام علی کون ہیں؟"
-    ]
+    ],
+    "you": "آپ",
+    "copy": "کاپی",
+    "copied": "کاپی ہو گیا",
+    "copyAccessibility": "جواب کو کلپ بورڈ پر کاپی کریں",
+    "copiedAccessibility": "جواب کلپ بورڈ پر کاپی ہو گیا",
+    "referencesAvailable_one": "{{localizedCount}} حوالہ دستیاب",
+    "referencesAvailable_other": "{{localizedCount}} حوالہ جات دستیاب"
   },
   "settings": {
     "title": "ترتیبات",
     "language": "زبان",
     "languageDescription": "اپنی پسندیدہ زبان منتخب کریں",
-    "languageRestartBanner": "سمت کی تبدیلی ایپ دوبارہ شروع کرنے کے بعد نافذ ہوگی۔",
     "appearance": "ظاہری شکل",
     "appearanceDescription": "دین کی ظاہری شکل منتخب کریں",
     "themeSystem": "سسٹم",

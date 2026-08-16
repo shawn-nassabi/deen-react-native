@@ -52,13 +52,19 @@
       "Quelle est l'importance de l'Achoura dans l'islam chiite ?",
       "Pouvez-vous expliquer le concept de l'Imamat ?",
       "Qui est l'Imam Ali ?"
-    ]
+    ],
+    "you": "Vous",
+    "copy": "Copier",
+    "copied": "Copié",
+    "copyAccessibility": "Copier la réponse dans le presse-papiers",
+    "copiedAccessibility": "Réponse copiée dans le presse-papiers",
+    "referencesAvailable_one": "{{localizedCount}} référence disponible",
+    "referencesAvailable_other": "{{localizedCount}} références disponibles"
   },
   "settings": {
     "title": "Paramètres",
     "language": "Langue",
     "languageDescription": "Choisissez votre langue préférée",
-    "languageRestartBanner": "Le changement de direction prendra effet après le redémarrage de l'application.",
     "appearance": "Apparence",
     "appearanceDescription": "Choisissez l'apparence de Deen",
     "themeSystem": "Système",

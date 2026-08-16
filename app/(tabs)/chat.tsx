@@ -2,52 +2,52 @@
  * Chat screen - Main chat interface with streaming AI responses
  */
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  Platform,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Keyboard,
-  Dimensions,
-} from "react-native";
-import PlatformBlurView from "@/components/ui/PlatformBlurView";
-import { Ionicons } from "@expo/vector-icons";
-import { useTranslation } from "react-i18next";
+import ChatHistoryDrawer from "@/components/chat/ChatHistoryDrawer";
+import ChatInput from "@/components/chat/ChatInput";
+import ChatMessage from "@/components/chat/ChatMessage";
+import SuggestedQuestions from "@/components/chat/SuggestedQuestions";
+import ElaborationModal from "@/components/hikmah/ElaborationModal";
 import { ThemedText } from "@/components/themed-text";
+import LoadingIndicator from "@/components/ui/LoadingIndicator";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import ChatMessage from "@/components/chat/ChatMessage";
-import ChatInput from "@/components/chat/ChatInput";
-import LoadingIndicator from "@/components/ui/LoadingIndicator";
-import SuggestedQuestions from "@/components/chat/SuggestedQuestions";
+import { useLanguagePreference } from "@/hooks/use-language-preference";
+import { useAuth } from "@/hooks/useAuth";
+import { useStreamingText } from "@/hooks/useStreamingText";
 import {
+  fetchSavedChatDetail,
   getOrCreateSessionId,
   sendChatMessage,
   startNewConversation,
-  fetchSavedChatDetail,
 } from "@/utils/api";
 import {
+  clearMessages,
   loadMessages,
   saveMessages,
-  clearMessages,
   purgeExpiredSessions,
   type Message,
 } from "@/utils/chatStorage";
-import { useLanguagePreference } from "@/hooks/use-language-preference";
+import { ERROR_MESSAGES, UI_CONSTANTS } from "@/utils/constants";
 import { LANGUAGES, getLanguageConfig, type LanguageCode } from "@/utils/languageConfig";
 import { consumePendingChatPrompt } from "@/utils/pendingChatPrompt";
-import { ERROR_MESSAGES, UI_CONSTANTS } from "@/utils/constants";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "@/hooks/useAuth";
-import { useStreamingText } from "@/hooks/useStreamingText";
-import ChatHistoryDrawer from "@/components/chat/ChatHistoryDrawer";
-import ElaborationModal from "@/components/hikmah/ElaborationModal";
 
 // Module-level flag: true once the chat screen has mounted at least once in this JS runtime.
 // Reset to false on every cold start (new process / OS-kill / dev reload), which is exactly
@@ -77,7 +77,7 @@ const EmptyState = React.memo(({
   const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
-  const { languageCode, setLanguage, pendingRTLRestart } = useLanguagePreference();
+  const { languageCode, setLanguage } = useLanguagePreference();
   const [isLangOpen, setIsLangOpen] = useState(false);
   const currentLang = getLanguageConfig(languageCode);
 
@@ -168,19 +168,6 @@ const EmptyState = React.memo(({
                 ))}
               </View>
             )}
-          {pendingRTLRestart && (
-            <View
-              style={[
-                styles.rtlBanner,
-                { backgroundColor: "#fff1f1", borderColor: "#f87171" },
-              ]}
-            >
-              <Ionicons name="warning-outline" size={14} color="#dc2626" />
-              <ThemedText style={[styles.rtlBannerText, { color: "#dc2626" }]}>
-                {t("settings.languageRestartBanner")}
-              </ThemedText>
-            </View>
-          )}
           </View>
 
           <SuggestedQuestions onQuestionClick={onQuestionClick} />
@@ -653,7 +640,7 @@ export default function ChatScreen() {
       {/* Main Content with KeyboardAvoidingView */}
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+           behavior="padding"
         keyboardVerticalOffset={0}
       >
         {/* Messages List */}
@@ -893,19 +880,5 @@ const styles = StyleSheet.create({
   langDropdownEnglish: {
     fontSize: 12,
     marginTop: 1,
-  },
-  rtlBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 8,
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  rtlBannerText: {
-    fontSize: 12,
-    flex: 1,
-    lineHeight: 16,
   },
 });

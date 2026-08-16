@@ -52,13 +52,19 @@
       "Was ist die Bedeutung von Ashura im schiitischen Islam?",
       "Kannst du das Konzept des Imamats erklären?",
       "Wer ist Imam Ali?"
-    ]
+    ],
+    "you": "Du",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "copyAccessibility": "Antwort in die Zwischenablage kopieren",
+    "copiedAccessibility": "Antwort in die Zwischenablage kopiert",
+    "referencesAvailable_one": "{{localizedCount}} Quelle verfügbar",
+    "referencesAvailable_other": "{{localizedCount}} Quellen verfügbar"
   },
   "settings": {
     "title": "Einstellungen",
     "language": "Sprache",
     "languageDescription": "Wähle deine bevorzugte Sprache",
-    "languageRestartBanner": "Die Richtungsänderung wird nach dem Neustart der App wirksam.",
     "appearance": "Erscheinungsbild",
     "appearanceDescription": "Wähle aus, wie Deen aussieht",
     "themeSystem": "System",

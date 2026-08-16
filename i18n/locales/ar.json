@@ -52,13 +52,19 @@
       "ما أهمية عاشوراء في الإسلام الشيعي؟",
       "هل يمكنك شرح مفهوم الإمامة؟",
       "من هو الإمام علي؟"
-    ]
+    ],
+    "you": "أنت",
+    "copy": "نسخ",
+    "copied": "تم النسخ",
+    "copyAccessibility": "نسخ الرد إلى الحافظة",
+    "copiedAccessibility": "تم نسخ الرد إلى الحافظة",
+    "referencesAvailable_one": "{{localizedCount}} مرجع متاح",
+    "referencesAvailable_other": "{{localizedCount}} مراجع متاحة"
   },
   "settings": {
     "title": "الإعدادات",
     "language": "اللغة",
     "languageDescription": "اختر لغتك المفضلة",
-    "languageRestartBanner": "سيسري تغيير اتجاه النص بعد إعادة تشغيل التطبيق.",
     "appearance": "المظهر",
     "appearanceDescription": "اختر كيف يبدو دين",
     "themeSystem": "تلقائي",

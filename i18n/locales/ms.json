@@ -52,13 +52,19 @@
       "Apakah kepentingan Ashura dalam Islam Syiah?",
       "Bolehkah anda jelaskan konsep Imamah?",
       "Siapakah Imam Ali?"
-    ]
+    ],
+    "you": "Anda",
+    "copy": "Salin",
+    "copied": "Disalin",
+    "copyAccessibility": "Salin respons ke papan klip",
+    "copiedAccessibility": "Respons disalin ke papan klip",
+    "referencesAvailable_one": "{{localizedCount}} rujukan tersedia",
+    "referencesAvailable_other": "{{localizedCount}} rujukan tersedia"
   },
   "settings": {
     "title": "Tetapan",
     "language": "Bahasa",
     "languageDescription": "Pilih bahasa pilihan anda",
-    "languageRestartBanner": "Perubahan arah teks akan berkuat kuasa selepas memulakan semula aplikasi.",
     "appearance": "Penampilan",
     "appearanceDescription": "Pilih cara Deen kelihatan kepada anda",
     "themeSystem": "Sistem",

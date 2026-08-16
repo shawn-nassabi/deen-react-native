@@ -21,6 +21,11 @@ import {
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useRef, useState } from "react";
 import { I18nManager } from "react-native";
+
+// Must run before any React rendering begins so forceRTL() calls take effect.
+// Idempotent — safe to call unconditionally at module load time.
+I18nManager.allowRTL(true);
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   DEFAULT_LANGUAGE_CODE,
@@ -158,10 +163,6 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  // Enable RTL layout capability in the native layer (idempotent; must be
-  // called before any component renders so forceRTL() calls take effect).
-  I18nManager.allowRTL(true);
-
   const [loaded, error] = useFonts({
     Montserrat_400Regular,
     Montserrat_500Medium,
@@ -178,9 +179,18 @@ export default function RootLayout() {
         const stored = await AsyncStorage.getItem(STORAGE_KEYS.APP_LANGUAGE);
         const code = (stored ?? DEFAULT_LANGUAGE_CODE) as LanguageCode;
         const config = getLanguageConfig(code);
-        I18nManager.forceRTL(config.rtl);
+        // Only flip if the native direction doesn't already match. On a true cold
+        // start after switching languages, native reads NSUserDefaults / SharedPrefs
+        // and initialises the Fabric surface to the correct direction automatically.
+        // Calling forceRTL() again with the same value is a no-op in theory but can
+        // trigger a redundant layout pass in New Architecture that reverts the direction.
+        if (I18nManager.isRTL !== config.rtl) {
+          I18nManager.forceRTL(config.rtl);
+        }
       } catch {
-        I18nManager.forceRTL(false); // safe default: LTR
+        if (I18nManager.isRTL) {
+          I18nManager.forceRTL(false); // safe default: LTR
+        }
       } finally {
         setRtlReady(true);
       }

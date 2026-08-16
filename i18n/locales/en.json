@@ -52,13 +52,19 @@
       "What is the importance of Ashura in Shia Islam?",
       "Can you explain the concept of Imamate?",
       "Who is Imam Ali?"
-    ]
+    ],
+    "you": "You",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyAccessibility": "Copy response to clipboard",
+    "copiedAccessibility": "Response copied to clipboard",
+    "referencesAvailable_one": "{{localizedCount}} reference available",
+    "referencesAvailable_other": "{{localizedCount}} references available"
   },
   "settings": {
     "title": "Settings",
     "language": "Language",
     "languageDescription": "Choose your preferred language",
-    "languageRestartBanner": "Direction change will take effect after restarting the app.",
     "appearance": "Appearance",
     "appearanceDescription": "Choose how Deen looks to you",
     "themeSystem": "System",

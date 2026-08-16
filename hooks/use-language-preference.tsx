@@ -6,6 +6,7 @@ import React, {
   type ReactNode,
 } from "react";
 import { I18nManager } from "react-native";
+import RNRestart from "react-native-restart";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import i18n from "@/i18n/index";
 import {
@@ -20,14 +21,12 @@ interface LanguageContextType {
   isRTL: boolean;
   apiCode: string;
   setLanguage: (code: LanguageCode) => Promise<void>;
-  pendingRTLRestart: boolean;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [languageCode, setLanguageCode] = useState<LanguageCode>(DEFAULT_LANGUAGE_CODE);
-  const [pendingRTLRestart, setPendingRTLRestart] = useState(false);
 
   // Load persisted language preference on mount
   useEffect(() => {
@@ -58,10 +57,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       setLanguageCode(code);
       await i18n.changeLanguage(code);
 
-      // If RTL direction is changing, notify user a restart is needed
+      // Only RTL↔LTR transitions require a full process restart.
+      // Non-RTL switches (e.g. English → German) are handled live by i18next above.
       if (config.rtl !== previousConfig.rtl) {
         I18nManager.forceRTL(config.rtl);
-        setPendingRTLRestart(true);
+        RNRestart.Restart();
       }
     } catch (error) {
       console.warn("⚠️ Failed to save language preference:", error);
@@ -77,7 +77,6 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         isRTL: config.rtl,
         apiCode: config.apiCode,
         setLanguage,
-        pendingRTLRestart,
       }}
     >
       {children}

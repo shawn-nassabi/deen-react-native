@@ -28,3 +28,15 @@ export const DEFAULT_LANGUAGE_CODE: LanguageCode = "en";
 export function getLanguageConfig(code: LanguageCode): LanguageConfig {
   return LANGUAGES.find((l) => l.code === code) ?? LANGUAGES[0];
 }
+
+const EASTERN_ARABIC_DIGITS = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+const PERSIAN_DIGITS        = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+
+/** Convert a non-negative integer to the numeral system of the given language. */
+export function localizeNumber(n: number, code: LanguageCode): string {
+  const digits = code === "ar" ? EASTERN_ARABIC_DIGITS
+               : (code === "fa" || code === "ur") ? PERSIAN_DIGITS
+               : null;
+  if (!digits) return String(n);
+  return String(n).replace(/[0-9]/g, (d) => digits[parseInt(d)]);
+}

@@ -2,25 +2,25 @@
  * References screen - Search and display Islamic references
  */
 
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  Platform,
-  View,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-} from "react-native";
+import ReferencesContainer from "@/components/references/ReferencesContainer";
+import SearchInput from "@/components/references/SearchInput";
+import { ThemedText } from "@/components/themed-text";
 import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { useTranslation } from "react-i18next";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { searchReferences } from "@/utils/api";
 import { ERROR_MESSAGES } from "@/utils/constants";
-import ReferencesContainer from "@/components/references/ReferencesContainer";
-import SearchInput from "@/components/references/SearchInput";
+import React, { useState } from "react";
+import {
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ThemedText } from "@/components/themed-text";
 
 // Estimated input container height for padding calculations
 const INPUT_CONTAINER_HEIGHT = 70;
@@ -112,7 +112,7 @@ export default function ReferencesScreen() {
       {/* Main Content with KeyboardAvoidingView */}
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+           behavior="padding"
         keyboardVerticalOffset={0}
       >
         {/* Content */}

@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useLanguagePreference } from "@/hooks/use-language-preference";
 import {
   fetchSavedChats,
   type SavedChatListItem,
@@ -74,9 +75,18 @@ export default function ChatHistoryDrawer({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
+  const { isRTL } = useLanguagePreference();
 
-  const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
+  const translateX = useRef(new Animated.Value(isRTL ? DRAWER_WIDTH : -DRAWER_WIDTH)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
+
+  // Keep translateX parked at the correct off-screen position when isRTL changes
+  // (e.g., during an in-session language switch before the required restart).
+  useEffect(() => {
+    if (!visible) {
+      translateX.setValue(isRTL ? DRAWER_WIDTH : -DRAWER_WIDTH);
+    }
+  }, [isRTL, visible, translateX]);
 
   const [chats, setChats] = useState<SavedChatListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -118,7 +128,7 @@ export default function ChatHistoryDrawer({
     } else {
       Animated.parallel([
         Animated.spring(translateX, {
-          toValue: -DRAWER_WIDTH,
+          toValue: isRTL ? DRAWER_WIDTH : -DRAWER_WIDTH,
           useNativeDriver: true,
           damping: 22,
           stiffness: 200,
@@ -132,7 +142,7 @@ export default function ChatHistoryDrawer({
         if (finished) setIsVisible(false);
       });
     }
-  }, [visible, loadChats, translateX, overlayOpacity]);
+  }, [visible, isRTL, loadChats, translateX, overlayOpacity]);
 
   const handleSelectChat = useCallback(
     (sessionId: string) => {
@@ -288,6 +298,7 @@ export default function ChatHistoryDrawer({
       <Animated.View
         style={[
           styles.drawer,
+          isRTL ? styles.drawerRTL : styles.drawerLTR,
           {
             width: DRAWER_WIDTH,
             transform: [{ translateX }],
@@ -356,11 +367,18 @@ const styles = StyleSheet.create({
   drawer: {
     position: "absolute",
     top: 0,
-    left: 0,
     bottom: 0,
     overflow: "hidden",
+  },
+  drawerLTR: {
+    left: 0,
     borderRightWidth: 1,
     borderRightColor: "rgba(0,0,0,0.08)",
+  },
+  drawerRTL: {
+    right: 0,
+    borderLeftWidth: 1,
+    borderLeftColor: "rgba(0,0,0,0.08)",
   },
   drawerInner: {
     flex: 1,
