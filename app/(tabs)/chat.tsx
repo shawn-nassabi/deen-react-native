@@ -77,7 +77,7 @@ const EmptyState = React.memo(({
   const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
-  const { languageCode, setLanguage } = useLanguagePreference();
+  const { languageCode, setLanguage, pendingRTLRestart } = useLanguagePreference();
   const [isLangOpen, setIsLangOpen] = useState(false);
   const currentLang = getLanguageConfig(languageCode);
 
@@ -168,6 +168,19 @@ const EmptyState = React.memo(({
                 ))}
               </View>
             )}
+          {pendingRTLRestart && (
+            <View
+              style={[
+                styles.rtlBanner,
+                { backgroundColor: "#fff1f1", borderColor: "#f87171" },
+              ]}
+            >
+              <Ionicons name="warning-outline" size={14} color="#dc2626" />
+              <ThemedText style={[styles.rtlBannerText, { color: "#dc2626" }]}>
+                {t("settings.languageRestartBanner")}
+              </ThemedText>
+            </View>
+          )}
           </View>
 
           <SuggestedQuestions onQuestionClick={onQuestionClick} />
@@ -880,5 +893,19 @@ const styles = StyleSheet.create({
   langDropdownEnglish: {
     fontSize: 12,
     marginTop: 1,
+  },
+  rtlBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  rtlBannerText: {
+    fontSize: 12,
+    flex: 1,
+    lineHeight: 16,
   },
 });

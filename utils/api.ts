@@ -7,10 +7,10 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import uuid from "react-native-uuid";
-import { CONFIG } from "./config";
-import { STORAGE_KEYS } from "./constants";
 import { getValidAccessToken } from "./auth";
 import type { Reference } from "./chatStorage";
+import { CONFIG } from "./config";
+import { STORAGE_KEYS } from "./constants";
 
 const API_BASE_URL = CONFIG.API_BASE_URL;
 const SESSION_KEY = STORAGE_KEYS.SESSION_ID;
