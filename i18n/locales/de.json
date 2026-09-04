@@ -199,7 +199,17 @@
     "startLesson": "Lektion starten",
     "back": "Zurück",
     "continueLesson": "Weiter",
-    "lessonComplete": "Lektion abgeschlossen"
+    "lessonComplete": "Lektion abgeschlossen",
+    "elaborationPlaceholder": "Frag zu dieser Lektion...",
+    "completed": "abgeschlossen",
+    "readMore": "Mehr lesen",
+    "readLess": "Weniger lesen",
+    "percentComplete": "{{percent}}% abgeschlossen",
+    "lessonsComing": "Lektionen kommen bald...",
+    "minRead": "{{min}} Min. Lesezeit",
+    "questionOf": "Frage {{current}} von {{total}}",
+    "noQuestions": "Keine Fragen für diese Seite.",
+    "explanation": "Erklärung"
   },
   "references": {
     "title": "Quellen",
@@ -213,7 +223,8 @@
     "sunni": "Sunnitische Quellen",
     "topResults": "Top {{count}} Ergebnisse",
     "noShiaRefs": "Keine schiitischen Quellen gefunden",
-    "noSunniRefs": "Keine sunnitischen Quellen gefunden"
+    "noSunniRefs": "Keine sunnitischen Quellen gefunden",
+    "found": "{{count}} gefunden"
   },
   "home": {
     "joinVision": "Der Vision beitreten",

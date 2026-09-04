@@ -199,7 +199,17 @@
     "startLesson": "سبق شروع کریں",
     "back": "واپس",
     "continueLesson": "جاری رکھیں",
-    "lessonComplete": "سبق مکمل"
+    "lessonComplete": "سبق مکمل",
+    "elaborationPlaceholder": "اس سبق کے بارے میں پوچھیں...",
+    "completed": "مکمل",
+    "readMore": "مزید پڑھیں",
+    "readLess": "کم پڑھیں",
+    "percentComplete": "{{percent}}% مکمل",
+    "lessonsComing": "اسباق جلد آ رہے ہیں...",
+    "minRead": "{{min}} منٹ پڑھنا",
+    "questionOf": "سوال {{current}} از {{total}}",
+    "noQuestions": "اس صفحے کے لیے کوئی سوال نہیں۔",
+    "explanation": "وضاحت"
   },
   "references": {
     "title": "حوالہ جات",
@@ -213,7 +223,8 @@
     "sunni": "سنی حوالہ جات",
     "topResults": "{{count}} بہترین نتائج",
     "noShiaRefs": "کوئی شیعہ حوالہ نہیں ملا",
-    "noSunniRefs": "کوئی سنی حوالہ نہیں ملا"
+    "noSunniRefs": "کوئی سنی حوالہ نہیں ملا",
+    "found": "{{count}} ملے"
   },
   "home": {
     "joinVision": "وژن میں شامل ہوں",

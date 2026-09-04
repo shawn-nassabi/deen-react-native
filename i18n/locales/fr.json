@@ -199,7 +199,17 @@
     "startLesson": "Commencer la leçon",
     "back": "Retour",
     "continueLesson": "Continuer",
-    "lessonComplete": "Leçon terminée"
+    "lessonComplete": "Leçon terminée",
+    "elaborationPlaceholder": "Posez une question sur cette leçon...",
+    "completed": "terminé",
+    "readMore": "Lire plus",
+    "readLess": "Lire moins",
+    "percentComplete": "{{percent}}% terminé",
+    "lessonsComing": "Leçons à venir...",
+    "minRead": "{{min}} min de lecture",
+    "questionOf": "Question {{current}} sur {{total}}",
+    "noQuestions": "Pas de questions pour cette page.",
+    "explanation": "Explication"
   },
   "references": {
     "title": "Références",
@@ -213,7 +223,8 @@
     "sunni": "Références sunnites",
     "topResults": "Top {{count}} résultats",
     "noShiaRefs": "Aucune référence chiite trouvée",
-    "noSunniRefs": "Aucune référence sunnite trouvée"
+    "noSunniRefs": "Aucune référence sunnite trouvée",
+    "found": "{{count}} trouvé"
   },
   "home": {
     "joinVision": "Rejoindre la vision",

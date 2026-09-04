@@ -199,7 +199,17 @@
     "startLesson": "Mulakan Pelajaran",
     "back": "Kembali",
     "continueLesson": "Teruskan",
-    "lessonComplete": "Pelajaran Selesai"
+    "lessonComplete": "Pelajaran Selesai",
+    "elaborationPlaceholder": "Tanya tentang pelajaran ini...",
+    "completed": "selesai",
+    "readMore": "Baca lagi",
+    "readLess": "Baca kurang",
+    "percentComplete": "{{percent}}% selesai",
+    "lessonsComing": "Pelajaran akan datang...",
+    "minRead": "{{min}} min baca",
+    "questionOf": "Soalan {{current}} daripada {{total}}",
+    "noQuestions": "Tiada soalan untuk halaman ini.",
+    "explanation": "Penjelasan"
   },
   "references": {
     "title": "Rujukan",
@@ -213,7 +223,8 @@
     "sunni": "Rujukan Sunni",
     "topResults": "{{count}} hasil teratas",
     "noShiaRefs": "Tiada rujukan Syiah ditemui",
-    "noSunniRefs": "Tiada rujukan Sunni ditemui"
+    "noSunniRefs": "Tiada rujukan Sunni ditemui",
+    "found": "{{count}} ditemui"
   },
   "home": {
     "joinVision": "Sertai Visi",

@@ -199,7 +199,17 @@
     "startLesson": "شروع درس",
     "back": "بازگشت",
     "continueLesson": "ادامه",
-    "lessonComplete": "درس کامل شد"
+    "lessonComplete": "درس کامل شد",
+    "elaborationPlaceholder": "درباره این درس بپرسید...",
+    "completed": "تکمیل شد",
+    "readMore": "بیشتر بخوانید",
+    "readLess": "کمتر بخوانید",
+    "percentComplete": "{{percent}}% کامل",
+    "lessonsComing": "دروس به زودی...",
+    "minRead": "{{min}} دقیقه مطالعه",
+    "questionOf": "سوال {{current}} از {{total}}",
+    "noQuestions": "هیچ سوالی برای این صفحه وجود ندارد.",
+    "explanation": "توضیح"
   },
   "references": {
     "title": "منابع",
@@ -213,7 +223,8 @@
     "sunni": "منابع اهل سنت",
     "topResults": "{{count}} نتیجه برتر",
     "noShiaRefs": "هیچ منبع شیعی یافت نشد",
-    "noSunniRefs": "هیچ منبع سنی یافت نشد"
+    "noSunniRefs": "هیچ منبع سنی یافت نشد",
+    "found": "{{count}} یافت شد"
   },
   "home": {
     "joinVision": "به چشم‌انداز بپیوندید",

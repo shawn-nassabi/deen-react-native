@@ -1047,9 +1047,10 @@ export async function getLessonsByTreeId(
 
 /** GET /lessons/{lesson_id} */
 export async function getLessonById(
-  lessonId: string | number
+  lessonId: string | number,
+  params: Record<string, any> = {}
 ): Promise<Lesson> {
-  const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
+  const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}${buildQuery(params)}`, {
     method: "GET",
     headers: await withAuthHeaders({ "Content-Type": "application/json" }),
   });
@@ -1093,9 +1094,10 @@ export async function getLessonContent(
 
 /** GET /hikmah/pages/{lessonContentId}/quiz-questions */
 export async function getLessonPageQuizQuestions(
-  lessonContentId: number
+  lessonContentId: number,
+  params: Record<string, any> = {}
 ): Promise<LessonPageQuizQuestionsResponse> {
-  const url = `${API_BASE_URL}/hikmah/pages/${lessonContentId}/quiz-questions`;
+  const url = `${API_BASE_URL}/hikmah/pages/${lessonContentId}/quiz-questions${buildQuery(params)}`;
   const response = await fetch(url, {
     method: "GET",
     headers: await withAuthHeaders({ "Content-Type": "application/json" }),

@@ -25,6 +25,7 @@ import {
 } from "@/utils/api";
 import { useHikmahProgress } from "@/hooks/useHikmahProgress";
 import { useLanguagePreference } from "@/hooks/use-language-preference";
+import { useTranslation } from "react-i18next";
 import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LessonRowSkeleton from "@/components/hikmah/LessonRowSkeleton";
@@ -36,6 +37,7 @@ export default function TreeDetailScreen() {
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
   const { apiCode } = useLanguagePreference();
+  const { t } = useTranslation();
 
   const [tree, setTree] = useState<HikmahTree | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -261,7 +263,7 @@ export default function TreeDetailScreen() {
                 style={styles.readMoreBtn}
               >
                 <ThemedText style={{ color: colors.primary, fontSize: 12 }}>
-                  {isSummaryExpanded ? "Read less" : "Read more"}
+                  {isSummaryExpanded ? t("hikmah.readLess") : t("hikmah.readMore")}
                 </ThemedText>
               </TouchableOpacity>
             </View>
@@ -276,7 +278,7 @@ export default function TreeDetailScreen() {
                 color={colors.primary}
               />
               <ThemedText style={{ color: colors.textSecondary, fontSize: 12 }}>
-                {total} lessons
+                {total} {t(total === 1 ? "hikmah.lesson" : "hikmah.lessons")}
               </ThemedText>
             </View>
             {completedCount > 0 && (
@@ -289,7 +291,7 @@ export default function TreeDetailScreen() {
                 <ThemedText
                   style={{ color: colors.textSecondary, fontSize: 12 }}
                 >
-                  {completedCount} completed
+                  {completedCount} {t("hikmah.completed")}
                 </ThemedText>
               </View>
             )}
@@ -312,7 +314,7 @@ export default function TreeDetailScreen() {
           <ThemedText
             style={[styles.percentText, { color: colors.textSecondary }]}
           >
-            {percent}% Complete
+            {t("hikmah.percentComplete", { percent })}
           </ThemedText>
         </View>
 
@@ -321,7 +323,7 @@ export default function TreeDetailScreen() {
           {sortedLessons.length === 0 ? (
             <View style={[styles.emptyCard, { borderColor: colors.border }]}>
               <ThemedText style={{ color: colors.textSecondary }}>
-                Lessons coming soon...
+                {t("hikmah.lessonsComing")}
               </ThemedText>
             </View>
           ) : (
@@ -378,7 +380,7 @@ export default function TreeDetailScreen() {
                         <ThemedText
                           style={{ color: colors.textSecondary, fontSize: 11 }}
                         >
-                          {lesson.estMinutes} min read
+                          {t("hikmah.minRead", { min: lesson.estMinutes })}
                         </ThemedText>
                       ) : null}
                     </View>

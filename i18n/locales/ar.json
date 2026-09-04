@@ -199,7 +199,17 @@
     "startLesson": "ابدأ الدرس",
     "back": "رجوع",
     "continueLesson": "متابعة",
-    "lessonComplete": "اكتمل الدرس"
+    "lessonComplete": "اكتمل الدرس",
+    "elaborationPlaceholder": "اسأل عن هذا الدرس...",
+    "completed": "مكتمل",
+    "readMore": "اقرأ المزيد",
+    "readLess": "اقرأ أقل",
+    "percentComplete": "{{percent}}% مكتمل",
+    "lessonsComing": "الدروس قريباً...",
+    "minRead": "{{min}} دقيقة قراءة",
+    "questionOf": "السؤال {{current}} من {{total}}",
+    "noQuestions": "لا توجد أسئلة لهذه الصفحة.",
+    "explanation": "التفسير"
   },
   "references": {
     "title": "المراجع",
@@ -213,7 +223,8 @@
     "sunni": "المراجع السنية",
     "topResults": "أفضل {{count}} نتائج",
     "noShiaRefs": "لا توجد مراجع شيعية",
-    "noSunniRefs": "لا توجد مراجع سنية"
+    "noSunniRefs": "لا توجد مراجع سنية",
+    "found": "{{count}} موجود"
   },
   "home": {
     "joinVision": "انضم إلى الرؤية",

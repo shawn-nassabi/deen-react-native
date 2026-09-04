@@ -16,7 +16,7 @@ import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { PLACEHOLDERS } from "@/utils/constants";
+import { useTranslation } from "react-i18next";
 
 interface ChatInputProps {
   value: string;
@@ -35,10 +35,12 @@ export default function ChatInput({
   onChange,
   onSubmit,
   isLoading,
-  placeholder = PLACEHOLDERS.CHAT,
+  placeholder,
 }: ChatInputProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t("chat.placeholder");
   const inputRef = useRef<TextInput>(null);
 
   const handleSubmit = () => {
@@ -76,7 +78,7 @@ export default function ChatInput({
               color: colors.text,
             },
           ]}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           placeholderTextColor={colors.textSecondary}
           value={value}
           onChangeText={onChange}
