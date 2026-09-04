@@ -42,7 +42,7 @@ export default function HikmahScreen() {
   const colors = Colors[colorScheme];
   const { user } = useAuth();
   const userId = user?.id;
-  const { apiCode } = useLanguagePreference();
+  const { apiCode, isRTL } = useLanguagePreference();
   const blurIntensity = Platform.OS === "android" ? 120 : 60;
   const headerOverlayColor =
     colorScheme === "dark" ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
@@ -214,7 +214,7 @@ export default function HikmahScreen() {
         >
           <Ionicons name="search" size={20} color={colors.textSecondary} />
           <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
+            style={[styles.searchInput, { color: colors.text, textAlign: isRTL ? "right" : "left" }]}
             placeholder={t("hikmah.searchPlaceholder")}
             placeholderTextColor={colors.muted}
             value={query}

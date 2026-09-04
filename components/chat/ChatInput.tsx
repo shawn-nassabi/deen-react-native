@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useTranslation } from "react-i18next";
+import { useLanguagePreference } from "@/hooks/use-language-preference";
 
 interface ChatInputProps {
   value: string;
@@ -40,6 +41,7 @@ export default function ChatInput({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const { t } = useTranslation();
+  const { isRTL } = useLanguagePreference();
   const resolvedPlaceholder = placeholder ?? t("chat.placeholder");
   const inputRef = useRef<TextInput>(null);
 
@@ -76,6 +78,7 @@ export default function ChatInput({
             styles.input,
             {
               color: colors.text,
+              textAlign: isRTL ? "right" : "left",
             },
           ]}
           placeholder={resolvedPlaceholder}
