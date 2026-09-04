@@ -16,25 +16,18 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { supabase } from "@/utils/supabase";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
-// ---- Error message mapping ----
-
-function mapForgotPasswordError(message: string): string {
-  if (/network/i.test(message)) {
-    return "Something went wrong. Check your connection and try again.";
-  }
-  return "Something went wrong. Check your connection and try again.";
-}
-
 // ---- Screen ----
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
@@ -48,7 +41,7 @@ export default function ForgotPasswordScreen() {
     if (busy) return;
     setError(null);
     if (!email.trim()) {
-      setError("Please enter your email address.");
+      setError(t("auth.emailRequired"));
       return;
     }
     setBusy(true);
@@ -58,13 +51,12 @@ export default function ForgotPasswordScreen() {
         { redirectTo: "deenreactnative://reset-password" },
       );
       if (supabaseError) {
-        setError(mapForgotPasswordError(supabaseError.message));
+        setError(t("auth.errorNetwork"));
       } else {
         setSent(true);
       }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "";
-      setError(mapForgotPasswordError(msg));
+    } catch {
+      setError(t("auth.errorNetwork"));
     } finally {
       setBusy(false);
     }
@@ -102,14 +94,10 @@ export default function ForgotPasswordScreen() {
                   <Ionicons name="mail-outline" size={40} color={colors.primary} />
                 </View>
                 <ThemedText style={[styles.heading, { textAlign: "center" }]}>
-                  Check your email
+                  {t("auth.checkEmail")}
                 </ThemedText>
                 <ThemedText style={[styles.confirmBody, { color: colors.muted }]}>
-                  {"We've sent a reset link to "}
-                  <ThemedText style={{ fontWeight: "600", color: colors.text }}>
-                    {email.trim()}
-                  </ThemedText>
-                  {". Check your inbox and junk folder."}
+                  {t("auth.checkEmailResetBody", { email: email.trim() })}
                 </ThemedText>
                 <View style={styles.linksRow}>
                   <TouchableOpacity
@@ -118,7 +106,7 @@ export default function ForgotPasswordScreen() {
                     style={styles.linkTouchable}
                   >
                     <ThemedText style={[styles.linkText, { color: colors.primary }]}>
-                      Back to sign in
+                      {t("auth.backToSignIn")}
                     </ThemedText>
                   </TouchableOpacity>
                 </View>
@@ -126,7 +114,7 @@ export default function ForgotPasswordScreen() {
             ) : (
               /* ---- Email form state ---- */
               <>
-                <ThemedText style={styles.heading}>Reset your password</ThemedText>
+                <ThemedText style={styles.heading}>{t("auth.forgotPasswordTitle")}</ThemedText>
 
                 {/* Email input */}
                 <View style={styles.inputGroup}>
@@ -139,7 +127,7 @@ export default function ForgotPasswordScreen() {
                         color: colors.text,
                       },
                     ]}
-                    placeholder="Email address"
+                    placeholder={t("auth.email")}
                     placeholderTextColor={colors.muted}
                     value={email}
                     onChangeText={setEmail}
@@ -172,10 +160,10 @@ export default function ForgotPasswordScreen() {
                   {busy ? (
                     <View style={styles.buttonRow}>
                       <ActivityIndicator color="#fff" />
-                      <ThemedText style={styles.buttonText}>Sending…</ThemedText>
+                      <ThemedText style={styles.buttonText}>{t("auth.sending")}</ThemedText>
                     </View>
                   ) : (
-                    <ThemedText style={styles.buttonText}>Send reset email</ThemedText>
+                    <ThemedText style={styles.buttonText}>{t("auth.sendResetEmail")}</ThemedText>
                   )}
                 </TouchableOpacity>
 
@@ -187,7 +175,7 @@ export default function ForgotPasswordScreen() {
                     style={styles.linkTouchable}
                   >
                     <ThemedText style={[styles.linkText, { color: colors.muted }]}>
-                      Back to sign in
+                      {t("auth.backToSignIn")}
                     </ThemedText>
                   </TouchableOpacity>
                 </View>

@@ -7,6 +7,7 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, { FadeInDown, ZoomIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/themed-text";
 
 interface DoneStepProps {
@@ -16,6 +17,14 @@ interface DoneStepProps {
 }
 
 export default function DoneStep({ accentColor, textColor, mutedColor }: DoneStepProps) {
+  const { t } = useTranslation();
+
+  const hints = [
+    { icon: "chatbubble-outline" as const, text: t("onboarding.done.hint1") },
+    { icon: "git-branch-outline" as const, text: t("onboarding.done.hint2") },
+    { icon: "search-outline" as const, text: t("onboarding.done.hint3") },
+  ];
+
   return (
     <View style={styles.container}>
       <Animated.View entering={ZoomIn.delay(100).duration(500)} style={styles.iconWrap}>
@@ -26,25 +35,21 @@ export default function DoneStep({ accentColor, textColor, mutedColor }: DoneSte
 
       <Animated.View entering={FadeInDown.delay(250).duration(500)}>
         <ThemedText style={[styles.title, { color: textColor }]}>
-          You&apos;re all set.
+          {t("onboarding.done.title")}
         </ThemedText>
         <ThemedText style={[styles.subtitle, { color: accentColor }]}>
-          Welcome to Deen.
+          {t("onboarding.done.subtitle")}
         </ThemedText>
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(360).duration(500)}>
         <ThemedText style={[styles.body, { color: mutedColor }]}>
-          Your journey through Islamic knowledge begins now. Start with a question, explore Hikmah lessons, or look up a hadith — Deen is here whenever you need it.
+          {t("onboarding.done.body")}
         </ThemedText>
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(460).duration(500)} style={styles.hints}>
-        {[
-          { icon: "chatbubble-outline" as const, text: "Ask a question on the Chat tab" },
-          { icon: "git-branch-outline" as const, text: "Explore lesson trees in Hikmah" },
-          { icon: "search-outline" as const, text: "Look up references directly" },
-        ].map((hint) => (
+        {hints.map((hint) => (
           <View key={hint.text} style={styles.hintRow}>
             <Ionicons name={hint.icon} size={16} color={accentColor} />
             <ThemedText style={[styles.hintText, { color: mutedColor }]}>

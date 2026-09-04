@@ -9,6 +9,7 @@ import {
   Image,
 } from "react-native";
 import PlatformBlurView from "@/components/ui/PlatformBlurView";
+import { useTranslation } from "react-i18next";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -26,6 +27,7 @@ import ComingSoonCard from "@/components/hikmah/ComingSoonCard";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguagePreference } from "@/hooks/use-language-preference";
 
 const COMING_SOON_COURSES = [
   { id: "foundations-islam", title: "The Foundations of Islam" },
@@ -35,10 +37,12 @@ const COMING_SOON_COURSES = [
 
 export default function HikmahScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const { user } = useAuth();
   const userId = user?.id;
+  const { apiCode, isRTL } = useLanguagePreference();
   const blurIntensity = Platform.OS === "android" ? 120 : 60;
   const headerOverlayColor =
     colorScheme === "dark" ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.65)";
@@ -96,7 +100,7 @@ export default function HikmahScreen() {
   const loadData = async () => {
     try {
       setError("");
-      const data = await getHikmahTrees({ limit: 100 });
+      const data = await getHikmahTrees({ limit: 100, language: apiCode });
       const treesArray = Array.isArray(data) ? data : [];
 
       // Fetch lessons for each tree to compute progress
@@ -108,6 +112,7 @@ export default function HikmahScreen() {
             const lessons = await getLessonsByTreeId(tree.id, {
               order_by: "order_position",
               limit: 200,
+              language: apiCode,
             });
             return {
               ...tree,
@@ -137,7 +142,8 @@ export default function HikmahScreen() {
 
   useEffect(() => {
     loadData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiCode]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -194,7 +200,7 @@ export default function HikmahScreen() {
               style={styles.headerLogo}
             />
             <ThemedText type="subtitle" style={styles.headerTitle}>
-              Hikmah Trees
+              {t("hikmah.title")}
             </ThemedText>
           </View>
         </View>
@@ -208,8 +214,8 @@ export default function HikmahScreen() {
         >
           <Ionicons name="search" size={20} color={colors.textSecondary} />
           <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
-            placeholder="Search topics..."
+            style={[styles.searchInput, { color: colors.text, textAlign: isRTL ? "right" : "left" }]}
+            placeholder={t("hikmah.searchPlaceholder")}
             placeholderTextColor={colors.muted}
             value={query}
             onChangeText={setQuery}
@@ -245,7 +251,7 @@ export default function HikmahScreen() {
               color: colors.textSecondary,
             }}
           >
-            Loading topics...
+            {t("hikmah.loadingTopics")}
           </ThemedText>
         </ScrollView>
       ) : error ? (
@@ -261,7 +267,7 @@ export default function HikmahScreen() {
             }}
             onPress={loadData}
           >
-            Try Again
+            {t("common.retry")}
           </ThemedText>
         </View>
       ) : (
@@ -278,7 +284,7 @@ export default function HikmahScreen() {
           {filtered.length === 0 && filteredComingSoon.length === 0 ? (
             <View style={styles.emptyState}>
               <ThemedText style={{ color: colors.textSecondary }}>
-                {`No topics found matching "${query}"`}
+                {t("hikmah.noTopicsFound", { query })}
               </ThemedText>
             </View>
           ) : (
@@ -299,12 +305,12 @@ export default function HikmahScreen() {
             ]}
           >
             <ThemedText type="subtitle" style={{ color: colors.textSecondary }}>
-              More Coming Soon
+              {t("hikmah.comingSoon")}
             </ThemedText>
             <ThemedText
               style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}
             >
-              Inshallah...
+              {t("hikmah.comingSoonSubtitle")}
             </ThemedText>
           </View>
         </ScrollView>

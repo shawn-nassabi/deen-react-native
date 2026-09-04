@@ -7,10 +7,10 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import uuid from "react-native-uuid";
-import { CONFIG } from "./config";
-import { STORAGE_KEYS } from "./constants";
 import { getValidAccessToken } from "./auth";
 import type { Reference } from "./chatStorage";
+import { CONFIG } from "./config";
+import { STORAGE_KEYS } from "./constants";
 
 const API_BASE_URL = CONFIG.API_BASE_URL;
 const SESSION_KEY = STORAGE_KEYS.SESSION_ID;
@@ -1003,9 +1003,10 @@ export async function getHikmahTrees(params = {}): Promise<HikmahTree[]> {
 
 /** GET /hikmah-trees/{tree_id} */
 export async function getHikmahTree(
-  treeId: string | number
+  treeId: string | number,
+  params: Record<string, any> = {}
 ): Promise<HikmahTree> {
-  const response = await fetch(`${API_BASE_URL}/hikmah-trees/${treeId}`, {
+  const response = await fetch(`${API_BASE_URL}/hikmah-trees/${treeId}${buildQuery(params)}`, {
     method: "GET",
     headers: await withAuthHeaders({ "Content-Type": "application/json" }),
   });
@@ -1046,9 +1047,10 @@ export async function getLessonsByTreeId(
 
 /** GET /lessons/{lesson_id} */
 export async function getLessonById(
-  lessonId: string | number
+  lessonId: string | number,
+  params: Record<string, any> = {}
 ): Promise<Lesson> {
-  const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}`, {
+  const response = await fetch(`${API_BASE_URL}/lessons/${lessonId}${buildQuery(params)}`, {
     method: "GET",
     headers: await withAuthHeaders({ "Content-Type": "application/json" }),
   });
@@ -1092,9 +1094,10 @@ export async function getLessonContent(
 
 /** GET /hikmah/pages/{lessonContentId}/quiz-questions */
 export async function getLessonPageQuizQuestions(
-  lessonContentId: number
+  lessonContentId: number,
+  params: Record<string, any> = {}
 ): Promise<LessonPageQuizQuestionsResponse> {
-  const url = `${API_BASE_URL}/hikmah/pages/${lessonContentId}/quiz-questions`;
+  const url = `${API_BASE_URL}/hikmah/pages/${lessonContentId}/quiz-questions${buildQuery(params)}`;
   const response = await fetch(url, {
     method: "GET",
     headers: await withAuthHeaders({ "Content-Type": "application/json" }),

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +19,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
@@ -40,13 +42,13 @@ export default function LoginScreen() {
     } catch (e: any) {
       const msg: string = e?.message ?? "";
       if (msg === "Invalid login credentials") {
-        setError("Incorrect email or password. Please try again.");
+        setError(t("auth.errorInvalidCredentials"));
       } else if (msg.toLowerCase().includes("not confirmed") || msg.toLowerCase().includes("email not confirmed")) {
-        setError("Please verify your email before signing in. Check your inbox and junk folder.");
+        setError(t("auth.errorEmailNotConfirmed"));
       } else if (/network/i.test(msg)) {
-        setError("Something went wrong. Check your connection and try again.");
+        setError(t("auth.errorNetwork"));
       } else {
-        setError("Something went wrong. Check your connection and try again.");
+        setError(t("auth.errorNetwork"));
       }
     } finally {
       setBusy(false);
@@ -70,7 +72,7 @@ export default function LoginScreen() {
 
           {/* Elevated card */}
           <View style={[styles.card, { backgroundColor: colors.panel }]}>
-            <ThemedText style={styles.heading}>Sign in to continue</ThemedText>
+            <ThemedText style={styles.heading}>{t("auth.signInSubtitle")}</ThemedText>
 
             {/* Email input */}
             <View style={styles.inputGroup}>
@@ -83,7 +85,7 @@ export default function LoginScreen() {
                     color: colors.text,
                   },
                 ]}
-                placeholder="Email address"
+                placeholder={t("auth.email")}
                 placeholderTextColor={colors.muted}
                 value={email}
                 onChangeText={setEmail}
@@ -110,7 +112,7 @@ export default function LoginScreen() {
                     color: colors.text,
                   },
                 ]}
-                placeholder="Password"
+                placeholder={t("auth.password")}
                 placeholderTextColor={colors.muted}
                 value={password}
                 onChangeText={setPassword}
@@ -125,7 +127,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={styles.eyeToggle}
                 onPress={() => setShowPassword((v) => !v)}
-                accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                accessibilityLabel={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
               >
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
@@ -153,10 +155,10 @@ export default function LoginScreen() {
               {busy ? (
                 <View style={styles.buttonRow}>
                   <ActivityIndicator color="#fff" />
-                  <ThemedText style={styles.buttonText}>Signing in…</ThemedText>
+                  <ThemedText style={styles.buttonText}>{t("auth.signingIn")}</ThemedText>
                 </View>
               ) : (
-                <ThemedText style={styles.buttonText}>Sign in</ThemedText>
+                <ThemedText style={styles.buttonText}>{t("auth.signIn")}</ThemedText>
               )}
             </TouchableOpacity>
 
@@ -168,7 +170,7 @@ export default function LoginScreen() {
                 activeOpacity={0.7}
               >
                 <ThemedText style={[styles.linkText, { color: colors.muted }]}>
-                  Forgot password?
+                  {t("auth.forgotPassword")}
                 </ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
@@ -177,7 +179,7 @@ export default function LoginScreen() {
                 activeOpacity={0.7}
               >
                 <ThemedText style={[styles.linkText, { color: colors.primary }]}>
-                  Don{"'"}t have an account? Sign up
+                  {t("auth.noAccountSignUp")}
                 </ThemedText>
               </TouchableOpacity>
             </View>

@@ -18,6 +18,7 @@ import {
 import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -35,6 +36,7 @@ export default function ReferencesModal({
   onClose,
   references = [],
 }: ReferencesModalProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
@@ -182,7 +184,7 @@ export default function ReferencesModal({
           {/* Header */}
           <View style={styles.header}>
             <ThemedText type="subtitle" style={styles.headerTitle}>
-              References
+              {t("references.title")}
             </ThemedText>
             <TouchableOpacity
               onPress={handleClose}
@@ -234,7 +236,7 @@ export default function ReferencesModal({
                       },
                     ]}
                   >
-                    Shia References
+                    {t("references.shia")}
                   </Text>
                 </TouchableOpacity>
 
@@ -269,7 +271,7 @@ export default function ReferencesModal({
                       },
                     ]}
                   >
-                    Sunni References
+                    {t("references.sunni")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -286,7 +288,7 @@ export default function ReferencesModal({
                     },
                   ]}
                 >
-                  {activeRefs.length} found
+                  {t("references.found", { count: activeRefs.length })}
                 </Animated.Text>
               )}
             </View>
@@ -315,7 +317,7 @@ export default function ReferencesModal({
                 <ThemedText
                   style={[styles.emptyText, { color: colors.textSecondary }]}
                 >
-                  No {activeTab === "shia" ? "Shia" : "Sunni"} references found
+                  {activeTab === "shia" ? t("references.noShiaRefs") : t("references.noSunniRefs")}
                 </ThemedText>
               </View>
             )}

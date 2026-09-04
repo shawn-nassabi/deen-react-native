@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, View, ViewStyle } from "react-native";
+import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -10,6 +11,7 @@ interface ComingSoonCardProps {
 }
 
 export default function ComingSoonCard({ title, style }: ComingSoonCardProps) {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
@@ -38,7 +40,7 @@ export default function ComingSoonCard({ title, style }: ComingSoonCardProps) {
             ]}
           >
             <ThemedText style={{ color: colors.textSecondary }}>
-              Coming Soon
+              {t("hikmah.comingSoonButton")}
             </ThemedText>
           </View>
         </View>

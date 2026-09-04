@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { ThemedView } from "@/components/themed-view";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
@@ -18,6 +19,7 @@ const FEEDBACK_FORM_URL = "https://forms.gle/62jJPypFq2PybuYC6";
 
 export default function FeedbackScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const [isOpening, setIsOpening] = useState(false);
@@ -26,21 +28,21 @@ export default function FeedbackScreen() {
     try {
       setIsOpening(true);
       const canOpen = await Linking.canOpenURL(FEEDBACK_FORM_URL);
-      
+
       if (canOpen) {
         await Linking.openURL(FEEDBACK_FORM_URL);
       } else {
         Alert.alert(
-          "Unable to Open",
-          "Cannot open the feedback form. Please try again later.",
-          [{ text: "OK" }]
+          t("feedback.unableToOpen"),
+          t("feedback.cannotOpenForm"),
+          [{ text: t("common.ok") }]
         );
       }
     } catch (error) {
       Alert.alert(
-        "Error",
-        "An error occurred while trying to open the feedback form.",
-        [{ text: "OK" }]
+        t("feedback.errorTitle"),
+        t("feedback.errorOpenForm"),
+        [{ text: t("common.ok") }]
       );
       console.error("Error opening feedback form:", error);
     } finally {
@@ -85,23 +87,19 @@ export default function FeedbackScreen() {
           </View>
 
           <ThemedText type="title" style={styles.title}>
-            Provide Feedback
+            {t("feedback.title")}
           </ThemedText>
 
           <ThemedText
             style={[styles.description, { color: colors.textSecondary }]}
           >
-            Your feedback is invaluable to us! We{"'"}re constantly working to
-            improve Deen and provide the best possible experience for Islamic
-            education.
+            {t("feedback.description1")}
           </ThemedText>
 
           <ThemedText
             style={[styles.description, { color: colors.textSecondary }]}
           >
-            Please share your thoughts, suggestions, or report any issues you{"'"}ve
-            encountered. Whether it{"'"}s a bug, a feature request, or general
-            feedback, we want to hear from you.
+            {t("feedback.description2")}
           </ThemedText>
 
           <View
@@ -119,8 +117,7 @@ export default function FeedbackScreen() {
             <ThemedText
               style={[styles.highlightText, { color: colors.textSecondary }]}
             >
-              Your feedback helps us fix bugs, add new features, and create a
-              better learning experience for everyone.
+              {t("feedback.highlight")}
             </ThemedText>
           </View>
 
@@ -143,12 +140,12 @@ export default function FeedbackScreen() {
               style={styles.buttonIcon}
             />
             <ThemedText style={styles.primaryButtonText}>
-              {isOpening ? "Opening..." : "Open Feedback Form"}
+              {isOpening ? t("feedback.opening") : t("feedback.openForm")}
             </ThemedText>
           </TouchableOpacity>
 
           <ThemedText style={[styles.footerNote, { color: colors.muted }]}>
-            You{"'"}ll be redirected to Google Forms to submit your feedback.
+            {t("feedback.footerNote")}
           </ThemedText>
         </ThemedView>
       </ScrollView>

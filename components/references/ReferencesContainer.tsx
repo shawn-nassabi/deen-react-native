@@ -8,6 +8,7 @@ import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Animated,
   Image,
@@ -39,6 +40,7 @@ export default function ReferencesContainer({
   bottomPadding,
   topPadding,
 }: ReferencesContainerProps) {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
@@ -92,7 +94,7 @@ export default function ReferencesContainer({
           <ThemedText
             style={[styles.loadingText, { color: colors.textSecondary }]}
           >
-            Searching references...
+            {t("references.searching")}
           </ThemedText>
         </View>
       </TouchableWithoutFeedback>
@@ -117,12 +119,12 @@ export default function ReferencesContainer({
             type="title"
             style={[styles.emptyTitle, { color: colors.text }]}
           >
-            Reference Lookup
+            {t("references.lookup")}
           </ThemedText>
           <ThemedText
             style={[styles.emptyText, { color: colors.textSecondary }]}
           >
-            Search for authentic Islamic references and sources
+            {t("references.lookupSubtitle")}
           </ThemedText>
         </View>
       </TouchableWithoutFeedback>
@@ -142,7 +144,7 @@ export default function ReferencesContainer({
           <ThemedText
             style={[styles.emptyText, { color: colors.textSecondary }]}
           >
-            No references found for your query.
+            {t("references.noResults")}
           </ThemedText>
         </View>
       </TouchableWithoutFeedback>
@@ -206,7 +208,7 @@ export default function ReferencesContainer({
         ]}
       >
         <Text style={[styles.queryLabel, { color: colors.primary }]}>
-          Your Search
+          {t("references.yourSearch")}
         </Text>
         <ThemedText style={[styles.queryText, { color: colors.text }]}>
           {submittedQuery}
@@ -248,7 +250,7 @@ export default function ReferencesContainer({
                   },
                 ]}
               >
-                Shia References
+                {t("references.shia")}
               </Text>
             </TouchableOpacity>
 
@@ -283,7 +285,7 @@ export default function ReferencesContainer({
                   },
                 ]}
               >
-                Sunni References
+                {t("references.sunni")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -300,7 +302,7 @@ export default function ReferencesContainer({
                 },
               ]}
             >
-              Top {activeRefs.length} results
+              {t("references.topResults", { count: activeRefs.length })}
             </Animated.Text>
           )}
         </View>
@@ -326,7 +328,7 @@ export default function ReferencesContainer({
           <ThemedText
             style={[styles.emptyTabText, { color: colors.textSecondary }]}
           >
-            No {activeTab === "shia" ? "Shia" : "Sunni"} references found
+            {activeTab === "shia" ? t("references.noShiaRefs") : t("references.noSunniRefs")}
           </ThemedText>
         </View>
       )}
