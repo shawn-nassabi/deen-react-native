@@ -15,7 +15,7 @@ import {
   Animated,
   Platform,
 } from "react-native";
-import { BlurView } from "expo-blur";
+import PlatformBlurView from "@/components/ui/PlatformBlurView";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/themed-text";
@@ -158,7 +158,7 @@ export default function ReferencesModal({
             activeOpacity={1}
             onPress={handleClose}
           >
-            <BlurView
+            <PlatformBlurView
               intensity={blurIntensity}
               tint={colorScheme === "dark" ? "dark" : "light"}
               style={StyleSheet.absoluteFill}

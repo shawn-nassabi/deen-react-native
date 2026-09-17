@@ -79,7 +79,7 @@ export default function ElaborationModal({
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    const userId = user?.email || user?.sub;
+    const userId = user?.id;
     if (!userId) {
       setLoading(false);
       setError("Please sign in again to continue.");
@@ -131,7 +131,7 @@ export default function ElaborationModal({
       onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={[styles.container, { backgroundColor: colors.background }]}
       >
         <View style={[styles.header, { borderBottomColor: colors.border }]}>

@@ -1,7 +1,8 @@
 /**
- * Polyfills for React Native
- * Note: Using react-native-blob-util for streaming support instead of polyfills
- * as it provides native streaming capabilities
+ * Polyfills for React Native / Hermes
+ * react-native-url-polyfill/auto MUST be first — Supabase requires a spec-compliant
+ * URL global at module init time. Hermes does not ship one by default.
  */
+import "react-native-url-polyfill/auto";
 
-// No polyfills needed - using react-native-blob-util for streaming
+// No other polyfills needed — streaming handled natively

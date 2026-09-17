@@ -4,24 +4,23 @@
  * Features tab switching between Shia and Sunni references
  */
 
-import React, { useEffect, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Animated,
-  Easing,
-  Platform,
-  TouchableOpacity,
-  Image,
-  Keyboard,
-  TouchableWithoutFeedback,
-} from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Image,
+  Keyboard,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 import ReferenceItem from "./ReferenceItem";
+import ReferenceSkeleton from "./ReferenceSkeleton";
 
 interface ReferencesContainerProps {
   results: any;
@@ -46,40 +45,9 @@ export default function ReferencesContainer({
   // Tab state: 'shia' or 'sunni'
   const [activeTab, setActiveTab] = useState<"shia" | "sunni">("shia");
 
-  // Pulsing animation for loading
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-
   // Animation for count text reveal
   const countTranslateX = useRef(new Animated.Value(-50)).current;
   const countOpacity = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (isLoading) {
-      // Create pulsing loop animation
-      const pulse = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.2,
-            duration: 800,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 800,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      );
-      pulse.start();
-
-      return () => {
-        pulse.stop();
-        pulseAnim.setValue(1);
-      };
-    }
-  }, [isLoading]);
 
   // Animate count text when tab changes or results load
   useEffect(() => {
@@ -112,19 +80,15 @@ export default function ReferencesContainer({
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View
           style={[
-            styles.centerContainer,
+            styles.loadingContainer,
             { paddingBottom: bottomPadding, paddingTop: topPadding },
           ]}
         >
-          <Animated.View
-            style={[
-              styles.loadingCircle,
-              {
-                backgroundColor: colors.primary,
-                transform: [{ scale: pulseAnim }],
-              },
-            ]}
-          />
+          <View style={styles.skeletonStack}>
+            <ReferenceSkeleton />
+            <ReferenceSkeleton />
+            <ReferenceSkeleton />
+          </View>
           <ThemedText
             style={[styles.loadingText, { color: colors.textSecondary }]}
           >
@@ -336,7 +300,7 @@ export default function ReferencesContainer({
                 },
               ]}
             >
-              {activeRefs.length} found
+              Top {activeRefs.length} results
             </Animated.Text>
           )}
         </View>
@@ -389,14 +353,17 @@ const styles = StyleSheet.create({
     opacity: 0.8,
     marginBottom: 20,
   },
-  loadingCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 24,
+  loadingContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+    alignItems: "stretch",
+  },
+  skeletonStack: {
+    marginBottom: 16,
   },
   loadingText: {
     fontSize: 16,
+    textAlign: "center",
   },
   emptyTitle: {
     marginBottom: 12,
