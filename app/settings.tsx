@@ -3,6 +3,7 @@ import { StyleSheet, ScrollView, TouchableOpacity, View, Alert, ActivityIndicato
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { useThemePreference } from "@/hooks/use-theme-preference";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemedView } from "@/components/themed-view";
@@ -14,6 +15,7 @@ import { EXTERNAL_URLS } from "@/utils/constants";
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { themePreference, setThemePreference } = useThemePreference();
   const { user, signOut } = useAuth();
   const colorScheme = useColorScheme();
@@ -26,18 +28,18 @@ export default function SettingsScreen() {
   const themeOptions = [
     {
       value: "system" as const,
-      label: "System",
-      description: "Match device settings",
+      label: t("settings.themeSystem"),
+      description: t("settings.themeSystemDescription"),
     },
     {
       value: "light" as const,
-      label: "Light",
-      description: "Always use light mode",
+      label: t("settings.themeLight"),
+      description: t("settings.themeLightDescription"),
     },
     {
       value: "dark" as const,
-      label: "Dark",
-      description: "Always use dark mode",
+      label: t("settings.themeDark"),
+      description: t("settings.themeDarkDescription"),
     },
   ];
 
@@ -46,7 +48,7 @@ export default function SettingsScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 8 }]}>
         <ThemedText type="title" style={styles.headerTitle}>
-          Settings
+          {t("settings.title")}
         </ThemedText>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -67,12 +69,12 @@ export default function SettingsScreen() {
       >
         <ThemedView style={styles.section}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Appearance
+            {t("settings.appearance")}
           </ThemedText>
           <ThemedText
             style={[styles.sectionDescription, { color: colors.textSecondary }]}
           >
-            Choose how Deen looks to you
+            {t("settings.appearanceDescription")}
           </ThemedText>
 
           <View style={styles.optionsContainer}>
@@ -123,12 +125,12 @@ export default function SettingsScreen() {
 
         <ThemedView style={styles.section}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Account
+            {t("settings.account")}
           </ThemedText>
           <ThemedText
             style={[styles.sectionDescription, { color: colors.textSecondary }]}
           >
-            Manage your account
+            {t("settings.accountDescription")}
           </ThemedText>
 
           <View
@@ -171,7 +173,7 @@ export default function SettingsScreen() {
 
             {authError ? (
               <ThemedText style={[styles.versionText, { color: "#ef4444" }]}>
-                Auth error: {authError}
+                {t("settings.errorLabel")} {authError}
               </ThemedText>
             ) : null}
           </View>
@@ -200,7 +202,7 @@ export default function SettingsScreen() {
               activeOpacity={0.8}
               disabled={authBusy}
             >
-              <ThemedText style={styles.primaryButtonText}>Sign out</ThemedText>
+              <ThemedText style={styles.primaryButtonText}>{t("settings.signOut")}</ThemedText>
             </TouchableOpacity>
 
             {/* Danger zone separator */}
@@ -221,12 +223,12 @@ export default function SettingsScreen() {
                 if (deleteLoading) return;
                 // Alert confirmation before irreversible action (D-11)
                 Alert.alert(
-                  "Delete Account",
-                  "This will permanently delete your account and all associated data. This action cannot be undone.",
+                  t("settings.deleteAccountTitle"),
+                  t("settings.deleteAccountMessage"),
                   [
-                    { text: "Cancel", style: "cancel" },
+                    { text: t("common.cancel"), style: "cancel" },
                     {
-                      text: "Delete",
+                      text: t("settings.deleteAccountConfirm"),
                       style: "destructive",
                       onPress: async () => {
                         setDeleteLoading(true);
@@ -237,8 +239,8 @@ export default function SettingsScreen() {
                         } catch (e: any) {
                           // Stay on settings screen so user can retry (D-13)
                           Alert.alert(
-                            "Error",
-                            e?.message || "Failed to delete account. Please try again."
+                            t("common.error"),
+                            e?.message || t("settings.deleteAccountError")
                           );
                         } finally {
                           setDeleteLoading(false);
@@ -254,7 +256,7 @@ export default function SettingsScreen() {
               {deleteLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <ThemedText style={styles.primaryButtonText}>Delete Account</ThemedText>
+                <ThemedText style={styles.primaryButtonText}>{t("settings.deleteAccount")}</ThemedText>
               )}
             </TouchableOpacity>
           </View>
@@ -262,12 +264,12 @@ export default function SettingsScreen() {
 
         <ThemedView style={styles.section}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Legal
+            {t("settings.legal")}
           </ThemedText>
           <ThemedText
             style={[styles.sectionDescription, { color: colors.textSecondary }]}
           >
-            Policies and terms
+            {t("settings.legalDescription")}
           </ThemedText>
 
           <View
@@ -281,7 +283,7 @@ export default function SettingsScreen() {
               onPress={() => Linking.openURL(EXTERNAL_URLS.PRIVACY_POLICY)}
               activeOpacity={0.7}
             >
-              <ThemedText style={styles.legalRowLabel}>Privacy Policy</ThemedText>
+              <ThemedText style={styles.legalRowLabel}>{t("settings.privacyPolicy")}</ThemedText>
               <Ionicons name="open-outline" size={16} color={colors.muted} />
             </TouchableOpacity>
 
@@ -292,7 +294,7 @@ export default function SettingsScreen() {
               onPress={() => Linking.openURL(EXTERNAL_URLS.TERMS_OF_USE)}
               activeOpacity={0.7}
             >
-              <ThemedText style={styles.legalRowLabel}>Terms of Use</ThemedText>
+              <ThemedText style={styles.legalRowLabel}>{t("settings.termsOfUse")}</ThemedText>
               <Ionicons name="open-outline" size={16} color={colors.muted} />
             </TouchableOpacity>
           </View>

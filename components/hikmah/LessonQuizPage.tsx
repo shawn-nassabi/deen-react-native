@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
@@ -30,6 +31,7 @@ export default function LessonQuizPage({
   userId,
   onContinue,
 }: Props) {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
@@ -114,14 +116,14 @@ export default function LessonQuizPage({
     return (
       <ThemedView style={styles.emptyContainer}>
         <ThemedText style={{ color: colors.textSecondary }}>
-          No questions for this page.
+          {t("hikmah.noQuestions")}
         </ThemedText>
         <TouchableOpacity
           style={[styles.continueBtn, { backgroundColor: colors.primary }]}
           onPress={onContinue}
           activeOpacity={0.85}
         >
-          <ThemedText style={styles.continueBtnText}>Continue</ThemedText>
+          <ThemedText style={styles.continueBtnText}>{t("hikmah.continueLesson")}</ThemedText>
           <Ionicons name="arrow-forward" size={16} color="#fff" />
         </TouchableOpacity>
       </ThemedView>
@@ -133,10 +135,10 @@ export default function LessonQuizPage({
       {/* Quiz header strip */}
       <View style={[styles.quizHeader, { borderBottomColor: colors.border }]}>
         <ThemedText style={[styles.quizLabel, { color: colors.primary }]}>
-          KNOWLEDGE CHECK
+          {t("hikmah.quizTitle")}
         </ThemedText>
         <ThemedText style={[styles.questionCounter, { color: colors.textSecondary }]}>
-          Question {currentQuestionIndex + 1} of {totalQuestions}
+          {t("hikmah.questionOf", { current: currentQuestionIndex + 1, total: totalQuestions })}
         </ThemedText>
       </View>
 
@@ -260,7 +262,7 @@ export default function LessonQuizPage({
                 <ThemedText
                   style={[styles.explanationLabel, { color: colors.primary }]}
                 >
-                  Explanation
+                  {t("hikmah.explanation")}
                 </ThemedText>
               </View>
               <ThemedText
@@ -298,7 +300,7 @@ export default function LessonQuizPage({
               onPress={onContinue}
               activeOpacity={0.85}
             >
-              <ThemedText style={styles.continueBtnText}>Continue</ThemedText>
+              <ThemedText style={styles.continueBtnText}>{t("hikmah.continueLesson")}</ThemedText>
               <Ionicons name="arrow-forward" size={16} color="#fff" />
             </TouchableOpacity>
           ) : (

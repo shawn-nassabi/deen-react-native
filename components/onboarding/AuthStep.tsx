@@ -20,6 +20,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/themed-text";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 
 // ---- Types ----
 
@@ -47,6 +48,7 @@ export default function AuthStep({
   bgColor,
 }: AuthStepProps) {
   const { signIn, signUp } = useAuth();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>("signup");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -149,7 +151,7 @@ export default function AuthStep({
               <Ionicons name="person-outline" size={18} color={mutedColor} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: textColor }]}
-                placeholder="Display name"
+                placeholder={t("auth.displayName")}
                 placeholderTextColor={mutedColor}
                 autoCapitalize="words"
                 autoCorrect={false}
@@ -168,7 +170,7 @@ export default function AuthStep({
             <TextInput
               ref={emailRef}
               style={[styles.input, { color: textColor }]}
-              placeholder="Email address"
+              placeholder={t("auth.email")}
               placeholderTextColor={mutedColor}
               autoCapitalize="none"
               keyboardType="email-address"
@@ -186,7 +188,7 @@ export default function AuthStep({
             <TextInput
               ref={passwordRef}
               style={[styles.input, { color: textColor }]}
-              placeholder="Password"
+              placeholder={t("auth.password")}
               placeholderTextColor={mutedColor}
               secureTextEntry={!showPassword}
               value={password}

@@ -9,6 +9,7 @@ import {
 import { useRouter } from "expo-router";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Colors } from "@/constants/theme";
@@ -20,6 +21,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
@@ -43,11 +45,11 @@ export default function HomeScreen() {
           ]}
           onPress={() => router.push("/vision")}
           activeOpacity={0.7}
-          accessibilityLabel="Join the Vision"
+          accessibilityLabel={t("home.joinVision")}
         >
           <Ionicons name="heart" size={16} color={colors.primary} />
           <ThemedText style={[styles.visionButtonText, { color: colors.primary }]}>
-            Join the Vision
+            {t("home.joinVision")}
           </ThemedText>
         </TouchableOpacity>
       </Animated.View>
@@ -89,7 +91,7 @@ export default function HomeScreen() {
             resizeMode="contain"
           />
           <ThemedText style={[styles.tagline, { color: colors.textSecondary }]}>
-            Revolutionizing Islamic Education with AI
+            {t("home.tagline")}
           </ThemedText>
         </Animated.View>
 
@@ -103,9 +105,9 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <View style={styles.mainCardContent}>
-              <ThemedText style={styles.mainCardTitle}>Deen Chat</ThemedText>
+              <ThemedText style={styles.mainCardTitle}>{t("home.deenChat")}</ThemedText>
               <ThemedText style={styles.mainCardSubtitle}>
-                Ask deen anything
+                {t("home.askDeenAnything")}
               </ThemedText>
             </View>
             <View style={styles.mainCardIconContainer}>
@@ -124,10 +126,10 @@ export default function HomeScreen() {
             >
               <View style={styles.sideCardContent}>
                 <ThemedText style={styles.sideCardTitle}>
-                  Reference Lookup
+                  {t("home.referenceLookup")}
                 </ThemedText>
                 <ThemedText style={styles.sideCardSubtitle}>
-                  Search references
+                  {t("home.searchReferences")}
                 </ThemedText>
               </View>
               <View style={styles.sideCardIconContainer}>
@@ -144,10 +146,10 @@ export default function HomeScreen() {
             >
               <View style={styles.sideCardContent}>
                 <ThemedText style={styles.sideCardTitle}>
-                  Hikmah Trees
+                  {t("home.hikmahTreesCard")}
                 </ThemedText>
                 <ThemedText style={styles.sideCardSubtitle}>
-                  Guided lessons
+                  {t("home.guidedLessons")}
                 </ThemedText>
               </View>
               <View style={styles.sideCardIconContainer}>
@@ -157,14 +159,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Footer */}
-        {/* <View style={styles.footerContainer}>
-          <Animated.View entering={FadeIn.delay(400).duration(400)}>
-            <ThemedText style={[styles.footer, { color: colors.muted }]}>
-              © {new Date().getFullYear()} Deen. All rights reserved.
-            </ThemedText>
-          </Animated.View>
-        </View> */}
       </View>
     </ThemedView>
   );

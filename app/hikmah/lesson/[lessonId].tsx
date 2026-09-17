@@ -34,6 +34,7 @@ import LessonContentWebView from "@/components/hikmah/LessonContentWebView";
 import LessonPrimerPage from "@/components/hikmah/LessonPrimerPage";
 import LessonQuizPage from "@/components/hikmah/LessonQuizPage";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguagePreference } from "@/hooks/use-language-preference";
 
 export default function LessonReaderScreen() {
   const { lessonId, treeId } = useLocalSearchParams<{
@@ -45,6 +46,7 @@ export default function LessonReaderScreen() {
   const colors = Colors[colorScheme];
   const { user } = useAuth();
   const userId = user?.id;
+  const { apiCode } = useLanguagePreference();
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [tree, setTree] = useState<HikmahTree | null>(null);
@@ -90,9 +92,9 @@ export default function LessonReaderScreen() {
 
     Promise.all([
       getLessonById(lessonId),
-      getHikmahTree(treeId),
-      getLessonsByTreeId(Number(treeId), { limit: 200 }),
-      getLessonContent(Number(lessonId), { limit: 500 }),
+      getHikmahTree(treeId, { language: apiCode }),
+      getLessonsByTreeId(Number(treeId), { limit: 200, language: apiCode }),
+      getLessonContent(Number(lessonId), { limit: 500, language: apiCode }),
     ])
       .then(async ([lsn, tr, ls, content]) => {
         if (!mounted) return;
@@ -109,7 +111,7 @@ export default function LessonReaderScreen() {
         // Fetch quizzes for all pages in parallel; failures are non-fatal
         const quizResults = await Promise.all(
           sortedPages.map((page) =>
-            getLessonPageQuizQuestions(page.id).catch((err) => {
+            getLessonPageQuizQuestions(page.id, { language: apiCode }).catch((err) => {
               console.warn(`Quiz fetch failed for page ${page.id}:`, err);
               return { lesson_content_id: page.id, questions: [] as QuizQuestionResponse[] };
             })
@@ -137,7 +139,7 @@ export default function LessonReaderScreen() {
     return () => {
       mounted = false;
     };
-  }, [lessonId, treeId]);
+  }, [lessonId, treeId, apiCode]);
 
   // Load baseline + personalized primers for lesson page 1
   useEffect(() => {

@@ -4,21 +4,12 @@
  */
 
 import React, { useMemo } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { View, StyleSheet, TouchableOpacity, I18nManager } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-
-const QUESTION_POOL = [
-  "What are the five pillars of Islam?",
-  "Who are the Twelve Imams?",
-  "What is the significance of Ghadir Khumm?",
-  "Explain the concept of Tawheed",
-  "What is the importance of Ashura in Shia Islam?",
-  "Can you explain the concept of Imamate?",
-  "Who is Imam Ali?",
-];
 
 interface SuggestedQuestionsProps {
   onQuestionClick: (question: string) => void;
@@ -27,14 +18,16 @@ interface SuggestedQuestionsProps {
 export default function SuggestedQuestions({
   onQuestionClick,
 }: SuggestedQuestionsProps) {
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
-  // Randomly select 3 questions on mount
+  // Randomly select 3 questions from the translated pool; re-shuffles on language change
   const selectedQuestions = useMemo(() => {
-    const shuffled = [...QUESTION_POOL].sort(() => Math.random() - 0.5);
+    const pool = t("chat.suggestedQuestions", { returnObjects: true }) as string[];
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 3);
-  }, []);
+  }, [t]);
 
   return (
     <View style={styles.container}>
@@ -51,14 +44,14 @@ export default function SuggestedQuestions({
           onPress={() => onQuestionClick(question)}
           activeOpacity={0.7}
         >
-          <View style={styles.questionContent}>
+          <View style={[styles.questionContent, I18nManager.isRTL && styles.questionContentRTL]}>
             <Ionicons
               name="help-circle-outline"
               size={20}
               color={colors.primary}
               style={styles.icon}
             />
-            <ThemedText style={styles.questionText}>{question}</ThemedText>
+            <ThemedText style={[styles.questionText, I18nManager.isRTL && styles.questionTextRTL]}>{question}</ThemedText>
           </View>
         </TouchableOpacity>
       ))}
@@ -94,5 +87,11 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
+  },
+  questionContentRTL: {
+    flexDirection: "row-reverse",
+  },
+  questionTextRTL: {
+    textAlign: "right",
   },
 });

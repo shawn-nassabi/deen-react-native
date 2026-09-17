@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, View, ViewStyle } from "react-native";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -14,6 +15,7 @@ interface TreeCardProps {
 
 export default function TreeCard({ tree, style }: TreeCardProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const { total, percent } = useHikmahProgress(tree);
@@ -63,7 +65,7 @@ export default function TreeCard({ tree, style }: TreeCardProps) {
             ))}
           </View>
           <ThemedText style={[styles.count, { color: colors.textSecondary }]}>
-            {total} {total === 1 ? "lesson" : "lessons"}
+            {total} {t(total === 1 ? "hikmah.lesson" : "hikmah.lessons")}
           </ThemedText>
         </View>
 
@@ -76,7 +78,7 @@ export default function TreeCard({ tree, style }: TreeCardProps) {
             ]}
             onPress={handlePress}
           >
-            <ThemedText style={{ color: colors.textSecondary }}>View Tree</ThemedText>
+            <ThemedText style={{ color: colors.textSecondary }}>{t("hikmah.viewTree")}</ThemedText>
           </TouchableOpacity>
         </View>
       </View>

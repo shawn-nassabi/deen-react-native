@@ -8,9 +8,12 @@ import { View, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useLanguagePreference } from "@/hooks/use-language-preference";
+import { localizeNumber } from "@/utils/languageConfig";
 import ReferencesModal from "./ReferencesModal";
 import ChatMessageWebView from "./ChatMessageWebView";
 import type { Message } from "@/utils/chatStorage";
@@ -22,6 +25,8 @@ interface ChatMessageProps {
 }
 
 export default function ChatMessage({ message, onSelectionChange, isStreaming = false }: ChatMessageProps) {
+  const { t } = useTranslation();
+  const { languageCode } = useLanguagePreference();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const isUser = message.sender === "user";
@@ -59,7 +64,7 @@ export default function ChatMessage({ message, onSelectionChange, isStreaming = 
               },
             ]}
           >
-            <ThemedText style={styles.userLabel}>You</ThemedText>
+            <ThemedText style={styles.userLabel}>{t("chat.you")}</ThemedText>
             <ThemedText style={styles.userText}>{message.text}</ThemedText>
           </View>
         </View>
@@ -104,7 +109,7 @@ export default function ChatMessage({ message, onSelectionChange, isStreaming = 
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel={
-              copied ? "Response copied to clipboard" : "Copy response to clipboard"
+              copied ? t("chat.copiedAccessibility") : t("chat.copyAccessibility")
             }
           >
             <Ionicons
@@ -116,7 +121,7 @@ export default function ChatMessage({ message, onSelectionChange, isStreaming = 
             <ThemedText
               style={[styles.copyButtonText, { color: colors.textSecondary }]}
             >
-              {copied ? "Copied" : "Copy"}
+              {copied ? t("chat.copied") : t("chat.copy")}
             </ThemedText>
           </TouchableOpacity>
         )}
@@ -136,8 +141,10 @@ export default function ChatMessage({ message, onSelectionChange, isStreaming = 
               <ThemedText
                 style={[styles.referencesText, { color: colors.textSecondary }]}
               >
-                {message.references.length} reference
-                {message.references.length !== 1 ? "s" : ""} available
+                {t("chat.referencesAvailable", {
+                  count: message.references.length,
+                  localizedCount: localizeNumber(message.references.length, languageCode),
+                })}
               </ThemedText>
               <Ionicons
                 name="chevron-forward"

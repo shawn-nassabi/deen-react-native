@@ -24,6 +24,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useTranslation } from "react-i18next";
+
 import { ThemedText } from "@/components/themed-text";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -70,6 +72,7 @@ function Pillar({ icon, title, description, delay, colors }: PillarProps) {
 
 export default function VisionScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const insets = useSafeAreaInsets();
@@ -146,18 +149,17 @@ export default function VisionScreen() {
             >
               <Ionicons name="shield-checkmark" size={13} color="#fff" />
               <ThemedText style={styles.heroBadgeText}>
-                501(c)(3) Non-Profit
+                {t("vision.badge")}
               </ThemedText>
             </Animated.View>
 
             <Animated.View entering={FadeInDown.delay(180).duration(450)}>
-              <ThemedText style={styles.heroTitle}>Our Vision</ThemedText>
+              <ThemedText style={styles.heroTitle}>{t("vision.title")}</ThemedText>
             </Animated.View>
 
             <Animated.View entering={FadeInDown.delay(260).duration(450)}>
               <ThemedText style={styles.heroSubtitle}>
-                Making authentic Islamic knowledge accessible to everyone,
-                everywhere.
+                {t("vision.heroSubtitle")}
               </ThemedText>
             </Animated.View>
 
@@ -172,7 +174,7 @@ export default function VisionScreen() {
                 <ThemedText
                   style={[styles.heroDonatePillText, { color: colors.primary }]}
                 >
-                  Support The Deen Foundation
+                  {t("vision.supportButton")}
                 </ThemedText>
                 <Ionicons
                   name="arrow-forward"
@@ -188,19 +190,15 @@ export default function VisionScreen() {
         <View style={styles.section}>
           <Animated.View entering={FadeInUp.delay(420).duration(500)}>
             <ThemedText style={[styles.eyebrow, { color: colors.primary }]}>
-              Our Mission
+              {t("vision.missionEyebrow")}
             </ThemedText>
             <ThemedText style={styles.sectionHeading}>
-              Knowledge that moves with you.
+              {t("vision.missionHeading")}
             </ThemedText>
             <ThemedText
               style={[styles.bodyText, { color: colors.textSecondary }]}
             >
-              The Deen Foundation is a registered 501(c)(3) non-profit
-              revolutionizing Islamic education with technology grounded in
-              tradition. The beauty of the teachings of the Ahlul Bayt should
-              never be more than a question away — whether you&apos;re a
-              lifelong student or taking your very first step.
+              {t("vision.missionBody")}
             </ThemedText>
           </Animated.View>
         </View>
@@ -209,22 +207,22 @@ export default function VisionScreen() {
         <View style={styles.section}>
           <Pillar
             icon="sparkles"
-            title="Rooted in tradition"
-            description="Guided by classical scholarship, reviewed by qualified teachers."
+            title={t("vision.pillar1Title")}
+            description={t("vision.pillar1Description")}
             delay={500}
             colors={colors}
           />
           <Pillar
             icon="globe-outline"
-            title="Accessible to all"
-            description="Free for everyone, everywhere."
+            title={t("vision.pillar2Title")}
+            description={t("vision.pillar2Description")}
             delay={580}
             colors={colors}
           />
           <Pillar
             icon="heart-circle-outline"
-            title="Independent & mission-driven"
-            description="The Deen Foundation is donor-funded so it can serve the community free of commercial pressure."
+            title={t("vision.pillar3Title")}
+            description={t("vision.pillar3Description")}
             delay={660}
             colors={colors}
           />
@@ -236,11 +234,10 @@ export default function VisionScreen() {
           style={styles.ctaContainer}
         >
           <ThemedText style={styles.ctaHeading}>
-            Support authentic Shia Islamic education.
+            {t("vision.ctaHeading")}
           </ThemedText>
           <ThemedText style={[styles.ctaBody, { color: colors.textSecondary }]}>
-            Your tax-deductible gift to The Deen Foundation supports authentic
-            Shia Islamic education and our vision to combat misinformation.
+            {t("vision.ctaBody")}
           </ThemedText>
 
           <AnimatedTouchable
@@ -256,7 +253,7 @@ export default function VisionScreen() {
             >
               <Ionicons name="heart" size={20} color="#fff" />
               <ThemedText style={styles.ctaText}>
-                Support The Deen Foundation
+                {t("vision.supportButton")}
               </ThemedText>
               <Ionicons name="arrow-forward" size={18} color="#fff" />
             </LinearGradient>

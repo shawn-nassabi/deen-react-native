@@ -16,6 +16,7 @@
       }
     },
     "android": {
+      "supportsRTL": true,
       "package": "com.thedeenfoundation.deen",
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {

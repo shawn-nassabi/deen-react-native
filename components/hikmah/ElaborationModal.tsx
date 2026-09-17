@@ -19,6 +19,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/hooks/useAuth";
 import { elaborateSelectionStream, ElaborationPayload } from "@/utils/api";
 import * as Haptics from "expo-haptics";
+import { useTranslation } from "react-i18next";
 import Markdown from "react-native-markdown-display";
 
 interface ElaborationModalProps {
@@ -43,6 +44,7 @@ export default function ElaborationModal({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
@@ -263,7 +265,7 @@ export default function ElaborationModal({
                   borderColor: colors.border,
                 },
               ]}
-              placeholder="Ask about this lesson..."
+              placeholder={t("hikmah.elaborationPlaceholder")}
               placeholderTextColor={colors.muted}
               value={query}
               onChangeText={setQuery}
